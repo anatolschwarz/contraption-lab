@@ -9,7 +9,12 @@ export interface RampTransform {
 }
 
 export type GameAction =
-  "edit" | "run" | "pause" | "reset" | "success" | "select-ramp" | "deselect";
+  | "edit"
+  | "toggle-simulation"
+  | "reset"
+  | "success"
+  | "select-ramp"
+  | "deselect";
 
 export interface GameState {
   mode: GameMode;
@@ -29,8 +34,7 @@ export const INITIAL_GAME_STATE: Readonly<GameState> = Object.freeze({
 
 export interface EnabledControls {
   edit: boolean;
-  run: boolean;
-  pause: boolean;
+  simulation: boolean;
   reset: boolean;
 }
 
@@ -59,7 +63,10 @@ export function transitionGameState(
   if (action === "deselect" && state.mode === "edit") {
     return { ...state, selectedComponent: null };
   }
-  if (action === "run" && state.mode !== "running") {
+  if (
+    action === "toggle-simulation" &&
+    (state.mode === "edit" || state.mode === "paused")
+  ) {
     return {
       mode: "running",
       succeeded: false,
@@ -68,7 +75,7 @@ export function transitionGameState(
       selectedComponent: null,
     };
   }
-  if (action === "pause" && state.mode === "running") {
+  if (action === "toggle-simulation" && state.mode === "running") {
     return {
       mode: "paused",
       succeeded: false,
@@ -111,12 +118,17 @@ export function getEnabledControls(
   state: Readonly<GameState>,
 ): EnabledControls {
   if (state.succeeded) {
-    return { edit: false, run: false, pause: false, reset: true };
+    return { edit: false, simulation: false, reset: true };
   }
   return {
     edit: state.mode !== "edit",
-    run: state.mode !== "running",
-    pause: state.mode === "running",
+    simulation: true,
     reset: true,
   };
+}
+
+export function getSimulationButtonLabel(
+  state: Readonly<GameState>,
+): "Run" | "Pause" {
+  return state.mode === "running" ? "Pause" : "Run";
 }

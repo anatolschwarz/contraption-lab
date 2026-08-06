@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getEnabledControls,
   INITIAL_GAME_STATE,
+  getSimulationButtonLabel,
   transitionGameState,
   updateRampTransform,
 } from "../src/state/gameState";
@@ -17,18 +18,25 @@ describe("game-state transitions", () => {
     });
     expect(getEnabledControls(INITIAL_GAME_STATE)).toEqual({
       edit: false,
-      run: true,
-      pause: false,
+      simulation: true,
       reset: true,
     });
+    expect(getSimulationButtonLabel(INITIAL_GAME_STATE)).toBe("Run");
   });
 
-  it("runs, pauses, and resumes", () => {
-    const running = transitionGameState(INITIAL_GAME_STATE, "run");
-    const paused = transitionGameState(running, "pause");
+  it("toggles simulation between Run and Pause", () => {
+    const running = transitionGameState(
+      INITIAL_GAME_STATE,
+      "toggle-simulation",
+    );
+    const paused = transitionGameState(running, "toggle-simulation");
     expect(running.mode).toBe("running");
+    expect(getSimulationButtonLabel(running)).toBe("Pause");
     expect(paused.mode).toBe("paused");
-    expect(transitionGameState(paused, "run").mode).toBe("running");
+    expect(getSimulationButtonLabel(paused)).toBe("Run");
+    expect(transitionGameState(paused, "toggle-simulation").mode).toBe(
+      "running",
+    );
   });
 
   it("selects and deselects the ramp only in Edit mode", () => {
@@ -38,8 +46,8 @@ describe("game-state transitions", () => {
       null,
     );
 
-    const running = transitionGameState(selected, "run");
-    const paused = transitionGameState(running, "pause");
+    const running = transitionGameState(selected, "toggle-simulation");
+    const paused = transitionGameState(running, "toggle-simulation");
     expect(running.selectedComponent).toBeNull();
     expect(transitionGameState(running, "select-ramp")).toEqual(running);
     expect(transitionGameState(paused, "select-ramp")).toEqual(paused);
@@ -54,8 +62,8 @@ describe("game-state transitions", () => {
     expect(moved.rampPosition).toEqual({ x: 420, y: 300 });
     expect(moved.rampRotation).toBe(0.5);
 
-    const running = transitionGameState(moved, "run");
-    const paused = transitionGameState(running, "pause");
+    const running = transitionGameState(moved, "toggle-simulation");
+    const paused = transitionGameState(running, "toggle-simulation");
     expect(running.rampPosition).toEqual({ x: 420, y: 300 });
     expect(paused.rampPosition).toEqual({ x: 420, y: 300 });
     expect(running.rampRotation).toBe(0.5);
@@ -80,7 +88,10 @@ describe("game-state transitions", () => {
   });
 
   it("pauses and locks controls after success", () => {
-    const running = transitionGameState(INITIAL_GAME_STATE, "run");
+    const running = transitionGameState(
+      INITIAL_GAME_STATE,
+      "toggle-simulation",
+    );
     const success = transitionGameState(running, "success");
     expect(success).toEqual({
       mode: "paused",
@@ -91,8 +102,7 @@ describe("game-state transitions", () => {
     });
     expect(getEnabledControls(success)).toEqual({
       edit: false,
-      run: false,
-      pause: false,
+      simulation: false,
       reset: true,
     });
   });
@@ -112,5 +122,6 @@ describe("reset behavior", () => {
     expect(firstReset).toEqual(INITIAL_GAME_STATE);
     expect(secondReset).toEqual(firstReset);
     expect(secondReset).not.toBe(firstReset);
+    expect(getSimulationButtonLabel(firstReset)).toBe("Run");
   });
 });

@@ -19,14 +19,15 @@ export class Controls {
   constructor(onAction: (action: GameAction) => void) {
     this.buttons = {
       edit: requireElement("edit-button"),
-      run: requireElement("run-button"),
-      pause: requireElement("pause-button"),
+      simulation: requireElement("simulation-button"),
       reset: requireElement("reset-button"),
     };
 
-    for (const [action, button] of Object.entries(this.buttons)) {
-      button.addEventListener("click", () => onAction(action as GameAction));
-    }
+    this.buttons.edit.addEventListener("click", () => onAction("edit"));
+    this.buttons.simulation.addEventListener("click", () =>
+      onAction("toggle-simulation"),
+    );
+    this.buttons.reset.addEventListener("click", () => onAction("reset"));
   }
 
   render(state: Readonly<GameState>): void {
@@ -34,6 +35,8 @@ export class Controls {
     for (const key of Object.keys(this.buttons) as (keyof EnabledControls)[]) {
       this.buttons[key].disabled = !enabled[key];
     }
+    this.buttons.simulation.textContent =
+      state.mode === "running" ? "Pause" : "Run";
     const label = state.succeeded
       ? "Success"
       : state.mode.charAt(0).toUpperCase() + state.mode.slice(1);

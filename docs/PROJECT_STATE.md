@@ -12,7 +12,7 @@ The prototype currently supports:
 - A first puzzle whose initial ramp placement does not reach the goal.
 - Ramp selection in Edit mode, plus pointer dragging and Q/E rotation in 5-degree
   steps; its complete rotated bounds remain inside the simulation area.
-- Run and Pause controls for starting, stopping, and resuming physics.
+- A Run/Pause toggle for starting, freezing, and resuming physics.
 - Reset to reconstruct the ball and ramp from their exact JSON-defined transforms.
 - Goal collision detection, a completion message, and locked simulation controls
   after success until Reset is selected.

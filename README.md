@@ -22,7 +22,7 @@ npm install
 npm run dev
 ```
 
-Open the local address printed by Vite. The puzzle starts in Edit mode with physics frozen, and its initial layout does not reach the goal. Click the ramp to select it, drag it to reposition it, and use Q/E to rotate it in 5-degree steps. Use Run to simulate, Pause to freeze the current state, Edit to return to the non-simulating mode, and Reset to restore the exact JSON-defined ball and ramp transforms.
+Open the local address printed by Vite. The puzzle starts in Edit mode with physics frozen, and its initial layout does not reach the goal. Click the ramp to select it, drag it to reposition it, and use Q/E to rotate it in 5-degree steps. The simulation toggle reads Run when stopped and Pause when running; Edit returns to the non-simulating mode, and Reset restores the exact JSON-defined ball and ramp transforms.
 
 ## Build
 
