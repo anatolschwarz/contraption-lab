@@ -1,16 +1,26 @@
 import Phaser from "phaser";
 import type { LevelDefinition } from "../levels/levelTypes";
+import type { SelectableComponent } from "../state/gameState";
 
 const BALL_LABEL = "prototype-ball";
 const GOAL_LABEL = "prototype-goal";
+const RAMP_STROKE_COLOR = 0x4c3526;
+const SELECTED_RAMP_STROKE_COLOR = 0xffd166;
 
 export class PrototypeScene extends Phaser.Scene {
   private ball?: Phaser.GameObjects.Arc;
+  private editInteractionEnabled = false;
+  private rampShape?: Phaser.GameObjects.Rectangle;
+  private selectedComponent: SelectableComponent | null = null;
+  private selectionText?: Phaser.GameObjects.Text;
   private successText?: Phaser.GameObjects.Text;
 
   constructor(
     private readonly level: LevelDefinition,
     private readonly onSuccess: () => void,
+    private readonly onSelectionChange: (
+      component: SelectableComponent | null,
+    ) => void,
   ) {
     super("prototype");
   }
@@ -32,12 +42,24 @@ export class PrototypeScene extends Phaser.Scene {
         }
       },
     );
+    this.input.on(Phaser.Input.Events.POINTER_DOWN, () => {
+      if (this.editInteractionEnabled) this.onSelectionChange(null);
+    });
     this.matter.world.pause();
   }
 
   setSimulationRunning(running: boolean): void {
     if (running) this.matter.world.resume();
     else this.matter.world.pause();
+  }
+
+  setEditSelection(
+    enabled: boolean,
+    selectedComponent: SelectableComponent | null,
+  ): void {
+    this.editInteractionEnabled = enabled;
+    this.selectedComponent = selectedComponent;
+    this.updateSelectionDisplay();
   }
 
   resetLevel(): void {
@@ -68,11 +90,37 @@ export class PrototypeScene extends Phaser.Scene {
       .setStrokeStyle(3, 0x252b2d);
     this.matter.add.gameObject(floorShape, { isStatic: true, label: "floor" });
 
-    const rampShape = this.add
+    this.rampShape = this.add
       .rectangle(ramp.x, ramp.y, ramp.width, ramp.height, 0x9d6b45)
-      .setStrokeStyle(4, 0x4c3526)
+      .setStrokeStyle(4, RAMP_STROKE_COLOR)
       .setRotation(ramp.rotation);
-    this.matter.add.gameObject(rampShape, { isStatic: true, label: "ramp" });
+    this.matter.add.gameObject(this.rampShape, {
+      isStatic: true,
+      label: "ramp",
+    });
+    this.rampShape.on(
+      Phaser.Input.Events.POINTER_DOWN,
+      (
+        _pointer: Phaser.Input.Pointer,
+        _localX: number,
+        _localY: number,
+        event: Phaser.Types.Input.EventData,
+      ) => {
+        event.stopPropagation();
+        if (this.editInteractionEnabled) this.onSelectionChange("ramp");
+      },
+    );
+
+    this.selectionText = this.add
+      .text(ramp.x, ramp.y - 34, "RAMP SELECTED", {
+        color: "#513a25",
+        fontFamily: "Arial, sans-serif",
+        fontSize: "14px",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(2)
+      .setVisible(false);
 
     const goalShape = this.add
       .rectangle(goal.x, goal.y, goal.width, goal.height, 0x759c82, 0.28)
@@ -92,6 +140,23 @@ export class PrototypeScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.resetLevel();
+    this.updateSelectionDisplay();
+  }
+
+  private updateSelectionDisplay(): void {
+    const isRampSelected =
+      this.editInteractionEnabled && this.selectedComponent === "ramp";
+    this.selectionText?.setVisible(isRampSelected);
+    this.rampShape?.setStrokeStyle(
+      isRampSelected ? 5 : 4,
+      isRampSelected ? SELECTED_RAMP_STROKE_COLOR : RAMP_STROKE_COLOR,
+    );
+
+    if (this.editInteractionEnabled) {
+      this.rampShape?.setInteractive({ useHandCursor: true });
+    } else {
+      this.rampShape?.disableInteractive();
+    }
   }
 
   private drawWorkshop(): void {

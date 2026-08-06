@@ -19,6 +19,10 @@ const controls = new Controls(handleAction);
 function applyState(): void {
   controls.render(state);
   scene.setSimulationRunning(state.mode === "running" && !state.succeeded);
+  scene.setEditSelection(
+    state.mode === "edit" && !state.succeeded,
+    state.selectedComponent,
+  );
 }
 
 function handleAction(action: GameAction): void {
@@ -28,7 +32,12 @@ function handleAction(action: GameAction): void {
   applyState();
 }
 
-const scene = new PrototypeScene(level, () => handleAction("success"));
+const scene = new PrototypeScene(
+  level,
+  () => handleAction("success"),
+  (component) =>
+    handleAction(component === "ramp" ? "select-ramp" : "deselect"),
+);
 
 new Phaser.Game({
   type: Phaser.AUTO,
