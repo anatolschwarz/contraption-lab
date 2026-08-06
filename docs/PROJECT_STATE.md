@@ -2,15 +2,18 @@
 
 ## Current functionality
 
-Contraption Lab is a browser-only first playable physics prototype. It loads a
+Contraption Lab is a browser-only first playable physics puzzle. It loads a
 single level from JSON and renders generated Phaser shapes in a responsive 16:9
-simulation area. The level contains a ball, ramp, floor, and sensor-based goal.
+simulation area. The level contains a ball, editable ramp, floor, and sensor-based goal.
 
 The prototype currently supports:
 
 - Edit mode with the Matter simulation frozen.
+- A first puzzle whose initial ramp placement does not reach the goal.
+- Ramp selection in Edit mode, plus pointer dragging and Q/E rotation in 5-degree
+  steps; its complete rotated bounds remain inside the simulation area.
 - Run and Pause controls for starting, stopping, and resuming physics.
-- Reset to reconstruct the ball from its exact JSON-defined initial state.
+- Reset to reconstruct the ball and ramp from their exact JSON-defined transforms.
 - Goal collision detection, a completion message, and locked simulation controls
   after success until Reset is selected.
 - Runtime validation of level JSON before it reaches the Phaser scene.
@@ -21,17 +24,20 @@ The prototype currently supports:
 
 - `src/main.ts` composes the validated level, pure state transitions, DOM
   controls, Phaser configuration, and scene lifecycle.
-- `src/game/PrototypeScene.ts` owns Phaser rendering, Matter bodies, simulation
-  pause/resume/reset behavior, and goal collision handling.
+- `src/game/PrototypeScene.ts` owns Phaser rendering, Matter bodies, editable
+  ramp input and transforms, simulation pause/resume/reset behavior, and goal
+  collision handling.
+- `src/game/rampPlacement.ts` calculates rotated ramp bounds and fixed rotation
+  steps for the 960×540 simulation area.
 - `src/levels/prototype.json` is the source of truth for the initial level.
 - `src/levels/levelTypes.ts`, `src/levels/loadLevel.ts`, and
   `src/levels/validateLevel.ts` keep level types and runtime parsing separate from
   rendering.
-- `src/state/gameState.ts` contains pure mode transitions and control-enabled
-  state.
+- `src/state/gameState.ts` contains pure mode transitions, editable ramp
+  transform state, and control-enabled state.
 - `src/ui/Controls.ts` binds and renders the plain DOM controls.
-- `tests/gameState.test.ts` and `tests/levelValidation.test.ts` cover the pure,
-  browser-independent behavior.
+- `tests/gameState.test.ts`, `tests/rampPlacement.test.ts`, and
+  `tests/levelValidation.test.ts` cover the pure, browser-independent behavior.
 - `index.html` and `src/style.css` provide the page structure and responsive
   presentation.
 - `vite.config.ts`, `tsconfig.json`, and `eslint.config.js` configure the build
@@ -90,23 +96,20 @@ The individual commands are:
 
 ## Known limitations
 
-- There is one fixed demonstration level and one moving component.
-- Edit mode freezes the simulation but does not yet allow object manipulation.
+- There is one fixed puzzle and one editable component.
+- Edit mode supports only the predefined ramp; it has no general-purpose object
+  manipulation or level editor.
 - The browser canvas and Matter collision path are manually tested; the automated
   suite covers only browser-independent logic.
 - Reset determinism covers the defined initial state. Small physics differences
   can still occur between browser or engine versions.
 - The production bundle includes Phaser in a large JavaScript chunk; Vite reports
   a chunk-size warning, but the prototype builds successfully.
-- Keyboard controls, touch-specific interactions, audio, persistence, networking,
-  multiplayer, and a general-purpose level editor are outside the current scope.
+- Touch-specific interactions, audio, persistence, networking, multiplayer, and a
+  general-purpose level editor are outside the current scope.
 
 ## Recommended next milestone
 
-Build a small second playable slice around constrained object placement: allow
-the player to reposition one predefined component in Edit mode, then run and
-reset the simulation deterministically. Keep editable placement state pure and
-JSON-backed, add unit coverage for placement/reset transitions, and add a focused
-browser smoke test for startup, controls, and successful goal detection. This
-would prove the core puzzle interaction without expanding into a general-purpose
-level editor.
+Add a focused browser smoke test that verifies startup, ramp placement and
+rotation controls, and completion of the first puzzle without expanding into a
+general-purpose level editor.

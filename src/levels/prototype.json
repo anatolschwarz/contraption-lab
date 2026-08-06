@@ -1,15 +1,15 @@
 {
-  "id": "prototype-roll-001",
-  "title": "First Roll",
+  "id": "aim-the-ramp-001",
+  "title": "Aim the Ramp",
   "ball": { "x": 215, "y": 135, "radius": 24 },
   "ramp": {
-    "x": 330,
-    "y": 245,
+    "x": 675,
+    "y": 280,
     "width": 330,
     "height": 24,
-    "rotation": 0.3
+    "rotation": 0
   },
   "floor": { "x": 480, "y": 510, "width": 960, "height": 60 },
-  "goal": { "x": 760, "y": 445, "width": 120, "height": 70 },
+  "goal": { "x": 540, "y": 445, "width": 120, "height": 70 },
   "gravity": { "x": 0, "y": 1 }
 }
