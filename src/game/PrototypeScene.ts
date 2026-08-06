@@ -1,6 +1,11 @@
 import Phaser from "phaser";
 import type { LevelDefinition } from "../levels/levelTypes";
 import type { SelectableComponent } from "../state/gameState";
+import {
+  clampRampPosition,
+  PLAYABLE_HEIGHT,
+  PLAYABLE_WIDTH,
+} from "./rampPlacement";
 
 const BALL_LABEL = "prototype-ball";
 const GOAL_LABEL = "prototype-goal";
@@ -9,6 +14,7 @@ const SELECTED_RAMP_STROKE_COLOR = 0xffd166;
 
 export class PrototypeScene extends Phaser.Scene {
   private ball?: Phaser.GameObjects.Arc;
+  private dragOffset?: Phaser.Math.Vector2;
   private editInteractionEnabled = false;
   private rampShape?: Phaser.GameObjects.Rectangle;
   private selectedComponent: SelectableComponent | null = null;
@@ -21,6 +27,10 @@ export class PrototypeScene extends Phaser.Scene {
     private readonly onSelectionChange: (
       component: SelectableComponent | null,
     ) => void,
+    private readonly onRampPositionChange: (position: {
+      x: number;
+      y: number;
+    }) => void,
   ) {
     super("prototype");
   }
@@ -45,6 +55,29 @@ export class PrototypeScene extends Phaser.Scene {
     this.input.on(Phaser.Input.Events.POINTER_DOWN, () => {
       if (this.editInteractionEnabled) this.onSelectionChange(null);
     });
+    this.input.on(
+      Phaser.Input.Events.POINTER_MOVE,
+      (pointer: Phaser.Input.Pointer) => {
+        if (
+          !this.editInteractionEnabled ||
+          !this.dragOffset ||
+          !pointer.isDown
+        ) {
+          return;
+        }
+        this.moveRamp(
+          pointer.worldX - this.dragOffset.x,
+          pointer.worldY - this.dragOffset.y,
+          true,
+        );
+      },
+    );
+    this.input.on(Phaser.Input.Events.POINTER_UP, () => {
+      this.dragOffset = undefined;
+    });
+    this.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, () => {
+      this.dragOffset = undefined;
+    });
     this.matter.world.pause();
   }
 
@@ -62,8 +95,14 @@ export class PrototypeScene extends Phaser.Scene {
     this.updateSelectionDisplay();
   }
 
+  setRampPosition(position: { x: number; y: number } | null): void {
+    const rampPosition = position ?? this.level.ramp;
+    this.moveRamp(rampPosition.x, rampPosition.y, false);
+  }
+
   resetLevel(): void {
     this.matter.world.pause();
+    this.setRampPosition(null);
     this.ball?.destroy();
     this.successText?.destroy();
     this.successText = undefined;
@@ -107,7 +146,12 @@ export class PrototypeScene extends Phaser.Scene {
         event: Phaser.Types.Input.EventData,
       ) => {
         event.stopPropagation();
-        if (this.editInteractionEnabled) this.onSelectionChange("ramp");
+        if (!this.editInteractionEnabled || !this.rampShape) return;
+        this.onSelectionChange("ramp");
+        this.dragOffset = new Phaser.Math.Vector2(
+          _pointer.worldX - this.rampShape.x,
+          _pointer.worldY - this.rampShape.y,
+        );
       },
     );
 
@@ -143,6 +187,14 @@ export class PrototypeScene extends Phaser.Scene {
     this.updateSelectionDisplay();
   }
 
+  private moveRamp(x: number, y: number, notify: boolean): void {
+    if (!this.rampShape) return;
+    const position = clampRampPosition({ x, y }, this.level.ramp);
+    this.rampShape.setPosition(position.x, position.y);
+    this.selectionText?.setPosition(position.x, position.y - 34);
+    if (notify) this.onRampPositionChange(position);
+  }
+
   private updateSelectionDisplay(): void {
     const isRampSelected =
       this.editInteractionEnabled && this.selectedComponent === "ramp";
@@ -155,6 +207,7 @@ export class PrototypeScene extends Phaser.Scene {
     if (this.editInteractionEnabled) {
       this.rampShape?.setInteractive({ useHandCursor: true });
     } else {
+      this.dragOffset = undefined;
       this.rampShape?.disableInteractive();
     }
   }
@@ -163,8 +216,12 @@ export class PrototypeScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(0xc7cec6);
     const graphics = this.add.graphics();
     graphics.lineStyle(1, 0xabb5ad, 0.55);
-    for (let x = 0; x <= 960; x += 48) graphics.lineBetween(x, 0, x, 540);
-    for (let y = 0; y <= 540; y += 48) graphics.lineBetween(0, y, 960, y);
+    for (let x = 0; x <= PLAYABLE_WIDTH; x += 48) {
+      graphics.lineBetween(x, 0, x, PLAYABLE_HEIGHT);
+    }
+    for (let y = 0; y <= PLAYABLE_HEIGHT; y += 48) {
+      graphics.lineBetween(0, y, PLAYABLE_WIDTH, y);
+    }
     graphics.fillStyle(0x6f7d78, 0.45);
     graphics.fillRect(40, 42, 880, 12);
     this.add.text(52, 68, this.level.title.toUpperCase(), {

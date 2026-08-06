@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getEnabledControls,
   INITIAL_GAME_STATE,
+  moveRamp,
   transitionGameState,
 } from "../src/state/gameState";
 
@@ -10,6 +11,7 @@ describe("game-state transitions", () => {
     expect(INITIAL_GAME_STATE).toEqual({
       mode: "edit",
       succeeded: false,
+      rampPosition: null,
       selectedComponent: null,
     });
     expect(getEnabledControls(INITIAL_GAME_STATE)).toEqual({
@@ -42,12 +44,25 @@ describe("game-state transitions", () => {
     expect(transitionGameState(paused, "select-ramp")).toEqual(paused);
   });
 
+  it("persists the ramp position through Run and Pause, but not Reset", () => {
+    const moved = moveRamp(INITIAL_GAME_STATE, { x: 420, y: 300 });
+    expect(moved.rampPosition).toEqual({ x: 420, y: 300 });
+
+    const running = transitionGameState(moved, "run");
+    const paused = transitionGameState(running, "pause");
+    expect(running.rampPosition).toEqual({ x: 420, y: 300 });
+    expect(paused.rampPosition).toEqual({ x: 420, y: 300 });
+    expect(moveRamp(running, { x: 500, y: 360 })).toEqual(running);
+    expect(transitionGameState(paused, "reset").rampPosition).toBeNull();
+  });
+
   it("pauses and locks controls after success", () => {
     const running = transitionGameState(INITIAL_GAME_STATE, "run");
     const success = transitionGameState(running, "success");
     expect(success).toEqual({
       mode: "paused",
       succeeded: true,
+      rampPosition: null,
       selectedComponent: null,
     });
     expect(getEnabledControls(success)).toEqual({
@@ -64,6 +79,7 @@ describe("reset behavior", () => {
     const changed = {
       mode: "paused" as const,
       succeeded: true,
+      rampPosition: { x: 420, y: 300 },
       selectedComponent: "ramp" as const,
     };
     const firstReset = transitionGameState(changed, "reset");

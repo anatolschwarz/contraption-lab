@@ -2,9 +2,11 @@ import Phaser from "phaser";
 import "./style.css";
 import rawLevel from "./levels/prototype.json";
 import { PrototypeScene } from "./game/PrototypeScene";
+import { PLAYABLE_HEIGHT, PLAYABLE_WIDTH } from "./game/rampPlacement";
 import { loadLevel } from "./levels/loadLevel";
 import {
   INITIAL_GAME_STATE,
+  moveRamp,
   transitionGameState,
   type GameAction,
   type GameState,
@@ -23,6 +25,7 @@ function applyState(): void {
     state.mode === "edit" && !state.succeeded,
     state.selectedComponent,
   );
+  scene.setRampPosition(state.rampPosition);
 }
 
 function handleAction(action: GameAction): void {
@@ -37,13 +40,17 @@ const scene = new PrototypeScene(
   () => handleAction("success"),
   (component) =>
     handleAction(component === "ramp" ? "select-ramp" : "deselect"),
+  (position) => {
+    state = moveRamp(state, position);
+    applyState();
+  },
 );
 
 new Phaser.Game({
   type: Phaser.AUTO,
   parent: "game-container",
-  width: 960,
-  height: 540,
+  width: PLAYABLE_WIDTH,
+  height: PLAYABLE_HEIGHT,
   backgroundColor: "#c7cec6",
   physics: {
     default: "matter",
