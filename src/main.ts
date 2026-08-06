@@ -6,10 +6,10 @@ import { PLAYABLE_HEIGHT, PLAYABLE_WIDTH } from "./game/rampPlacement";
 import { loadLevel } from "./levels/loadLevel";
 import {
   INITIAL_GAME_STATE,
-  moveRamp,
   transitionGameState,
   type GameAction,
   type GameState,
+  updateRampTransform,
 } from "./state/gameState";
 import { Controls } from "./ui/Controls";
 
@@ -25,7 +25,7 @@ function applyState(): void {
     state.mode === "edit" && !state.succeeded,
     state.selectedComponent,
   );
-  scene.setRampPosition(state.rampPosition);
+  scene.setRampTransform(state.rampPosition, state.rampRotation);
 }
 
 function handleAction(action: GameAction): void {
@@ -40,8 +40,8 @@ const scene = new PrototypeScene(
   () => handleAction("success"),
   (component) =>
     handleAction(component === "ramp" ? "select-ramp" : "deselect"),
-  (position) => {
-    state = moveRamp(state, position);
+  (transform) => {
+    state = updateRampTransform(state, transform);
     applyState();
   },
 );

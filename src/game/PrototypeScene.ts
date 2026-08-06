@@ -1,10 +1,11 @@
 import Phaser from "phaser";
 import type { LevelDefinition } from "../levels/levelTypes";
-import type { SelectableComponent } from "../state/gameState";
+import type { RampTransform, SelectableComponent } from "../state/gameState";
 import {
   clampRampPosition,
   PLAYABLE_HEIGHT,
   PLAYABLE_WIDTH,
+  rotateRampByStep,
 } from "./rampPlacement";
 
 const BALL_LABEL = "prototype-ball";
@@ -27,10 +28,7 @@ export class PrototypeScene extends Phaser.Scene {
     private readonly onSelectionChange: (
       component: SelectableComponent | null,
     ) => void,
-    private readonly onRampPositionChange: (position: {
-      x: number;
-      y: number;
-    }) => void,
+    private readonly onRampTransformChange: (transform: RampTransform) => void,
   ) {
     super("prototype");
   }
@@ -65,9 +63,10 @@ export class PrototypeScene extends Phaser.Scene {
         ) {
           return;
         }
-        this.moveRamp(
+        this.updateRampTransform(
           pointer.worldX - this.dragOffset.x,
           pointer.worldY - this.dragOffset.y,
+          this.rampShape?.rotation ?? this.level.ramp.rotation,
           true,
         );
       },
@@ -77,6 +76,12 @@ export class PrototypeScene extends Phaser.Scene {
     });
     this.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, () => {
       this.dragOffset = undefined;
+    });
+    this.input.keyboard?.on("keydown-Q", () => {
+      this.rotateSelectedRamp(-1);
+    });
+    this.input.keyboard?.on("keydown-E", () => {
+      this.rotateSelectedRamp(1);
     });
     this.matter.world.pause();
   }
@@ -95,14 +100,23 @@ export class PrototypeScene extends Phaser.Scene {
     this.updateSelectionDisplay();
   }
 
-  setRampPosition(position: { x: number; y: number } | null): void {
+  setRampTransform(
+    position: { x: number; y: number } | null,
+    rotation: number | null,
+  ): void {
     const rampPosition = position ?? this.level.ramp;
-    this.moveRamp(rampPosition.x, rampPosition.y, false);
+    const rampRotation = rotation ?? this.level.ramp.rotation;
+    this.updateRampTransform(
+      rampPosition.x,
+      rampPosition.y,
+      rampRotation,
+      false,
+    );
   }
 
   resetLevel(): void {
     this.matter.world.pause();
-    this.setRampPosition(null);
+    this.setRampTransform(null, null);
     this.ball?.destroy();
     this.successText?.destroy();
     this.successText = undefined;
@@ -187,12 +201,36 @@ export class PrototypeScene extends Phaser.Scene {
     this.updateSelectionDisplay();
   }
 
-  private moveRamp(x: number, y: number, notify: boolean): void {
+  private updateRampTransform(
+    x: number,
+    y: number,
+    rotation: number,
+    notify: boolean,
+  ): void {
     if (!this.rampShape) return;
-    const position = clampRampPosition({ x, y }, this.level.ramp);
-    this.rampShape.setPosition(position.x, position.y);
+    const position = clampRampPosition(
+      { x, y },
+      { ...this.level.ramp, rotation },
+    );
+    this.rampShape.setPosition(position.x, position.y).setRotation(rotation);
     this.selectionText?.setPosition(position.x, position.y - 34);
-    if (notify) this.onRampPositionChange(position);
+    if (notify) this.onRampTransformChange({ position, rotation });
+  }
+
+  private rotateSelectedRamp(direction: -1 | 1): void {
+    if (
+      !this.editInteractionEnabled ||
+      this.selectedComponent !== "ramp" ||
+      !this.rampShape
+    ) {
+      return;
+    }
+    this.updateRampTransform(
+      this.rampShape.x,
+      this.rampShape.y,
+      rotateRampByStep(this.rampShape.rotation, direction),
+      true,
+    );
   }
 
   private updateSelectionDisplay(): void {

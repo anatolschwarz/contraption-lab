@@ -2,6 +2,12 @@ import type { Point } from "../levels/levelTypes";
 
 export type GameMode = "edit" | "running" | "paused";
 export type SelectableComponent = "ramp";
+
+export interface RampTransform {
+  position: Point;
+  rotation: number;
+}
+
 export type GameAction =
   "edit" | "run" | "pause" | "reset" | "success" | "select-ramp" | "deselect";
 
@@ -9,6 +15,7 @@ export interface GameState {
   mode: GameMode;
   succeeded: boolean;
   rampPosition: Point | null;
+  rampRotation: number | null;
   selectedComponent: SelectableComponent | null;
 }
 
@@ -16,6 +23,7 @@ export const INITIAL_GAME_STATE: Readonly<GameState> = Object.freeze({
   mode: "edit",
   succeeded: false,
   rampPosition: null,
+  rampRotation: null,
   selectedComponent: null,
 });
 
@@ -38,6 +46,7 @@ export function transitionGameState(
       mode: "paused",
       succeeded: true,
       rampPosition: state.rampPosition,
+      rampRotation: state.rampRotation,
       selectedComponent: null,
     };
   }
@@ -55,6 +64,7 @@ export function transitionGameState(
       mode: "running",
       succeeded: false,
       rampPosition: state.rampPosition,
+      rampRotation: state.rampRotation,
       selectedComponent: null,
     };
   }
@@ -63,6 +73,7 @@ export function transitionGameState(
       mode: "paused",
       succeeded: false,
       rampPosition: state.rampPosition,
+      rampRotation: state.rampRotation,
       selectedComponent: null,
     };
   }
@@ -71,18 +82,29 @@ export function transitionGameState(
       mode: "edit",
       succeeded: false,
       rampPosition: state.rampPosition,
+      rampRotation: state.rampRotation,
       selectedComponent: null,
     };
   }
   return { ...state };
 }
 
-export function moveRamp(
+export function updateRampTransform(
   state: Readonly<GameState>,
-  position: Readonly<Point>,
+  transform: Readonly<RampTransform>,
 ): GameState {
-  if (state.mode !== "edit" || state.succeeded) return { ...state };
-  return { ...state, rampPosition: { ...position } };
+  if (
+    state.mode !== "edit" ||
+    state.succeeded ||
+    state.selectedComponent !== "ramp"
+  ) {
+    return { ...state };
+  }
+  return {
+    ...state,
+    rampPosition: { ...transform.position },
+    rampRotation: transform.rotation,
+  };
 }
 
 export function getEnabledControls(

@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   getEnabledControls,
   INITIAL_GAME_STATE,
-  moveRamp,
   transitionGameState,
+  updateRampTransform,
 } from "../src/state/gameState";
 
 describe("game-state transitions", () => {
@@ -12,6 +12,7 @@ describe("game-state transitions", () => {
       mode: "edit",
       succeeded: false,
       rampPosition: null,
+      rampRotation: null,
       selectedComponent: null,
     });
     expect(getEnabledControls(INITIAL_GAME_STATE)).toEqual({
@@ -44,16 +45,38 @@ describe("game-state transitions", () => {
     expect(transitionGameState(paused, "select-ramp")).toEqual(paused);
   });
 
-  it("persists the ramp position through Run and Pause, but not Reset", () => {
-    const moved = moveRamp(INITIAL_GAME_STATE, { x: 420, y: 300 });
+  it("persists the ramp transform through Run and Pause, but not Reset", () => {
+    const selected = transitionGameState(INITIAL_GAME_STATE, "select-ramp");
+    const moved = updateRampTransform(selected, {
+      position: { x: 420, y: 300 },
+      rotation: 0.5,
+    });
     expect(moved.rampPosition).toEqual({ x: 420, y: 300 });
+    expect(moved.rampRotation).toBe(0.5);
 
     const running = transitionGameState(moved, "run");
     const paused = transitionGameState(running, "pause");
     expect(running.rampPosition).toEqual({ x: 420, y: 300 });
     expect(paused.rampPosition).toEqual({ x: 420, y: 300 });
-    expect(moveRamp(running, { x: 500, y: 360 })).toEqual(running);
+    expect(running.rampRotation).toBe(0.5);
+    expect(paused.rampRotation).toBe(0.5);
+    expect(
+      updateRampTransform(running, {
+        position: { x: 500, y: 360 },
+        rotation: 0.6,
+      }),
+    ).toEqual(running);
     expect(transitionGameState(paused, "reset").rampPosition).toBeNull();
+    expect(transitionGameState(paused, "reset").rampRotation).toBeNull();
+  });
+
+  it("only updates the ramp transform for a selected ramp in Edit mode", () => {
+    expect(
+      updateRampTransform(INITIAL_GAME_STATE, {
+        position: { x: 420, y: 300 },
+        rotation: 0.5,
+      }),
+    ).toEqual(INITIAL_GAME_STATE);
   });
 
   it("pauses and locks controls after success", () => {
@@ -63,6 +86,7 @@ describe("game-state transitions", () => {
       mode: "paused",
       succeeded: true,
       rampPosition: null,
+      rampRotation: null,
       selectedComponent: null,
     });
     expect(getEnabledControls(success)).toEqual({
@@ -80,6 +104,7 @@ describe("reset behavior", () => {
       mode: "paused" as const,
       succeeded: true,
       rampPosition: { x: 420, y: 300 },
+      rampRotation: 0.5,
       selectedComponent: "ramp" as const,
     };
     const firstReset = transitionGameState(changed, "reset");
