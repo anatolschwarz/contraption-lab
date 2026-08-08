@@ -1,10 +1,12 @@
 # Contraption Lab
 
-Contraption Lab is an original browser-based 2D physics puzzle prototype. Its
-first puzzle requires placing and angling two ramps to guide a ball into the
-goal, using Phaser's bundled Matter physics integration.
+Contraption Lab is an original browser-based 2D physics-puzzle prototype built
+with TypeScript, Vite, Phaser 3, and Phaser's bundled Matter integration. The
+current prototype has one level, **Relay Ramps**: arrange player-owned parts so
+the ball reaches the goal.
 
-The project deliberately uses geometric shapes and text generated at runtime. It contains no external artwork, audio, backend, persistence, or protected game-specific content.
+The game uses generated shapes and text only. It has no external artwork,
+audio, backend, persistence, or copied game content.
 
 ## Requirements
 
@@ -12,33 +14,53 @@ The project deliberately uses geometric shapes and text generated at runtime. It
 - npm 11 or newer
 - A modern browser with WebGL or Canvas support
 
-## Install
+## Install and develop
 
 ```bash
 npm install
-```
-
-## Develop
-
-```bash
 npm run dev
 ```
 
-Open the local address printed by Vite. The puzzle starts in Edit mode with
-physics frozen, and its initial layout does not reach the goal. Click either
-ramp to select it (only one can be selected), drag it to reposition it, and use
-Q/E to rotate the selected ramp in 5-degree steps. Both editable ramps remain
-inside the 960×540 playfield. The simulation toggle reads Run when stopped and
-Pause when running; Edit returns to the non-simulating mode, and Reset restores
-the exact JSON-defined ball and both-ramp transforms.
+Open the local address printed by Vite.
 
-## Build
+## Gameplay and controls
 
-```bash
-npm run build
-```
+The prototype starts in **Edit** mode with Matter physics paused. The untouched
+level does not solve itself.
 
-## Test and validate
+- **Edit** — select a player-owned ramp or block with one click. Drag it to
+  move it; press Q/E to rotate a selected ramp in 5° steps. Blocks do not
+  rotate. Double-click the same editable part to remove it. A completed
+  double-click allows small pointer jitter, but dragging, slow clicks, and
+  clicks on different parts do not remove anything.
+- **Run** — captures the current edit layout and inventory, then starts the
+  simulation.
+- **Pause** — freezes a running simulation. Run resumes it.
+- **Rerun** — while Running, Paused, or Success, restores the layout and tray
+  inventory captured when that run started, resets the ball and success state,
+  and immediately runs again.
+- **Reset** — restores the original JSON level layout and JSON-defined initial
+  inventory. It is different from Rerun.
+
+The Parts tray is also available only in Edit. Its counts come from the level
+JSON; the current prototype starts with Block (2) and Ramp (4). Choosing an
+available tray part places a valid new part and selects it. Placing consumes
+one item; removing any player-owned part returns one item of that type.
+
+Level parts have explicit ownership:
+
+- **Fixed** parts are defined in JSON, remain static, and cannot be selected,
+  moved, rotated, or removed. The `FIXED` guide block is visible in the
+  prototype level.
+- **Player-owned** parts may be preplaced in JSON or spawned from the tray.
+  They are editable according to their component capabilities.
+
+During Edit, an editable ramp or block must stay inside the 960×540 playfield
+and may not penetrate the ball or any other ramp/block. A transform that would
+violate those rules is rejected and the last valid transform remains in use.
+Goal overlap is intentionally allowed.
+
+## Build and validation
 
 ```bash
 npm run typecheck
@@ -48,28 +70,37 @@ npm run format:check
 npm run build
 ```
 
-Run the browser smoke test (Playwright Chromium must be installed first):
+The optional Playwright browser flow is run separately:
 
 ```bash
 npm run test:e2e
 ```
 
+It requires Playwright Chromium and a usable local Vite server.
+
 ## Architecture
 
-- `src/levels/` contains the JSON level, TypeScript level types, loading, and runtime validation.
-- `src/state/` contains the browser-independent simulation mode, selected-ramp,
-  and editable ramp-transform state.
-- `src/game/` contains the Phaser scene, generated visuals, Matter bodies, ramp
-  placement bounds, and goal collision handling.
-- `src/ui/` owns the DOM control bindings and enabled states.
-- `src/main.ts` composes the level, state, controls, scene, and Phaser configuration.
-- `tests/` exercises validation, transitions, success, and deterministic reset
-  logic without a browser canvas; `e2e/` covers the two-ramp puzzle in Chromium.
+- `src/levels/` — level JSON, schema/types, loading, and validation.
+- `src/state/` — browser-independent modes, transforms, inventory, and
+  run-start snapshot transitions.
+- `src/game/` — Phaser scene, generated visuals, Matter bodies, placement
+  validation, double-click gesture logic, and scene-layout snapshots.
+- `src/ui/` — plain DOM controls and tray rendering.
+- `src/main.ts` — composition of the level, state, controls, and Phaser game.
+- `tests/` — browser-independent unit tests.
+- `e2e/` — Playwright coverage for the original two-ramp puzzle flow.
+
+For the detailed current state, known solution, and roadmap, see
+[`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) and
+[`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Current limitations
 
-- One fixed puzzle with a single ball, two editable ramps, floor, and goal.
-- Edit mode supports selection, dragging, and 5-degree rotation of the
-  predefined ramps, but not a general-purpose level editor.
-- Reset determinism covers the defined initial state; physics behavior can still vary slightly across browser/engine versions.
-- Keyboard controls, touch-specific interactions, audio, persistence, and additional components are intentionally out of scope.
+- One level only; there is no level selection or progression.
+- Tray spawn locations are a small predefined set of valid candidates, not a
+  free placement preview.
+- Browser e2e coverage currently focuses on the original two-ramp solution;
+  tray, removal, and Rerun flows are covered by unit tests rather than browser
+  automation.
+- Touch-specific interaction, persistence, audio, networking, and a general
+  purpose level editor are out of scope.

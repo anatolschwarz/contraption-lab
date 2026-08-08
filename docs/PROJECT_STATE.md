@@ -1,129 +1,84 @@
 # Project State
 
-## Current functionality
+## Status
 
-Contraption Lab is a browser-only first playable physics puzzle. It loads a
-single level from JSON and renders generated Phaser shapes in a responsive 16:9
-simulation area. The level contains a ball, two editable ramps, floor, and
-sensor-based goal.
+Contraption Lab is a browser-only, single-level physics-puzzle prototype. The
+current level, **Relay Ramps**, is playable in a fixed 960×540 simulation area.
+It has a ball, goal, floor, two preplaced player ramps, one fixed guide block,
+and level-defined tray inventory (currently Block 2 and Ramp 4).
 
-The prototype currently supports:
+The untouched layout fails. The known working solution is:
 
-- Edit mode with the Matter simulation frozen.
-- A first relay puzzle whose initial two-ramp placement does not reach the goal.
-- Exclusive ramp selection in Edit mode, plus pointer dragging and Q/E rotation
-  in 5-degree steps for the selected ramp only; both ramps' complete rotated
-  bounds remain inside the simulation area.
-- A Run/Pause toggle for starting, freezing, and resuming physics.
-- Reset to reconstruct the ball and both ramps from their exact JSON-defined
-  transforms.
-- Goal collision detection, a completion message, and locked simulation controls
-  after success until Reset is selected.
-- Runtime validation of level JSON before it reaches the Phaser scene.
-- Browser-independent tests for exclusive selection, two-ramp transform
-  persistence, deterministic reset, and level validation.
-- A Playwright Chromium smoke test covering page load, two-ramp editing,
-  simulation toggle behavior, reset, and relay-puzzle completion.
+| Part         |   X |   Y | Angle |
+| ------------ | --: | --: | ----: |
+| `upper-ramp` | 265 | 245 |   25° |
+| `lower-ramp` | 540 | 395 |   25° |
 
-## Active handover — Milestone #7 (in progress)
+The Playwright flow checks these positions with ±1 px tolerance and uses the
+same 25° rotation (five 5° Q/E steps).
 
-Milestone #7 adds a second editable ramp. The implementation is partially
-complete and must not be committed or pushed yet.
+## Completed milestones
 
-Completed changes:
+- **#1–#6 — Prototype foundation:** Vite/TypeScript/Phaser setup, JSON level
+  loading and validation, fixed simulation coordinates, Matter controls, and
+  ball/goal success detection.
+- **#7 — Two-ramp puzzle:** uniquely identified editable ramps, keyboard
+  rotation, deterministic reset, and the two-ramp Playwright solution flow.
+- **#8 — Block component:** added static rectangular blocks with placement,
+  rendering, and reset support.
+- **#9 — Parts tray:** added tray spawning, count display, selection of spawned
+  parts, and inventory return on removal.
+- **#10 — Ownership and safe editing:** introduced fixed versus player-owned
+  JSON parts, Edit-mode placement rejection for ball/part penetration, and
+  reliable double-click removal semantics.
+- **#11 — Player inventory:** added Ramp tray support, level-defined inventory,
+  generic tray counts, and reset of original parts plus original stock.
+- **#12 — Rerun:** captures the Run-start editable layout and inventory; Rerun
+  restores that snapshot, resets physics/success, and starts simulation.
 
-- Replaced the single `ramp` level property with two uniquely identified entries
-  in `ramps` (`upper-ramp` and `lower-ramp`).
-- Updated runtime validation to require at least two valid ramps and unique ids.
-- Replaced the single ramp transform in `GameState` with ID-keyed transforms and
-  an exclusive `selectedRampId`.
-- Updated `PrototypeScene` to render, select, drag, rotate, clamp, persist, and
-  reset each ramp independently.
-- Updated the relay-puzzle layout, unit tests, e2e flow, README, and UI hint.
-- Added the repository-local `.codex/config.toml` requested by the user:
-  `approval_policy = "never"` and `sandbox_mode = "workspace-write"`.
+## Current behavior
 
-Validation already run:
+### Modes
 
-- `npm run typecheck` — passed.
-- `npm test` — passed (4 files, 16 tests).
-- `npm run lint` — passed.
+- **Edit:** physics is paused. Player-owned ramps and blocks can be selected
+  and moved; ramps also rotate with Q/E. The tray is enabled when stock exists.
+- **Run / Pause:** Run starts or resumes Matter physics; Pause freezes it.
+  Editing and tray controls are disabled.
+- **Success:** goal contact pauses the simulation and locks Edit/Run. Rerun and
+  Reset remain available.
+- **Rerun:** restores the specific layout, part set, transforms, and inventory
+  captured when Run was last started from Edit, then runs immediately.
+- **Reset:** restores the original level JSON and initial JSON inventory.
 
-Remaining work:
+### Part ownership, placement, and inventory
 
-1. Format `src/game/PrototypeScene.ts`; Prettier requires one line wrap in the
-   selection-display loop. The current session could not write with Prettier
-   because its filesystem sandbox was already active before the new local Codex
-   config was added.
-2. Resolve the `test-results/` formatting noise before rerunning
-   `npm run format:check`; those Playwright result artifacts are not shown by
-   `git status` but are scanned by Prettier.
-3. Run `npm run format:check`, `npm run build`, and `npm run test:e2e`.
-4. Verify the browser puzzle's proposed solution coordinates in
-   `e2e/puzzle.e2e.ts` physically requires both ramps and reaches the goal.
-5. Review the final diff and confirm no unrelated files changed. Do not commit
-   or push.
+- Fixed level parts are static during Edit and Run and are never selectable,
+  movable, rotatable, removable, or inventoried.
+- Player parts can be preplaced in level JSON or tray-spawned. Removing either
+  kind returns one matching inventory item.
+- A new ramp/block must remain within the playfield and cannot penetrate the
+  ball, another ramp, or another block. Goal overlap is allowed deliberately.
+- Single clicks select. A double-click is two completed clicks on the same
+  editable part within 350 ms, each below the 8 px movement threshold. Drags,
+  slow clicks, and clicks across different parts do not remove a part.
 
-## Architecture and important files
+## Architecture
 
-- `src/main.ts` composes the validated level, pure state transitions, DOM
-  controls, Phaser configuration, and scene lifecycle.
-- `src/game/PrototypeScene.ts` owns Phaser rendering, Matter bodies, two-ramp
-  input and transforms, simulation pause/resume/reset behavior, and goal
-  collision handling.
-- `src/game/rampPlacement.ts` calculates rotated ramp bounds and fixed rotation
-  steps for the 960×540 simulation area.
-- `src/levels/prototype.json` is the source of truth for the initial two-ramp
-  level and reset transforms.
-- `src/levels/levelTypes.ts`, `src/levels/loadLevel.ts`, and
-  `src/levels/validateLevel.ts` keep level types and runtime parsing separate from
-  rendering.
-- `src/state/gameState.ts` contains pure mode transitions, exclusive selected
-  ramp state, editable ramp transforms, and control-enabled state.
-- `src/ui/Controls.ts` binds and renders the plain DOM controls.
-- `tests/gameState.test.ts`, `tests/rampPlacement.test.ts`, and
-  `tests/levelValidation.test.ts` cover the pure, browser-independent behavior.
-- `e2e/puzzle.e2e.ts` exercises the browser-level puzzle flow through Playwright.
-- `index.html` and `src/style.css` provide the page structure and responsive
-  presentation.
-- `vite.config.ts`, `tsconfig.json`, and `eslint.config.js` configure the build
-  and static checks.
+| Area                         | Responsibility                                                                                            |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `src/levels/`                | Level JSON, ownership/inventory types, runtime schema validation, and loading.                            |
+| `src/state/gameState.ts`     | Pure mode, transform, inventory, reset, and run-snapshot transitions.                                     |
+| `src/game/PrototypeScene.ts` | Phaser rendering, Matter bodies, player interactions, collision success, and full scene-layout snapshots. |
+| `src/game/rampPlacement.ts`  | Bounds and penetration checks for editable rectangles.                                                    |
+| `src/game/doubleClick.ts`    | Pure completed-click and movement-tolerance logic.                                                        |
+| `src/ui/Controls.ts`         | DOM buttons, tray counts, and enabled states.                                                             |
+| `src/main.ts`                | Connects state, scene snapshots, controls, and Phaser setup.                                              |
+| `tests/`                     | Vitest unit coverage for state, placement, validation, ownership, puzzle data, and gestures.              |
+| `e2e/puzzle.e2e.ts`          | Playwright flow for the known two-ramp solution.                                                          |
 
-## Installed dependencies
+## Automated validation
 
-Runtime dependency:
-
-- `phaser@3.90.0` (including Phaser's bundled Matter physics integration)
-
-Development dependencies:
-
-- `@eslint/js@10.0.1`
-- `@playwright/test@1.62.1`
-- `eslint@10.7.0`
-- `globals@17.7.0`
-- `prettier@3.9.5`
-- `typescript@6.0.3`
-- `typescript-eslint@8.64.0`
-- `vite@8.1.5`
-- `vitest@4.1.10`
-
-Exact resolved transitive versions are recorded in `package-lock.json`.
-
-## Run, test, and build commands
-
-Install project-local dependencies:
-
-```bash
-npm install
-```
-
-Start the development server:
-
-```bash
-npm run dev
-```
-
-Run the full validation sequence:
+Required local validation:
 
 ```bash
 npm run typecheck
@@ -133,30 +88,23 @@ npm run format:check
 npm run build
 ```
 
-The individual commands are:
+At the time of this document update, the Vitest suite contains 42 tests across
+6 files. `npm run test:e2e` is available separately and exercises the original
+two-ramp browser flow, including the 10-second Success assertion. It does not
+currently cover tray, removal, or Rerun in a browser.
 
-- `npm run typecheck` — run strict TypeScript checking without emitting files.
-- `npm run lint` — run ESLint across the project.
-- `npm test` — run the Vitest unit suite once.
-- `npm run format:check` — verify Prettier formatting.
-- `npm run build` — type-check and create the production bundle in `dist/`.
-- `npm run test:e2e` — start Vite and run the Chromium smoke test.
+## Known limitations and issues
 
-## Known limitations
+- Only one level exists; no level selection, progression, or save data exists.
+- The tray uses predefined valid spawn candidates instead of a placement preview
+  or user-chosen initial spawn position.
+- Unit coverage is strong for pure interaction/state rules, but browser e2e
+  coverage has not yet expanded to the newer tray, removal, ownership, and
+  Rerun flows.
+- Physics results can vary slightly between browser or engine versions.
+- Vite reports a production chunk-size warning because Phaser is bundled in the
+  main chunk; the build still succeeds.
+- Touch, accessibility-specific input behavior, audio, networking, and a
+  general-purpose editor remain out of scope.
 
-- There is one fixed puzzle and two editable ramps.
-- Edit mode supports only the predefined ramps; it has no general-purpose object
-  manipulation or level editor.
-- The Chromium smoke test covers the main browser flow, but cross-browser and
-  touch-specific behavior remain untested.
-- Reset determinism covers the defined initial state. Small physics differences
-  can still occur between browser or engine versions.
-- The production bundle includes Phaser in a large JavaScript chunk; Vite reports
-  a chunk-size warning, but the prototype builds successfully.
-- Touch-specific interactions, audio, persistence, networking, multiplayer, and a
-  general-purpose level editor are outside the current scope.
-
-## Recommended next milestone
-
-Add cross-browser or touch-specific smoke coverage only when those platforms
-enter scope.
+See [`ROADMAP.md`](ROADMAP.md) for the next planned milestones.
