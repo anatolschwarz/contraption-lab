@@ -59,10 +59,7 @@ async function readRampTransforms(page: Page): Promise<ActualRampTransform[]> {
       scene: { getScene: (key: string) => unknown };
     };
     const scene = game.scene.getScene("prototype") as {
-      ramps: Map<
-        string,
-        { shape: { rotation: number; x: number; y: number } }
-      >;
+      ramps: Map<string, { shape: { rotation: number; x: number; y: number } }>;
     };
 
     return ["upper-ramp", "lower-ramp"].map((id) => {
@@ -116,7 +113,7 @@ test("solves the first puzzle through the browser UI", async ({ page }) => {
         const namespace = value as Record<string, unknown>;
         const Game = namespace.Game as new (...args: unknown[]) => unknown;
         namespace.Game = function (...args: unknown[]): object {
-          const game = Reflect.construct(Game, args);
+          const game = Reflect.construct(Game, args) as object;
           Reflect.set(window, "__contraptionGame", game);
           return game;
         };

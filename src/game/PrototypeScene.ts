@@ -3,8 +3,10 @@ import type { LevelDefinition, RampDefinition } from "../levels/levelTypes";
 import type { RampTransform } from "../state/gameState";
 import {
   clampRampPosition,
+  isRampPlacementValid,
   PLAYABLE_HEIGHT,
   PLAYABLE_WIDTH,
+  type RampPlacement,
   rotateRampByStep,
 } from "./rampPlacement";
 
@@ -236,9 +238,42 @@ export class PrototypeScene extends Phaser.Scene {
       { x, y },
       { ...ramp.definition, rotation },
     );
+    if (notify && !this.isValidEditPlacement(rampId, position, rotation)) {
+      return;
+    }
     ramp.shape.setPosition(position.x, position.y).setRotation(rotation);
     ramp.selectionText.setPosition(position.x, position.y - 34);
     if (notify) this.onRampTransformChange(rampId, { position, rotation });
+  }
+
+  private isValidEditPlacement(
+    rampId: string,
+    position: { x: number; y: number },
+    rotation: number,
+  ): boolean {
+    const ramp = this.ramps.get(rampId);
+    if (!ramp) return false;
+    const ball = this.ball
+      ? { x: this.ball.x, y: this.ball.y, radius: this.level.ball.radius }
+      : this.level.ball;
+    const otherRamps = [...this.ramps.entries()]
+      .filter(([otherRampId]) => otherRampId !== rampId)
+      .map(([, otherRamp]) => this.getRampPlacement(otherRamp));
+
+    return isRampPlacementValid(
+      { ...ramp.definition, ...position, rotation },
+      ball,
+      otherRamps,
+    );
+  }
+
+  private getRampPlacement(ramp: EditableRamp): RampPlacement {
+    return {
+      ...ramp.definition,
+      x: ramp.shape.x,
+      y: ramp.shape.y,
+      rotation: ramp.shape.rotation,
+    };
   }
 
   private rotateSelectedRamp(direction: -1 | 1): void {
