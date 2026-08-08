@@ -15,6 +15,8 @@ export class Controls {
   private readonly buttons: Record<keyof EnabledControls, HTMLButtonElement>;
   private readonly modeLabel =
     requireElement<HTMLParagraphElement>("mode-label");
+  private readonly trayBlockButton =
+    requireElement<HTMLButtonElement>("tray-block-button");
 
   constructor(onAction: (action: GameAction) => void) {
     this.buttons = {
@@ -28,6 +30,9 @@ export class Controls {
       onAction("toggle-simulation"),
     );
     this.buttons.reset.addEventListener("click", () => onAction("reset"));
+    this.trayBlockButton.addEventListener("click", () =>
+      onAction({ type: "spawn-tray-block" }),
+    );
   }
 
   render(state: Readonly<GameState>): void {
@@ -37,6 +42,9 @@ export class Controls {
     }
     this.buttons.simulation.textContent =
       state.mode === "running" ? "Pause" : "Run";
+    this.trayBlockButton.disabled =
+      state.mode !== "edit" || state.succeeded || state.trayBlockCount === 0;
+    this.trayBlockButton.textContent = `Block (${state.trayBlockCount})`;
     const label = state.succeeded
       ? "Success"
       : state.mode.charAt(0).toUpperCase() + state.mode.slice(1);

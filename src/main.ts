@@ -31,6 +31,13 @@ function applyState(): void {
 }
 
 function handleAction(action: GameAction): void {
+  if (
+    typeof action === "object" &&
+    action.type === "spawn-tray-block" &&
+    !scene.spawnTrayBlock()
+  ) {
+    return;
+  }
   const nextState = transitionGameState(state, action);
   if (action === "reset") scene.resetLevel();
   state = nextState;
@@ -52,6 +59,12 @@ const scene = new PrototypeScene(
     state = updateBlockTransform(state, blockId, transform);
     applyState();
   },
+  (componentId, returnsTrayBlock) =>
+    handleAction({
+      type: "remove-component",
+      componentId,
+      returnsTrayBlock,
+    }),
 );
 
 new Phaser.Game({

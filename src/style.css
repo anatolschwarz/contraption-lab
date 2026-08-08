@@ -77,6 +77,23 @@ h1 {
   height: 100% !important;
 }
 
+.parts-tray {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  color: #344e41;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.parts-tray button {
+  min-height: 38px;
+  padding: 0 14px;
+  text-transform: none;
+}
+
 .controls {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

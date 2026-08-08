@@ -4,6 +4,7 @@ import type {
   LevelDefinition,
   RampDefinition,
 } from "../levels/levelTypes";
+import { TRAY_BLOCK_ID } from "../state/gameState";
 import type { BlockTransform, RampTransform } from "../state/gameState";
 import {
   clampRampPosition,
@@ -20,6 +21,14 @@ const RAMP_STROKE_COLOR = 0x4c3526;
 const SELECTED_RAMP_STROKE_COLOR = 0xffd166;
 const BLOCK_FILL_COLOR = 0x6f7d78;
 const BLOCK_STROKE_COLOR = 0x344e41;
+const DOUBLE_CLICK_WINDOW_MS = 350;
+const TRAY_BLOCK_DEFINITION: BlockDefinition = {
+  id: TRAY_BLOCK_ID,
+  x: 875,
+  y: 320,
+  width: 80,
+  height: 60,
+};
 
 interface EditableRamp {
   definition: RampDefinition;
@@ -29,6 +38,7 @@ interface EditableRamp {
 
 interface EditableBlock {
   definition: BlockDefinition;
+  fromTray: boolean;
   shape: Phaser.GameObjects.Rectangle;
   selectionText: Phaser.GameObjects.Text;
 }
@@ -45,7 +55,9 @@ export class PrototypeScene extends Phaser.Scene {
     componentType: "ramp" | "block";
     offset: Phaser.Math.Vector2;
   };
+  private dragMoved = false;
   private editInteractionEnabled = false;
+  private lastComponentClick?: { componentId: string; time: number };
   private readonly blocks = new Map<string, EditableBlock>();
   private readonly ramps = new Map<string, EditableRamp>();
   private selectedComponentId: string | null = null;
@@ -62,6 +74,10 @@ export class PrototypeScene extends Phaser.Scene {
     private readonly onBlockTransformChange: (
       blockId: string,
       transform: BlockTransform,
+    ) => void,
+    private readonly onComponentRemove: (
+      componentId: string,
+      returnsTrayBlock: boolean,
     ) => void,
   ) {
     super("prototype");
@@ -95,6 +111,7 @@ export class PrototypeScene extends Phaser.Scene {
         }
         const x = pointer.worldX - this.drag.offset.x;
         const y = pointer.worldY - this.drag.offset.y;
+        this.dragMoved = true;
         if (this.drag.componentType === "ramp") {
           const ramp = this.ramps.get(this.drag.componentId);
           if (!ramp) return;
@@ -111,10 +128,14 @@ export class PrototypeScene extends Phaser.Scene {
       },
     );
     this.input.on(Phaser.Input.Events.POINTER_UP, () => {
+      if (this.dragMoved) this.lastComponentClick = undefined;
       this.drag = undefined;
+      this.dragMoved = false;
     });
     this.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, () => {
+      if (this.dragMoved) this.lastComponentClick = undefined;
       this.drag = undefined;
+      this.dragMoved = false;
     });
     this.input.keyboard?.on("keydown-Q", () => {
       this.rotateSelectedRamp(-1);
@@ -167,10 +188,31 @@ export class PrototypeScene extends Phaser.Scene {
     }
   }
 
+  spawnTrayBlock(): boolean {
+    if (!this.editInteractionEnabled || this.blocks.has(TRAY_BLOCK_ID)) {
+      return false;
+    }
+    const position = clampRampPosition(TRAY_BLOCK_DEFINITION, {
+      ...TRAY_BLOCK_DEFINITION,
+      rotation: 0,
+    });
+    const definition = { ...TRAY_BLOCK_DEFINITION, ...position };
+    if (
+      !isRectanglePlacementValid(
+        { ...definition, rotation: 0 },
+        this.getCurrentBall(),
+        this.getOtherPlacements(TRAY_BLOCK_ID),
+      )
+    ) {
+      return false;
+    }
+    this.createBlock(definition, true);
+    return true;
+  }
+
   resetLevel(): void {
     this.matter.world.pause();
-    this.setRampTransforms({});
-    this.setBlockTransforms({});
+    this.restoreLevelParts();
     this.ball?.destroy();
     this.successText?.destroy();
     this.successText = undefined;
@@ -196,13 +238,6 @@ export class PrototypeScene extends Phaser.Scene {
       .rectangle(floor.x, floor.y, floor.width, floor.height, 0x465053)
       .setStrokeStyle(3, 0x252b2d);
     this.matter.add.gameObject(floorShape, { isStatic: true, label: "floor" });
-
-    for (const ramp of this.level.ramps) {
-      this.createRamp(ramp);
-    }
-    for (const block of this.level.blocks) {
-      this.createBlock(block);
-    }
 
     const goalShape = this.add
       .rectangle(goal.x, goal.y, goal.width, goal.height, 0x759c82, 0.28)
@@ -260,24 +295,20 @@ export class PrototypeScene extends Phaser.Scene {
         _localY: number,
         event: Phaser.Types.Input.EventData,
       ) => {
-        event.stopPropagation();
-        if (!this.editInteractionEnabled) return;
-        this.onSelectionChange(definition.id);
-        this.drag = {
-          componentId: definition.id,
-          componentType: "ramp",
-          offset: new Phaser.Math.Vector2(
-            pointer.worldX - shape.x,
-            pointer.worldY - shape.y,
-          ),
-        };
+        this.handleComponentPointerDown(
+          "ramp",
+          definition.id,
+          shape,
+          pointer,
+          event,
+        );
       },
     );
 
     this.ramps.set(definition.id, { definition, shape, selectionText });
   }
 
-  private createBlock(definition: BlockDefinition): void {
+  private createBlock(definition: BlockDefinition, fromTray = false): void {
     const shape = this.add
       .rectangle(
         definition.x,
@@ -311,21 +342,93 @@ export class PrototypeScene extends Phaser.Scene {
         _localY: number,
         event: Phaser.Types.Input.EventData,
       ) => {
-        event.stopPropagation();
-        if (!this.editInteractionEnabled) return;
-        this.onSelectionChange(definition.id);
-        this.drag = {
-          componentId: definition.id,
-          componentType: "block",
-          offset: new Phaser.Math.Vector2(
-            pointer.worldX - shape.x,
-            pointer.worldY - shape.y,
-          ),
-        };
+        this.handleComponentPointerDown(
+          "block",
+          definition.id,
+          shape,
+          pointer,
+          event,
+        );
       },
     );
 
-    this.blocks.set(definition.id, { definition, shape, selectionText });
+    this.blocks.set(definition.id, {
+      definition,
+      fromTray,
+      shape,
+      selectionText,
+    });
+  }
+
+  private handleComponentPointerDown(
+    componentType: "ramp" | "block",
+    componentId: string,
+    shape: Phaser.GameObjects.Rectangle,
+    pointer: Phaser.Input.Pointer,
+    event: Phaser.Types.Input.EventData,
+  ): void {
+    event.stopPropagation();
+    if (!this.editInteractionEnabled) return;
+    const isDoubleClick =
+      this.lastComponentClick?.componentId === componentId &&
+      pointer.downTime - this.lastComponentClick.time <= DOUBLE_CLICK_WINDOW_MS;
+    if (isDoubleClick) {
+      this.lastComponentClick = undefined;
+      this.drag = undefined;
+      this.removeComponent(componentType, componentId);
+      return;
+    }
+    this.lastComponentClick = { componentId, time: pointer.downTime };
+    this.onSelectionChange(componentId);
+    this.drag = {
+      componentId,
+      componentType,
+      offset: new Phaser.Math.Vector2(
+        pointer.worldX - shape.x,
+        pointer.worldY - shape.y,
+      ),
+    };
+    this.dragMoved = false;
+  }
+
+  private removeComponent(
+    componentType: "ramp" | "block",
+    componentId: string,
+  ): void {
+    if (componentType === "ramp") {
+      const ramp = this.ramps.get(componentId);
+      if (!ramp) return;
+      ramp.shape.destroy();
+      ramp.selectionText.destroy();
+      this.ramps.delete(componentId);
+      this.onComponentRemove(componentId, false);
+      return;
+    }
+    const block = this.blocks.get(componentId);
+    if (!block) return;
+    block.shape.destroy();
+    block.selectionText.destroy();
+    this.blocks.delete(componentId);
+    this.onComponentRemove(componentId, block.fromTray);
+  }
+
+  private restoreLevelParts(): void {
+    for (const ramp of this.ramps.values()) {
+      ramp.shape.destroy();
+      ramp.selectionText.destroy();
+    }
+    for (const block of this.blocks.values()) {
+      block.shape.destroy();
+      block.selectionText.destroy();
+    }
+    this.ramps.clear();
+    this.blocks.clear();
+    for (const ramp of this.level.ramps) {
+      this.createRamp(ramp);
+    }
+    for (const block of this.level.blocks) {
+      this.createBlock(block);
+    }
   }
 
   private updateRampTransform(

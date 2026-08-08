@@ -3,6 +3,7 @@ import {
   getEnabledControls,
   getSimulationButtonLabel,
   INITIAL_GAME_STATE,
+  TRAY_BLOCK_ID,
   transitionGameState,
   updateBlockTransform,
   updateRampTransform,
@@ -26,6 +27,7 @@ describe("game-state transitions", () => {
       rampTransforms: {},
       blockTransforms: {},
       selectedComponentId: null,
+      trayBlockCount: 1,
     });
     expect(getEnabledControls(INITIAL_GAME_STATE)).toEqual({
       edit: false,
@@ -111,6 +113,62 @@ describe("game-state transitions", () => {
     expect(attemptedRamp).toEqual(moved);
   });
 
+  it("uses the one available tray block only in Edit mode", () => {
+    const spawned = transitionGameState(INITIAL_GAME_STATE, {
+      type: "spawn-tray-block",
+    });
+    expect(spawned.trayBlockCount).toBe(0);
+    expect(spawned.selectedComponentId).toBe(TRAY_BLOCK_ID);
+    expect(transitionGameState(spawned, { type: "spawn-tray-block" })).toEqual(
+      spawned,
+    );
+
+    const running = transitionGameState(spawned, "toggle-simulation");
+    expect(transitionGameState(running, { type: "spawn-tray-block" })).toEqual(
+      running,
+    );
+    expect(transitionGameState(spawned, "reset").trayBlockCount).toBe(1);
+  });
+
+  it("clears selection and returns a removed tray block to inventory", () => {
+    const spawned = transitionGameState(INITIAL_GAME_STATE, {
+      type: "spawn-tray-block",
+    });
+    const removedTrayBlock = transitionGameState(spawned, {
+      type: "remove-component",
+      componentId: TRAY_BLOCK_ID,
+      returnsTrayBlock: true,
+    });
+    expect(removedTrayBlock.selectedComponentId).toBeNull();
+    expect(removedTrayBlock.trayBlockCount).toBe(1);
+
+    const selectedRamp = transitionGameState(INITIAL_GAME_STATE, {
+      type: "select-component",
+      componentId: "upper-ramp",
+    });
+    const movedRamp = updateRampTransform(
+      selectedRamp,
+      "upper-ramp",
+      upperRampTransform,
+    );
+    const removedRamp = transitionGameState(movedRamp, {
+      type: "remove-component",
+      componentId: "upper-ramp",
+      returnsTrayBlock: false,
+    });
+    expect(removedRamp.rampTransforms).toEqual({});
+    expect(removedRamp.selectedComponentId).toBeNull();
+
+    const running = transitionGameState(movedRamp, "toggle-simulation");
+    expect(
+      transitionGameState(running, {
+        type: "remove-component",
+        componentId: "upper-ramp",
+        returnsTrayBlock: false,
+      }),
+    ).toEqual(running);
+  });
+
   it("persists both ramp transforms through Run and Pause, but not Reset", () => {
     const upperSelected = transitionGameState(INITIAL_GAME_STATE, {
       type: "select-component",
@@ -165,6 +223,7 @@ describe("game-state transitions", () => {
       rampTransforms: {},
       blockTransforms: {},
       selectedComponentId: null,
+      trayBlockCount: 1,
     });
     expect(getEnabledControls(success)).toEqual({
       edit: false,
@@ -185,6 +244,7 @@ describe("reset behavior", () => {
       },
       blockTransforms: { "guide-block": blockTransform },
       selectedComponentId: "guide-block",
+      trayBlockCount: 0 as const,
     };
     const firstReset = transitionGameState(changed, "reset");
     const secondReset = transitionGameState(firstReset, "reset");

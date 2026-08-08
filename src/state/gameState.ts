@@ -1,6 +1,7 @@
 import type { Point } from "../levels/levelTypes";
 
 export type GameMode = "edit" | "running" | "paused";
+export const TRAY_BLOCK_ID = "tray-block-1";
 
 export interface RampTransform {
   position: Point;
@@ -16,13 +17,25 @@ export interface SelectComponentAction {
   componentId: string;
 }
 
+export interface SpawnTrayBlockAction {
+  type: "spawn-tray-block";
+}
+
+export interface RemoveComponentAction {
+  type: "remove-component";
+  componentId: string;
+  returnsTrayBlock: boolean;
+}
+
 export type GameAction =
   | "edit"
   | "toggle-simulation"
   | "reset"
   | "success"
   | "deselect"
-  | SelectComponentAction;
+  | SelectComponentAction
+  | SpawnTrayBlockAction
+  | RemoveComponentAction;
 
 export interface GameState {
   mode: GameMode;
@@ -30,6 +43,7 @@ export interface GameState {
   rampTransforms: Record<string, RampTransform>;
   blockTransforms: Record<string, BlockTransform>;
   selectedComponentId: string | null;
+  trayBlockCount: 0 | 1;
 }
 
 export const INITIAL_GAME_STATE: Readonly<GameState> = Object.freeze({
@@ -38,6 +52,7 @@ export const INITIAL_GAME_STATE: Readonly<GameState> = Object.freeze({
   rampTransforms: {},
   blockTransforms: {},
   selectedComponentId: null,
+  trayBlockCount: 1,
 });
 
 export interface EnabledControls {
@@ -64,6 +79,7 @@ export function transitionGameState(
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
+      trayBlockCount: state.trayBlockCount,
     };
   }
   if (state.succeeded) {
@@ -82,6 +98,45 @@ export function transitionGameState(
           blockTransforms: { ...state.blockTransforms },
         };
   }
+  if (typeof action === "object" && action.type === "spawn-tray-block") {
+    return state.mode === "edit" && state.trayBlockCount > 0
+      ? {
+          ...state,
+          selectedComponentId: TRAY_BLOCK_ID,
+          trayBlockCount: 0,
+        }
+      : {
+          ...state,
+          rampTransforms: { ...state.rampTransforms },
+          blockTransforms: { ...state.blockTransforms },
+        };
+  }
+  if (typeof action === "object" && action.type === "remove-component") {
+    if (state.mode !== "edit") {
+      return {
+        ...state,
+        rampTransforms: { ...state.rampTransforms },
+        blockTransforms: { ...state.blockTransforms },
+      };
+    }
+    const rampTransforms = Object.fromEntries(
+      Object.entries(state.rampTransforms).filter(
+        ([componentId]) => componentId !== action.componentId,
+      ),
+    );
+    const blockTransforms = Object.fromEntries(
+      Object.entries(state.blockTransforms).filter(
+        ([componentId]) => componentId !== action.componentId,
+      ),
+    );
+    return {
+      ...state,
+      rampTransforms,
+      blockTransforms,
+      selectedComponentId: null,
+      trayBlockCount: action.returnsTrayBlock ? 1 : state.trayBlockCount,
+    };
+  }
   if (action === "deselect" && state.mode === "edit") {
     return { ...state, selectedComponentId: null };
   }
@@ -95,6 +150,7 @@ export function transitionGameState(
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
+      trayBlockCount: state.trayBlockCount,
     };
   }
   if (action === "toggle-simulation" && state.mode === "running") {
@@ -104,6 +160,7 @@ export function transitionGameState(
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
+      trayBlockCount: state.trayBlockCount,
     };
   }
   if (action === "edit" && state.mode !== "edit") {
@@ -113,6 +170,7 @@ export function transitionGameState(
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
+      trayBlockCount: state.trayBlockCount,
     };
   }
   return {
