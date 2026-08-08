@@ -16,6 +16,18 @@ describe("validateLevel", () => {
     expect(() => validateLevel({ id: "incomplete" })).toThrow(/title/i);
   });
 
+  it("requires non-negative integer inventory counts", () => {
+    expect(() =>
+      validateLevel({ ...rawLevel, inventory: { block: -1, ramp: 0 } }),
+    ).toThrow(/inventory.*non-negative integer/i);
+    expect(() =>
+      validateLevel({ ...rawLevel, inventory: { block: 1, ramp: 0.5 } }),
+    ).toThrow(/inventory.*non-negative integer/i);
+    expect(() =>
+      validateLevel({ ...rawLevel, inventory: { block: 1 } }),
+    ).toThrow(/inventory/i);
+  });
+
   it("requires at least two ramps with unique ids", () => {
     expect(() =>
       validateLevel({ ...rawLevel, ramps: [rawLevel.ramps[0]] }),

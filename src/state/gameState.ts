@@ -1,7 +1,8 @@
-import type { Point } from "../levels/levelTypes";
+import type { InventoryDefinition, Point } from "../levels/levelTypes";
 
 export type GameMode = "edit" | "running" | "paused";
 export const TRAY_BLOCK_ID = "tray-block-1";
+export const TRAY_BLOCK_ID_PREFIX = "tray-block-";
 export const TRAY_RAMP_ID_PREFIX = "tray-ramp-";
 
 export interface RampTransform {
@@ -13,6 +14,13 @@ export interface BlockTransform {
   position: Point;
 }
 
+export interface RunSnapshot {
+  rampTransforms: Record<string, RampTransform>;
+  blockTransforms: Record<string, BlockTransform>;
+  trayBlockCount: number;
+  trayRampCount: number;
+}
+
 export interface SelectComponentAction {
   type: "select-component";
   componentId: string;
@@ -20,6 +28,7 @@ export interface SelectComponentAction {
 
 export interface SpawnTrayBlockAction {
   type: "spawn-tray-block";
+  componentId: string;
 }
 
 export interface SpawnTrayRampAction {
@@ -36,6 +45,7 @@ export interface RemoveComponentAction {
 export type GameAction =
   | "edit"
   | "toggle-simulation"
+  | "rerun"
   | "reset"
   | "success"
   | "deselect"
@@ -45,24 +55,31 @@ export type GameAction =
   | RemoveComponentAction;
 
 export interface GameState {
+  initialInventory: InventoryDefinition;
   mode: GameMode;
   succeeded: boolean;
   rampTransforms: Record<string, RampTransform>;
   blockTransforms: Record<string, BlockTransform>;
   selectedComponentId: string | null;
-  trayBlockCount: 0 | 1;
+  trayBlockCount: number;
   trayRampCount: number;
+  runSnapshot?: RunSnapshot;
 }
 
-export const INITIAL_GAME_STATE: Readonly<GameState> = Object.freeze({
-  mode: "edit",
-  succeeded: false,
-  rampTransforms: {},
-  blockTransforms: {},
-  selectedComponentId: null,
-  trayBlockCount: 1,
-  trayRampCount: 0,
-});
+export function createInitialGameState(
+  inventory: Readonly<InventoryDefinition>,
+): GameState {
+  return {
+    initialInventory: { ...inventory },
+    mode: "edit",
+    succeeded: false,
+    rampTransforms: {},
+    blockTransforms: {},
+    selectedComponentId: null,
+    trayBlockCount: inventory.block,
+    trayRampCount: inventory.ramp,
+  };
+}
 
 export interface EnabledControls {
   edit: boolean;
@@ -70,26 +87,59 @@ export interface EnabledControls {
   reset: boolean;
 }
 
+function createRunSnapshot(state: Readonly<GameState>): RunSnapshot {
+  return {
+    rampTransforms: { ...state.rampTransforms },
+    blockTransforms: { ...state.blockTransforms },
+    trayBlockCount: state.trayBlockCount,
+    trayRampCount: state.trayRampCount,
+  };
+}
+
+function cloneRunSnapshot(
+  snapshot: Readonly<RunSnapshot> | undefined,
+): RunSnapshot | undefined {
+  return (
+    snapshot && {
+      rampTransforms: { ...snapshot.rampTransforms },
+      blockTransforms: { ...snapshot.blockTransforms },
+      trayBlockCount: snapshot.trayBlockCount,
+      trayRampCount: snapshot.trayRampCount,
+    }
+  );
+}
+
 export function transitionGameState(
   state: Readonly<GameState>,
   action: GameAction,
 ): GameState {
   if (action === "reset") {
+    return createInitialGameState(state.initialInventory);
+  }
+  if (action === "rerun" && state.mode !== "edit" && state.runSnapshot) {
     return {
-      ...INITIAL_GAME_STATE,
-      rampTransforms: {},
-      blockTransforms: {},
+      mode: "running",
+      succeeded: false,
+      initialInventory: { ...state.initialInventory },
+      rampTransforms: { ...state.runSnapshot.rampTransforms },
+      blockTransforms: { ...state.runSnapshot.blockTransforms },
+      selectedComponentId: null,
+      trayBlockCount: state.runSnapshot.trayBlockCount,
+      trayRampCount: state.runSnapshot.trayRampCount,
+      runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }
   if (action === "success" && state.mode === "running") {
     return {
       mode: "paused",
       succeeded: true,
+      initialInventory: { ...state.initialInventory },
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
+      runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }
   if (state.succeeded) {
@@ -112,8 +162,8 @@ export function transitionGameState(
     return state.mode === "edit" && state.trayBlockCount > 0
       ? {
           ...state,
-          selectedComponentId: TRAY_BLOCK_ID,
-          trayBlockCount: 0,
+          selectedComponentId: action.componentId,
+          trayBlockCount: state.trayBlockCount - 1,
         }
       : {
           ...state,
@@ -158,7 +208,9 @@ export function transitionGameState(
       blockTransforms,
       selectedComponentId: null,
       trayBlockCount:
-        action.returnsTrayPart === "block" ? 1 : state.trayBlockCount,
+        action.returnsTrayPart === "block"
+          ? state.trayBlockCount + 1
+          : state.trayBlockCount,
       trayRampCount:
         action.returnsTrayPart === "ramp"
           ? state.trayRampCount + 1
@@ -168,40 +220,56 @@ export function transitionGameState(
   if (action === "deselect" && state.mode === "edit") {
     return { ...state, selectedComponentId: null };
   }
-  if (
-    action === "toggle-simulation" &&
-    (state.mode === "edit" || state.mode === "paused")
-  ) {
+  if (action === "toggle-simulation" && state.mode === "edit") {
     return {
       mode: "running",
       succeeded: false,
+      initialInventory: { ...state.initialInventory },
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
+      runSnapshot: createRunSnapshot(state),
+    };
+  }
+  if (action === "toggle-simulation" && state.mode === "paused") {
+    return {
+      mode: "running",
+      succeeded: false,
+      initialInventory: { ...state.initialInventory },
+      rampTransforms: { ...state.rampTransforms },
+      blockTransforms: { ...state.blockTransforms },
+      selectedComponentId: null,
+      trayBlockCount: state.trayBlockCount,
+      trayRampCount: state.trayRampCount,
+      runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }
   if (action === "toggle-simulation" && state.mode === "running") {
     return {
       mode: "paused",
       succeeded: false,
+      initialInventory: { ...state.initialInventory },
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
+      runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }
   if (action === "edit" && state.mode !== "edit") {
     return {
       mode: "edit",
       succeeded: false,
+      initialInventory: { ...state.initialInventory },
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
+      runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }
   return {

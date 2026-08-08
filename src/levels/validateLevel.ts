@@ -1,5 +1,6 @@
 import type {
   BlockDefinition,
+  InventoryDefinition,
   LevelDefinition,
   Point,
   RampDefinition,
@@ -47,17 +48,32 @@ const isBlock = (value: unknown): value is BlockDefinition =>
   value.id.trim() !== "" &&
   (value.ownership === "fixed" || value.ownership === "player");
 
+const isInventory = (value: unknown): value is InventoryDefinition =>
+  isRecord(value) &&
+  isFiniteNumber(value.block) &&
+  Number.isInteger(value.block) &&
+  value.block >= 0 &&
+  isFiniteNumber(value.ramp) &&
+  Number.isInteger(value.ramp) &&
+  value.ramp >= 0;
+
 export function validateLevel(value: unknown): LevelDefinition {
   if (!isRecord(value)) {
     throw new Error("Level data must be an object.");
   }
 
-  const { id, title, ball, ramps, blocks, floor, goal, gravity } = value;
+  const { id, title, inventory, ball, ramps, blocks, floor, goal, gravity } =
+    value;
   if (typeof id !== "string" || id.trim() === "") {
     throw new Error("Level id must be a non-empty string.");
   }
   if (typeof title !== "string" || title.trim() === "") {
     throw new Error("Level title must be a non-empty string.");
+  }
+  if (!isInventory(inventory)) {
+    throw new Error(
+      "Level inventory must define non-negative integer block and ramp counts.",
+    );
   }
   if (!isBall(ball)) {
     throw new Error("Level ball must have finite x/y and a positive radius.");
@@ -94,5 +110,5 @@ export function validateLevel(value: unknown): LevelDefinition {
     throw new Error("Level gravity must have finite x/y values.");
   }
 
-  return { id, title, ball, ramps, blocks, floor, goal, gravity };
+  return { id, title, inventory, ball, ramps, blocks, floor, goal, gravity };
 }

@@ -1,11 +1,16 @@
 import Phaser from "phaser";
 import {
+  isClickMovementWithinTolerance,
+  recordCompletedClick,
+  type CompletedClick,
+} from "./doubleClick";
+import {
   isEditablePart,
   type BlockDefinition,
   type LevelDefinition,
   type RampDefinition,
 } from "../levels/levelTypes";
-import { TRAY_BLOCK_ID, TRAY_RAMP_ID_PREFIX } from "../state/gameState";
+import { TRAY_BLOCK_ID_PREFIX, TRAY_RAMP_ID_PREFIX } from "../state/gameState";
 import type { BlockTransform, RampTransform } from "../state/gameState";
 import {
   clampRampPosition,
@@ -24,15 +29,16 @@ const BLOCK_FILL_COLOR = 0x6f7d78;
 const BLOCK_STROKE_COLOR = 0x344e41;
 const FIXED_BLOCK_FILL_COLOR = 0x465053;
 const FIXED_BLOCK_STROKE_COLOR = 0x252b2d;
-const DOUBLE_CLICK_WINDOW_MS = 350;
-const TRAY_BLOCK_DEFINITION: BlockDefinition = {
-  id: TRAY_BLOCK_ID,
-  x: 875,
-  y: 320,
+const TRAY_BLOCK_DEFINITION: Omit<BlockDefinition, "id" | "x" | "y"> = {
   width: 80,
   height: 60,
   ownership: "player",
 };
+const TRAY_BLOCK_CANDIDATES = [
+  { x: 875, y: 320 },
+  { x: 380, y: 410 },
+  { x: 490, y: 410 },
+];
 const TRAY_RAMP_DEFINITION: Omit<RampDefinition, "id" | "x" | "y"> = {
   width: 200,
   height: 24,
@@ -67,18 +73,34 @@ interface EditableComponent {
   selectionText: Phaser.GameObjects.Text;
 }
 
+interface RampPartSnapshot {
+  componentType: "ramp";
+  definition: RampDefinition;
+  fromTray: boolean;
+}
+
+interface BlockPartSnapshot {
+  componentType: "block";
+  definition: BlockDefinition;
+  fromTray: boolean;
+}
+
+type PlayerPartSnapshot = RampPartSnapshot | BlockPartSnapshot;
+
 export class PrototypeScene extends Phaser.Scene {
   private ball?: Phaser.GameObjects.Arc;
   private drag?: {
     componentId: string;
     componentType: "ramp" | "block";
     offset: Phaser.Math.Vector2;
+    pointerStart: Phaser.Math.Vector2;
   };
   private dragMoved = false;
   private editInteractionEnabled = false;
-  private lastComponentClick?: { componentId: string; time: number };
+  private lastComponentClick?: CompletedClick;
   private readonly blocks = new Map<string, EditableBlock>();
   private readonly ramps = new Map<string, EditableRamp>();
+  private runSnapshot?: PlayerPartSnapshot[];
   private selectedComponentId: string | null = null;
   private successText?: Phaser.GameObjects.Text;
 
@@ -120,7 +142,8 @@ export class PrototypeScene extends Phaser.Scene {
       },
     );
     this.input.on(Phaser.Input.Events.POINTER_DOWN, () => {
-      if (this.editInteractionEnabled) this.onSelectionChange(null);
+      if (!this.editInteractionEnabled) return;
+      this.onSelectionChange(null);
     });
     this.input.on(
       Phaser.Input.Events.POINTER_MOVE,
@@ -128,9 +151,19 @@ export class PrototypeScene extends Phaser.Scene {
         if (!this.editInteractionEnabled || !this.drag || !pointer.isDown) {
           return;
         }
+        if (
+          !this.dragMoved &&
+          isClickMovementWithinTolerance(this.drag.pointerStart, {
+            x: pointer.worldX,
+            y: pointer.worldY,
+          })
+        ) {
+          return;
+        }
+        this.dragMoved = true;
+        this.lastComponentClick = undefined;
         const x = pointer.worldX - this.drag.offset.x;
         const y = pointer.worldY - this.drag.offset.y;
-        this.dragMoved = true;
         if (this.drag.componentType === "ramp") {
           const ramp = this.ramps.get(this.drag.componentId);
           if (!ramp) return;
@@ -146,13 +179,14 @@ export class PrototypeScene extends Phaser.Scene {
         }
       },
     );
-    this.input.on(Phaser.Input.Events.POINTER_UP, () => {
-      if (this.dragMoved) this.lastComponentClick = undefined;
-      this.drag = undefined;
-      this.dragMoved = false;
-    });
+    this.input.on(
+      Phaser.Input.Events.POINTER_UP,
+      (pointer: Phaser.Input.Pointer) => {
+        this.completePointerInteraction(pointer);
+      },
+    );
     this.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, () => {
-      if (this.dragMoved) this.lastComponentClick = undefined;
+      this.lastComponentClick = undefined;
       this.drag = undefined;
       this.dragMoved = false;
     });
@@ -173,6 +207,7 @@ export class PrototypeScene extends Phaser.Scene {
   setEditSelection(enabled: boolean, selectedComponentId: string | null): void {
     this.editInteractionEnabled = enabled;
     this.selectedComponentId = selectedComponentId;
+    if (!enabled) this.lastComponentClick = undefined;
     this.updateSelectionDisplay();
   }
 
@@ -209,30 +244,27 @@ export class PrototypeScene extends Phaser.Scene {
     }
   }
 
-  spawnTrayBlock(availableCount: number): boolean {
-    if (
-      !this.editInteractionEnabled ||
-      availableCount <= 0 ||
-      this.blocks.has(TRAY_BLOCK_ID)
-    ) {
-      return false;
+  spawnTrayBlock(availableCount: number): string | null {
+    if (!this.editInteractionEnabled || availableCount <= 0) return null;
+    const id = this.getNextTrayBlockId();
+    for (const position of TRAY_BLOCK_CANDIDATES) {
+      const definition: BlockDefinition = {
+        ...TRAY_BLOCK_DEFINITION,
+        ...position,
+        id,
+      };
+      if (
+        isRectanglePlacementValid(
+          { ...definition, rotation: 0 },
+          this.getCurrentBall(),
+          this.getOtherPlacements(id),
+        )
+      ) {
+        this.createBlock(definition, true);
+        return id;
+      }
     }
-    const position = clampRampPosition(TRAY_BLOCK_DEFINITION, {
-      ...TRAY_BLOCK_DEFINITION,
-      rotation: 0,
-    });
-    const definition = { ...TRAY_BLOCK_DEFINITION, ...position };
-    if (
-      !isRectanglePlacementValid(
-        { ...definition, rotation: 0 },
-        this.getCurrentBall(),
-        this.getOtherPlacements(TRAY_BLOCK_ID),
-      )
-    ) {
-      return false;
-    }
-    this.createBlock(definition, true);
-    return true;
+    return null;
   }
 
   spawnTrayRamp(availableCount: number): string | null {
@@ -258,9 +290,46 @@ export class PrototypeScene extends Phaser.Scene {
     return null;
   }
 
+  captureRunLayout(): void {
+    this.runSnapshot = [
+      ...[...this.ramps.values()].map((ramp): RampPartSnapshot => ({
+        componentType: "ramp",
+        definition: {
+          ...ramp.definition,
+          x: ramp.shape.x,
+          y: ramp.shape.y,
+          rotation: ramp.shape.rotation,
+        },
+        fromTray: ramp.fromTray,
+      })),
+      ...[...this.blocks.values()].map((block): BlockPartSnapshot => ({
+        componentType: "block",
+        definition: {
+          ...block.definition,
+          x: block.shape.x,
+          y: block.shape.y,
+        },
+        fromTray: block.fromTray,
+      })),
+    ];
+  }
+
+  rerunFromSnapshot(): boolean {
+    if (!this.runSnapshot) return false;
+    this.matter.world.pause();
+    this.restoreParts(this.runSnapshot);
+    this.resetBallAndSuccess();
+    return true;
+  }
+
   resetLevel(): void {
     this.matter.world.pause();
     this.restoreLevelParts();
+    this.runSnapshot = undefined;
+    this.resetBallAndSuccess();
+  }
+
+  private resetBallAndSuccess(): void {
     this.ball?.destroy();
     this.successText?.destroy();
     this.successText = undefined;
@@ -445,16 +514,6 @@ export class PrototypeScene extends Phaser.Scene {
         ? this.ramps.get(componentId)
         : this.blocks.get(componentId);
     if (!component?.editable) return;
-    const isDoubleClick =
-      this.lastComponentClick?.componentId === componentId &&
-      pointer.downTime - this.lastComponentClick.time <= DOUBLE_CLICK_WINDOW_MS;
-    if (isDoubleClick) {
-      this.lastComponentClick = undefined;
-      this.drag = undefined;
-      this.removeComponent(componentType, componentId);
-      return;
-    }
-    this.lastComponentClick = { componentId, time: pointer.downTime };
     this.onSelectionChange(componentId);
     this.drag = {
       componentId,
@@ -463,8 +522,29 @@ export class PrototypeScene extends Phaser.Scene {
         pointer.worldX - shape.x,
         pointer.worldY - shape.y,
       ),
+      pointerStart: new Phaser.Math.Vector2(pointer.worldX, pointer.worldY),
     };
     this.dragMoved = false;
+  }
+
+  private completePointerInteraction(pointer: Phaser.Input.Pointer): void {
+    const drag = this.drag;
+    this.drag = undefined;
+    if (!drag || this.dragMoved) {
+      if (this.dragMoved) this.lastComponentClick = undefined;
+      this.dragMoved = false;
+      return;
+    }
+    this.dragMoved = false;
+    if (!this.editInteractionEnabled) return;
+    const click = recordCompletedClick(this.lastComponentClick, {
+      componentId: drag.componentId,
+      completedAt: pointer.upTime,
+    });
+    this.lastComponentClick = click.nextClick;
+    if (click.isDoubleClick) {
+      this.removeComponent(drag.componentType, drag.componentId);
+    }
   }
 
   private removeComponent(
@@ -496,6 +576,27 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private restoreLevelParts(): void {
+    this.destroyParts();
+    for (const ramp of this.level.ramps) {
+      this.createRamp(ramp);
+    }
+    for (const block of this.level.blocks) {
+      this.createBlock(block);
+    }
+  }
+
+  private restoreParts(snapshot: readonly PlayerPartSnapshot[]): void {
+    this.destroyParts();
+    for (const part of snapshot) {
+      if (part.componentType === "ramp") {
+        this.createRamp(part.definition, part.fromTray);
+      } else {
+        this.createBlock(part.definition, part.fromTray);
+      }
+    }
+  }
+
+  private destroyParts(): void {
     for (const ramp of this.ramps.values()) {
       ramp.shape.destroy();
       ramp.selectionText.destroy();
@@ -507,18 +608,18 @@ export class PrototypeScene extends Phaser.Scene {
     }
     this.ramps.clear();
     this.blocks.clear();
-    for (const ramp of this.level.ramps) {
-      this.createRamp(ramp);
-    }
-    for (const block of this.level.blocks) {
-      this.createBlock(block);
-    }
   }
 
   private getNextTrayRampId(): string {
     let index = 1;
     while (this.ramps.has(`${TRAY_RAMP_ID_PREFIX}${index}`)) index += 1;
     return `${TRAY_RAMP_ID_PREFIX}${index}`;
+  }
+
+  private getNextTrayBlockId(): string {
+    let index = 1;
+    while (this.blocks.has(`${TRAY_BLOCK_ID_PREFIX}${index}`)) index += 1;
+    return `${TRAY_BLOCK_ID_PREFIX}${index}`;
   }
 
   private updateRampTransform(

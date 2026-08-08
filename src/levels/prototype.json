@@ -1,6 +1,7 @@
 {
   "id": "aim-the-ramp-001",
   "title": "Relay Ramps",
+  "inventory": { "block": 2, "ramp": 4 },
   "ball": { "x": 215, "y": 135, "radius": 24 },
   "ramps": [
     {

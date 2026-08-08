@@ -5,7 +5,7 @@ import { PrototypeScene } from "./game/PrototypeScene";
 import { PLAYABLE_HEIGHT, PLAYABLE_WIDTH } from "./game/rampPlacement";
 import { loadLevel } from "./levels/loadLevel";
 import {
-  INITIAL_GAME_STATE,
+  createInitialGameState,
   transitionGameState,
   type GameAction,
   type GameState,
@@ -15,7 +15,7 @@ import {
 import { Controls } from "./ui/Controls";
 
 const level = loadLevel(rawLevel);
-let state: GameState = { ...INITIAL_GAME_STATE };
+let state: GameState = createInitialGameState(level.inventory);
 
 const controls = new Controls(handleAction);
 
@@ -31,17 +31,21 @@ function applyState(): void {
 }
 
 function handleAction(action: GameAction): void {
-  if (
-    typeof action === "object" &&
-    action.type === "spawn-tray-block" &&
-    !scene.spawnTrayBlock(state.trayBlockCount)
-  ) {
-    return;
+  if (typeof action === "object" && action.type === "spawn-tray-block") {
+    const componentId = scene.spawnTrayBlock(state.trayBlockCount);
+    if (!componentId) return;
+    action = { ...action, componentId };
   }
   if (typeof action === "object" && action.type === "spawn-tray-ramp") {
     const componentId = scene.spawnTrayRamp(state.trayRampCount);
     if (!componentId) return;
     action = { ...action, componentId };
+  }
+  if (action === "toggle-simulation" && state.mode === "edit") {
+    scene.captureRunLayout();
+  }
+  if (action === "rerun" && !scene.rerunFromSnapshot()) {
+    return;
   }
   const nextState = transitionGameState(state, action);
   if (action === "reset") scene.resetLevel();

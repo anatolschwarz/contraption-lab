@@ -19,6 +19,8 @@ export class Controls {
     requireElement<HTMLButtonElement>("tray-block-button");
   private readonly trayRampButton =
     requireElement<HTMLButtonElement>("tray-ramp-button");
+  private readonly rerunButton =
+    requireElement<HTMLButtonElement>("rerun-button");
 
   constructor(onAction: (action: GameAction) => void) {
     this.buttons = {
@@ -32,8 +34,9 @@ export class Controls {
       onAction("toggle-simulation"),
     );
     this.buttons.reset.addEventListener("click", () => onAction("reset"));
+    this.rerunButton.addEventListener("click", () => onAction("rerun"));
     this.trayBlockButton.addEventListener("click", () =>
-      onAction({ type: "spawn-tray-block" }),
+      onAction({ type: "spawn-tray-block", componentId: "" }),
     );
     this.trayRampButton.addEventListener("click", () =>
       onAction({ type: "spawn-tray-ramp", componentId: "" }),
@@ -53,6 +56,7 @@ export class Controls {
     this.trayRampButton.disabled =
       state.mode !== "edit" || state.succeeded || state.trayRampCount === 0;
     this.trayRampButton.textContent = `Ramp (${state.trayRampCount})`;
+    this.rerunButton.disabled = state.mode === "edit" || !state.runSnapshot;
     const label = state.succeeded
       ? "Success"
       : state.mode.charAt(0).toUpperCase() + state.mode.slice(1);

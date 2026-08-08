@@ -21,6 +21,11 @@ export interface RampDefinition extends LevelPartDefinition {
 
 export type BlockDefinition = LevelPartDefinition;
 
+export interface InventoryDefinition {
+  block: number;
+  ramp: number;
+}
+
 export function isPlayerPart(
   definition: Readonly<LevelPartDefinition>,
 ): boolean {
@@ -37,6 +42,7 @@ export function isEditablePart(
 export interface LevelDefinition {
   id: string;
   title: string;
+  inventory: InventoryDefinition;
   ball: Point & { radius: number };
   ramps: RampDefinition[];
   blocks: BlockDefinition[];

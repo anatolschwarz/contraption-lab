@@ -43,4 +43,8 @@ describe("the bundled relay-ramp puzzle", () => {
     expect(level.ramps.every(isPlayerPart)).toBe(true);
     expect(level.blocks.every(isPlayerPart)).toBe(false);
   });
+
+  it("defines the initial tray inventory", () => {
+    expect(level.inventory).toEqual({ block: 2, ramp: 4 });
+  });
 });
