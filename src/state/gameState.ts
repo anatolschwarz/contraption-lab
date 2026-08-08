@@ -2,6 +2,7 @@ import type { Point } from "../levels/levelTypes";
 
 export type GameMode = "edit" | "running" | "paused";
 export const TRAY_BLOCK_ID = "tray-block-1";
+export const TRAY_RAMP_ID_PREFIX = "tray-ramp-";
 
 export interface RampTransform {
   position: Point;
@@ -21,10 +22,15 @@ export interface SpawnTrayBlockAction {
   type: "spawn-tray-block";
 }
 
+export interface SpawnTrayRampAction {
+  type: "spawn-tray-ramp";
+  componentId: string;
+}
+
 export interface RemoveComponentAction {
   type: "remove-component";
   componentId: string;
-  returnsTrayBlock: boolean;
+  returnsTrayPart: "block" | "ramp" | null;
 }
 
 export type GameAction =
@@ -35,6 +41,7 @@ export type GameAction =
   | "deselect"
   | SelectComponentAction
   | SpawnTrayBlockAction
+  | SpawnTrayRampAction
   | RemoveComponentAction;
 
 export interface GameState {
@@ -44,6 +51,7 @@ export interface GameState {
   blockTransforms: Record<string, BlockTransform>;
   selectedComponentId: string | null;
   trayBlockCount: 0 | 1;
+  trayRampCount: number;
 }
 
 export const INITIAL_GAME_STATE: Readonly<GameState> = Object.freeze({
@@ -53,6 +61,7 @@ export const INITIAL_GAME_STATE: Readonly<GameState> = Object.freeze({
   blockTransforms: {},
   selectedComponentId: null,
   trayBlockCount: 1,
+  trayRampCount: 0,
 });
 
 export interface EnabledControls {
@@ -80,6 +89,7 @@ export function transitionGameState(
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
       trayBlockCount: state.trayBlockCount,
+      trayRampCount: state.trayRampCount,
     };
   }
   if (state.succeeded) {
@@ -111,6 +121,19 @@ export function transitionGameState(
           blockTransforms: { ...state.blockTransforms },
         };
   }
+  if (typeof action === "object" && action.type === "spawn-tray-ramp") {
+    return state.mode === "edit" && state.trayRampCount > 0
+      ? {
+          ...state,
+          selectedComponentId: action.componentId,
+          trayRampCount: state.trayRampCount - 1,
+        }
+      : {
+          ...state,
+          rampTransforms: { ...state.rampTransforms },
+          blockTransforms: { ...state.blockTransforms },
+        };
+  }
   if (typeof action === "object" && action.type === "remove-component") {
     if (state.mode !== "edit") {
       return {
@@ -134,7 +157,12 @@ export function transitionGameState(
       rampTransforms,
       blockTransforms,
       selectedComponentId: null,
-      trayBlockCount: action.returnsTrayBlock ? 1 : state.trayBlockCount,
+      trayBlockCount:
+        action.returnsTrayPart === "block" ? 1 : state.trayBlockCount,
+      trayRampCount:
+        action.returnsTrayPart === "ramp"
+          ? state.trayRampCount + 1
+          : state.trayRampCount,
     };
   }
   if (action === "deselect" && state.mode === "edit") {
@@ -151,6 +179,7 @@ export function transitionGameState(
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
       trayBlockCount: state.trayBlockCount,
+      trayRampCount: state.trayRampCount,
     };
   }
   if (action === "toggle-simulation" && state.mode === "running") {
@@ -161,6 +190,7 @@ export function transitionGameState(
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
       trayBlockCount: state.trayBlockCount,
+      trayRampCount: state.trayRampCount,
     };
   }
   if (action === "edit" && state.mode !== "edit") {
@@ -171,6 +201,7 @@ export function transitionGameState(
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
       trayBlockCount: state.trayBlockCount,
+      trayRampCount: state.trayRampCount,
     };
   }
   return {

@@ -17,6 +17,8 @@ export class Controls {
     requireElement<HTMLParagraphElement>("mode-label");
   private readonly trayBlockButton =
     requireElement<HTMLButtonElement>("tray-block-button");
+  private readonly trayRampButton =
+    requireElement<HTMLButtonElement>("tray-ramp-button");
 
   constructor(onAction: (action: GameAction) => void) {
     this.buttons = {
@@ -33,6 +35,9 @@ export class Controls {
     this.trayBlockButton.addEventListener("click", () =>
       onAction({ type: "spawn-tray-block" }),
     );
+    this.trayRampButton.addEventListener("click", () =>
+      onAction({ type: "spawn-tray-ramp", componentId: "" }),
+    );
   }
 
   render(state: Readonly<GameState>): void {
@@ -45,6 +50,9 @@ export class Controls {
     this.trayBlockButton.disabled =
       state.mode !== "edit" || state.succeeded || state.trayBlockCount === 0;
     this.trayBlockButton.textContent = `Block (${state.trayBlockCount})`;
+    this.trayRampButton.disabled =
+      state.mode !== "edit" || state.succeeded || state.trayRampCount === 0;
+    this.trayRampButton.textContent = `Ramp (${state.trayRampCount})`;
     const label = state.succeeded
       ? "Success"
       : state.mode.charAt(0).toUpperCase() + state.mode.slice(1);

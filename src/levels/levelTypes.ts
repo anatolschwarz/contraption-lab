@@ -8,13 +8,30 @@ export interface RectangleDefinition extends Point {
   height: number;
 }
 
-export interface RampDefinition extends RectangleDefinition {
+export type PartOwnership = "fixed" | "player";
+
+export interface LevelPartDefinition extends RectangleDefinition {
   id: string;
+  ownership: PartOwnership;
+}
+
+export interface RampDefinition extends LevelPartDefinition {
   rotation: number;
 }
 
-export interface BlockDefinition extends RectangleDefinition {
-  id: string;
+export type BlockDefinition = LevelPartDefinition;
+
+export function isPlayerPart(
+  definition: Readonly<LevelPartDefinition>,
+): boolean {
+  return definition.ownership === "player";
+}
+
+export function isEditablePart(
+  definition: Readonly<LevelPartDefinition>,
+  fromTray: boolean,
+): boolean {
+  return fromTray || isPlayerPart(definition);
 }
 
 export interface LevelDefinition {

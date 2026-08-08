@@ -4,6 +4,7 @@ import {
   getSimulationButtonLabel,
   INITIAL_GAME_STATE,
   TRAY_BLOCK_ID,
+  TRAY_RAMP_ID_PREFIX,
   transitionGameState,
   updateBlockTransform,
   updateRampTransform,
@@ -28,6 +29,7 @@ describe("game-state transitions", () => {
       blockTransforms: {},
       selectedComponentId: null,
       trayBlockCount: 1,
+      trayRampCount: 0,
     });
     expect(getEnabledControls(INITIAL_GAME_STATE)).toEqual({
       edit: false,
@@ -58,11 +60,10 @@ describe("game-state transitions", () => {
       componentId: "upper-ramp",
     });
     const blockSelected = transitionGameState(upperSelected, {
-      type: "select-component",
-      componentId: "guide-block",
+      type: "spawn-tray-block",
     });
     expect(upperSelected.selectedComponentId).toBe("upper-ramp");
-    expect(blockSelected.selectedComponentId).toBe("guide-block");
+    expect(blockSelected.selectedComponentId).toBe(TRAY_BLOCK_ID);
     expect(
       transitionGameState(blockSelected, "deselect").selectedComponentId,
     ).toBeNull();
@@ -72,7 +73,7 @@ describe("game-state transitions", () => {
     expect(
       transitionGameState(running, {
         type: "select-component",
-        componentId: "guide-block",
+        componentId: TRAY_BLOCK_ID,
       }),
     ).toEqual(running);
   });
@@ -100,16 +101,15 @@ describe("game-state transitions", () => {
 
   it("moves only the selected block", () => {
     const selected = transitionGameState(INITIAL_GAME_STATE, {
-      type: "select-component",
-      componentId: "guide-block",
+      type: "spawn-tray-block",
     });
-    const moved = updateBlockTransform(selected, "guide-block", blockTransform);
+    const moved = updateBlockTransform(selected, TRAY_BLOCK_ID, blockTransform);
     const attemptedRamp = updateRampTransform(
       moved,
       "upper-ramp",
       upperRampTransform,
     );
-    expect(moved.blockTransforms).toEqual({ "guide-block": blockTransform });
+    expect(moved.blockTransforms).toEqual({ [TRAY_BLOCK_ID]: blockTransform });
     expect(attemptedRamp).toEqual(moved);
   });
 
@@ -128,16 +128,17 @@ describe("game-state transitions", () => {
       running,
     );
     expect(transitionGameState(spawned, "reset").trayBlockCount).toBe(1);
+    expect(transitionGameState(spawned, "reset").trayRampCount).toBe(0);
   });
 
-  it("clears selection and returns a removed tray block to inventory", () => {
+  it("clears selection and returns removed tray parts to inventory", () => {
     const spawned = transitionGameState(INITIAL_GAME_STATE, {
       type: "spawn-tray-block",
     });
     const removedTrayBlock = transitionGameState(spawned, {
       type: "remove-component",
       componentId: TRAY_BLOCK_ID,
-      returnsTrayBlock: true,
+      returnsTrayPart: "block",
     });
     expect(removedTrayBlock.selectedComponentId).toBeNull();
     expect(removedTrayBlock.trayBlockCount).toBe(1);
@@ -154,19 +155,80 @@ describe("game-state transitions", () => {
     const removedRamp = transitionGameState(movedRamp, {
       type: "remove-component",
       componentId: "upper-ramp",
-      returnsTrayBlock: false,
+      returnsTrayPart: "ramp",
     });
     expect(removedRamp.rampTransforms).toEqual({});
     expect(removedRamp.selectedComponentId).toBeNull();
+    expect(removedRamp.trayRampCount).toBe(1);
+
+    const selectedLowerRamp = transitionGameState(removedRamp, {
+      type: "select-component",
+      componentId: "lower-ramp",
+    });
+    const removedLowerRamp = transitionGameState(selectedLowerRamp, {
+      type: "remove-component",
+      componentId: "lower-ramp",
+      returnsTrayPart: "ramp",
+    });
+    expect(removedLowerRamp.trayRampCount).toBe(2);
 
     const running = transitionGameState(movedRamp, "toggle-simulation");
     expect(
       transitionGameState(running, {
         type: "remove-component",
         componentId: "upper-ramp",
-        returnsTrayBlock: false,
+        returnsTrayPart: "ramp",
       }),
     ).toEqual(running);
+  });
+
+  it("cycles player ramps through removal, tray placement, and reset", () => {
+    const afterRemovingUpper = transitionGameState(INITIAL_GAME_STATE, {
+      type: "remove-component",
+      componentId: "upper-ramp",
+      returnsTrayPart: "ramp",
+    });
+    expect(afterRemovingUpper.trayRampCount).toBe(1);
+
+    const afterRemovingBoth = transitionGameState(afterRemovingUpper, {
+      type: "remove-component",
+      componentId: "lower-ramp",
+      returnsTrayPart: "ramp",
+    });
+    expect(afterRemovingBoth.trayRampCount).toBe(2);
+
+    const firstTrayRampId = `${TRAY_RAMP_ID_PREFIX}1`;
+    const afterPlacingFirst = transitionGameState(afterRemovingBoth, {
+      type: "spawn-tray-ramp",
+      componentId: firstTrayRampId,
+    });
+    expect(afterPlacingFirst.trayRampCount).toBe(1);
+    expect(afterPlacingFirst.selectedComponentId).toBe(firstTrayRampId);
+
+    const secondTrayRampId = `${TRAY_RAMP_ID_PREFIX}2`;
+    const afterPlacingBoth = transitionGameState(afterPlacingFirst, {
+      type: "spawn-tray-ramp",
+      componentId: secondTrayRampId,
+    });
+    expect(afterPlacingBoth.trayRampCount).toBe(0);
+    expect(afterPlacingBoth.selectedComponentId).toBe(secondTrayRampId);
+
+    const afterRemovingTrayRamps = transitionGameState(
+      transitionGameState(afterPlacingBoth, {
+        type: "remove-component",
+        componentId: firstTrayRampId,
+        returnsTrayPart: "ramp",
+      }),
+      {
+        type: "remove-component",
+        componentId: secondTrayRampId,
+        returnsTrayPart: "ramp",
+      },
+    );
+    expect(afterRemovingTrayRamps.trayRampCount).toBe(2);
+    expect(transitionGameState(afterRemovingTrayRamps, "reset")).toEqual(
+      INITIAL_GAME_STATE,
+    );
   });
 
   it("persists both ramp transforms through Run and Pause, but not Reset", () => {
@@ -189,12 +251,11 @@ describe("game-state transitions", () => {
       lowerRampTransform,
     );
     const blockSelected = transitionGameState(movedBoth, {
-      type: "select-component",
-      componentId: "guide-block",
+      type: "spawn-tray-block",
     });
     const movedAll = updateBlockTransform(
       blockSelected,
-      "guide-block",
+      TRAY_BLOCK_ID,
       blockTransform,
     );
 
@@ -205,7 +266,9 @@ describe("game-state transitions", () => {
       "lower-ramp": lowerRampTransform,
     });
     expect(paused.rampTransforms).toEqual(running.rampTransforms);
-    expect(running.blockTransforms).toEqual({ "guide-block": blockTransform });
+    expect(running.blockTransforms).toEqual({
+      [TRAY_BLOCK_ID]: blockTransform,
+    });
     expect(paused.blockTransforms).toEqual(running.blockTransforms);
     expect(transitionGameState(paused, "reset").rampTransforms).toEqual({});
     expect(transitionGameState(paused, "reset").blockTransforms).toEqual({});
@@ -224,6 +287,7 @@ describe("game-state transitions", () => {
       blockTransforms: {},
       selectedComponentId: null,
       trayBlockCount: 1,
+      trayRampCount: 0,
     });
     expect(getEnabledControls(success)).toEqual({
       edit: false,
@@ -242,9 +306,10 @@ describe("reset behavior", () => {
         "upper-ramp": upperRampTransform,
         "lower-ramp": lowerRampTransform,
       },
-      blockTransforms: { "guide-block": blockTransform },
-      selectedComponentId: "guide-block",
+      blockTransforms: { [TRAY_BLOCK_ID]: blockTransform },
+      selectedComponentId: TRAY_BLOCK_ID,
       trayBlockCount: 0 as const,
+      trayRampCount: 0 as const,
     };
     const firstReset = transitionGameState(changed, "reset");
     const secondReset = transitionGameState(firstReset, "reset");

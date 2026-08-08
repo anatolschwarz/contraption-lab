@@ -37,13 +37,15 @@ const isRamp = (value: unknown): value is RampDefinition =>
   isRectangle(value) &&
   typeof value.id === "string" &&
   value.id.trim() !== "" &&
+  (value.ownership === "fixed" || value.ownership === "player") &&
   isFiniteNumber(value.rotation);
 
 const isBlock = (value: unknown): value is BlockDefinition =>
   isRecord(value) &&
   isRectangle(value) &&
   typeof value.id === "string" &&
-  value.id.trim() !== "";
+  value.id.trim() !== "" &&
+  (value.ownership === "fixed" || value.ownership === "player");
 
 export function validateLevel(value: unknown): LevelDefinition {
   if (!isRecord(value)) {

@@ -9,7 +9,8 @@
       "y": 280,
       "width": 260,
       "height": 24,
-      "rotation": 0
+      "rotation": 0,
+      "ownership": "player"
     },
     {
       "id": "lower-ramp",
@@ -17,7 +18,8 @@
       "y": 380,
       "width": 310,
       "height": 24,
-      "rotation": 0
+      "rotation": 0,
+      "ownership": "player"
     }
   ],
   "blocks": [
@@ -26,7 +28,8 @@
       "x": 850,
       "y": 150,
       "width": 100,
-      "height": 80
+      "height": 80,
+      "ownership": "fixed"
     }
   ],
   "floor": { "x": 480, "y": 510, "width": 960, "height": 60 },

@@ -34,9 +34,14 @@ function handleAction(action: GameAction): void {
   if (
     typeof action === "object" &&
     action.type === "spawn-tray-block" &&
-    !scene.spawnTrayBlock()
+    !scene.spawnTrayBlock(state.trayBlockCount)
   ) {
     return;
+  }
+  if (typeof action === "object" && action.type === "spawn-tray-ramp") {
+    const componentId = scene.spawnTrayRamp(state.trayRampCount);
+    if (!componentId) return;
+    action = { ...action, componentId };
   }
   const nextState = transitionGameState(state, action);
   if (action === "reset") scene.resetLevel();
@@ -59,11 +64,11 @@ const scene = new PrototypeScene(
     state = updateBlockTransform(state, blockId, transform);
     applyState();
   },
-  (componentId, returnsTrayBlock) =>
+  (componentId, returnsTrayPart) =>
     handleAction({
       type: "remove-component",
       componentId,
-      returnsTrayBlock,
+      returnsTrayPart,
     }),
 );
 

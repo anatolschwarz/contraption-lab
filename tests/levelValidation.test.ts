@@ -45,4 +45,19 @@ describe("validateLevel", () => {
       }),
     ).toThrow(/editable component ids.*unique/i);
   });
+
+  it("requires explicit fixed or player ownership for every part", () => {
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        ramps: [{ ...rawLevel.ramps[0], ownership: "unknown" }],
+      }),
+    ).toThrow(/ramps/i);
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        blocks: [{ ...rawLevel.blocks[0], ownership: "unknown" }],
+      }),
+    ).toThrow(/blocks/i);
+  });
 });

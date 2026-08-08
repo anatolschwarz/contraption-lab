@@ -1,10 +1,11 @@
 import Phaser from "phaser";
-import type {
-  BlockDefinition,
-  LevelDefinition,
-  RampDefinition,
+import {
+  isEditablePart,
+  type BlockDefinition,
+  type LevelDefinition,
+  type RampDefinition,
 } from "../levels/levelTypes";
-import { TRAY_BLOCK_ID } from "../state/gameState";
+import { TRAY_BLOCK_ID, TRAY_RAMP_ID_PREFIX } from "../state/gameState";
 import type { BlockTransform, RampTransform } from "../state/gameState";
 import {
   clampRampPosition,
@@ -21,6 +22,8 @@ const RAMP_STROKE_COLOR = 0x4c3526;
 const SELECTED_RAMP_STROKE_COLOR = 0xffd166;
 const BLOCK_FILL_COLOR = 0x6f7d78;
 const BLOCK_STROKE_COLOR = 0x344e41;
+const FIXED_BLOCK_FILL_COLOR = 0x465053;
+const FIXED_BLOCK_STROKE_COLOR = 0x252b2d;
 const DOUBLE_CLICK_WINDOW_MS = 350;
 const TRAY_BLOCK_DEFINITION: BlockDefinition = {
   id: TRAY_BLOCK_ID,
@@ -28,22 +31,38 @@ const TRAY_BLOCK_DEFINITION: BlockDefinition = {
   y: 320,
   width: 80,
   height: 60,
+  ownership: "player",
 };
-
+const TRAY_RAMP_DEFINITION: Omit<RampDefinition, "id" | "x" | "y"> = {
+  width: 200,
+  height: 24,
+  rotation: 0,
+  ownership: "player",
+};
+const TRAY_RAMP_CANDIDATES = [
+  { x: 380, y: 340 },
+  { x: 380, y: 410 },
+  { x: 440, y: 230 },
+];
 interface EditableRamp {
   definition: RampDefinition;
+  editable: boolean;
+  fromTray: boolean;
   shape: Phaser.GameObjects.Rectangle;
   selectionText: Phaser.GameObjects.Text;
 }
 
 interface EditableBlock {
   definition: BlockDefinition;
+  editable: boolean;
+  fixedLabel?: Phaser.GameObjects.Text;
   fromTray: boolean;
   shape: Phaser.GameObjects.Rectangle;
   selectionText: Phaser.GameObjects.Text;
 }
 
 interface EditableComponent {
+  editable: boolean;
   shape: Phaser.GameObjects.Rectangle;
   selectionText: Phaser.GameObjects.Text;
 }
@@ -77,7 +96,7 @@ export class PrototypeScene extends Phaser.Scene {
     ) => void,
     private readonly onComponentRemove: (
       componentId: string,
-      returnsTrayBlock: boolean,
+      returnsTrayPart: "block" | "ramp" | null,
     ) => void,
   ) {
     super("prototype");
@@ -159,6 +178,7 @@ export class PrototypeScene extends Phaser.Scene {
 
   setRampTransforms(transforms: Readonly<Record<string, RampTransform>>): void {
     for (const ramp of this.ramps.values()) {
+      if (!ramp.editable) continue;
       const transform = transforms[ramp.definition.id] ?? {
         position: ramp.definition,
         rotation: ramp.definition.rotation,
@@ -177,6 +197,7 @@ export class PrototypeScene extends Phaser.Scene {
     transforms: Readonly<Record<string, BlockTransform>>,
   ): void {
     for (const block of this.blocks.values()) {
+      if (!block.editable) continue;
       const position =
         transforms[block.definition.id]?.position ?? block.definition;
       this.updateBlockPosition(
@@ -188,8 +209,12 @@ export class PrototypeScene extends Phaser.Scene {
     }
   }
 
-  spawnTrayBlock(): boolean {
-    if (!this.editInteractionEnabled || this.blocks.has(TRAY_BLOCK_ID)) {
+  spawnTrayBlock(availableCount: number): boolean {
+    if (
+      !this.editInteractionEnabled ||
+      availableCount <= 0 ||
+      this.blocks.has(TRAY_BLOCK_ID)
+    ) {
       return false;
     }
     const position = clampRampPosition(TRAY_BLOCK_DEFINITION, {
@@ -208,6 +233,29 @@ export class PrototypeScene extends Phaser.Scene {
     }
     this.createBlock(definition, true);
     return true;
+  }
+
+  spawnTrayRamp(availableCount: number): string | null {
+    if (!this.editInteractionEnabled || availableCount <= 0) return null;
+    const id = this.getNextTrayRampId();
+    for (const position of TRAY_RAMP_CANDIDATES) {
+      const definition: RampDefinition = {
+        ...TRAY_RAMP_DEFINITION,
+        ...position,
+        id,
+      };
+      if (
+        isRectanglePlacementValid(
+          definition,
+          this.getCurrentBall(),
+          this.getOtherPlacements(id),
+        )
+      ) {
+        this.createRamp(definition, true);
+        return id;
+      }
+    }
+    return null;
   }
 
   resetLevel(): void {
@@ -260,7 +308,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.updateSelectionDisplay();
   }
 
-  private createRamp(definition: RampDefinition): void {
+  private createRamp(definition: RampDefinition, fromTray = false): void {
     const shape = this.add
       .rectangle(
         definition.x,
@@ -305,19 +353,29 @@ export class PrototypeScene extends Phaser.Scene {
       },
     );
 
-    this.ramps.set(definition.id, { definition, shape, selectionText });
+    this.ramps.set(definition.id, {
+      definition,
+      editable: isEditablePart(definition, fromTray),
+      fromTray,
+      shape,
+      selectionText,
+    });
   }
 
   private createBlock(definition: BlockDefinition, fromTray = false): void {
+    const editable = isEditablePart(definition, fromTray);
     const shape = this.add
       .rectangle(
         definition.x,
         definition.y,
         definition.width,
         definition.height,
-        BLOCK_FILL_COLOR,
+        editable ? BLOCK_FILL_COLOR : FIXED_BLOCK_FILL_COLOR,
       )
-      .setStrokeStyle(4, BLOCK_STROKE_COLOR);
+      .setStrokeStyle(
+        4,
+        editable ? BLOCK_STROKE_COLOR : FIXED_BLOCK_STROKE_COLOR,
+      );
     this.matter.add.gameObject(shape, {
       isStatic: true,
       label: `block:${definition.id}`,
@@ -333,6 +391,17 @@ export class PrototypeScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(2)
       .setVisible(false);
+    const fixedLabel = editable
+      ? undefined
+      : this.add
+          .text(definition.x, definition.y, "FIXED", {
+            color: "#f7f3ea",
+            fontFamily: "Arial, sans-serif",
+            fontSize: "13px",
+            fontStyle: "bold",
+          })
+          .setOrigin(0.5)
+          .setDepth(2);
 
     shape.on(
       Phaser.Input.Events.POINTER_DOWN,
@@ -354,6 +423,8 @@ export class PrototypeScene extends Phaser.Scene {
 
     this.blocks.set(definition.id, {
       definition,
+      editable,
+      fixedLabel,
       fromTray,
       shape,
       selectionText,
@@ -369,6 +440,11 @@ export class PrototypeScene extends Phaser.Scene {
   ): void {
     event.stopPropagation();
     if (!this.editInteractionEnabled) return;
+    const component =
+      componentType === "ramp"
+        ? this.ramps.get(componentId)
+        : this.blocks.get(componentId);
+    if (!component?.editable) return;
     const isDoubleClick =
       this.lastComponentClick?.componentId === componentId &&
       pointer.downTime - this.lastComponentClick.time <= DOUBLE_CLICK_WINDOW_MS;
@@ -397,19 +473,26 @@ export class PrototypeScene extends Phaser.Scene {
   ): void {
     if (componentType === "ramp") {
       const ramp = this.ramps.get(componentId);
-      if (!ramp) return;
+      if (!ramp || !ramp.editable) return;
       ramp.shape.destroy();
       ramp.selectionText.destroy();
       this.ramps.delete(componentId);
-      this.onComponentRemove(componentId, false);
+      this.onComponentRemove(
+        componentId,
+        isEditablePart(ramp.definition, ramp.fromTray) ? "ramp" : null,
+      );
       return;
     }
     const block = this.blocks.get(componentId);
-    if (!block) return;
+    if (!block || !block.editable) return;
     block.shape.destroy();
     block.selectionText.destroy();
+    block.fixedLabel?.destroy();
     this.blocks.delete(componentId);
-    this.onComponentRemove(componentId, block.fromTray);
+    this.onComponentRemove(
+      componentId,
+      isEditablePart(block.definition, block.fromTray) ? "block" : null,
+    );
   }
 
   private restoreLevelParts(): void {
@@ -420,6 +503,7 @@ export class PrototypeScene extends Phaser.Scene {
     for (const block of this.blocks.values()) {
       block.shape.destroy();
       block.selectionText.destroy();
+      block.fixedLabel?.destroy();
     }
     this.ramps.clear();
     this.blocks.clear();
@@ -431,6 +515,12 @@ export class PrototypeScene extends Phaser.Scene {
     }
   }
 
+  private getNextTrayRampId(): string {
+    let index = 1;
+    while (this.ramps.has(`${TRAY_RAMP_ID_PREFIX}${index}`)) index += 1;
+    return `${TRAY_RAMP_ID_PREFIX}${index}`;
+  }
+
   private updateRampTransform(
     rampId: string,
     x: number,
@@ -440,6 +530,7 @@ export class PrototypeScene extends Phaser.Scene {
   ): void {
     const ramp = this.ramps.get(rampId);
     if (!ramp) return;
+    if (notify && !ramp.editable) return;
     const position = clampRampPosition(
       { x, y },
       { ...ramp.definition, rotation },
@@ -460,6 +551,7 @@ export class PrototypeScene extends Phaser.Scene {
   ): void {
     const block = this.blocks.get(blockId);
     if (!block) return;
+    if (notify && !block.editable) return;
     const position = clampRampPosition(
       { x, y },
       { ...block.definition, rotation: 0 },
@@ -535,7 +627,7 @@ export class PrototypeScene extends Phaser.Scene {
   private rotateSelectedRamp(direction: -1 | 1): void {
     if (!this.editInteractionEnabled || !this.selectedComponentId) return;
     const ramp = this.ramps.get(this.selectedComponentId);
-    if (!ramp) return;
+    if (!ramp || !ramp.editable) return;
     this.updateRampTransform(
       ramp.definition.id,
       ramp.shape.x,
@@ -551,7 +643,11 @@ export class PrototypeScene extends Phaser.Scene {
       this.updateComponentSelection(rampId, ramp, RAMP_STROKE_COLOR);
     }
     for (const [blockId, block] of this.blocks) {
-      this.updateComponentSelection(blockId, block, BLOCK_STROKE_COLOR);
+      this.updateComponentSelection(
+        blockId,
+        block,
+        block.editable ? BLOCK_STROKE_COLOR : FIXED_BLOCK_STROKE_COLOR,
+      );
     }
   }
 
@@ -567,7 +663,7 @@ export class PrototypeScene extends Phaser.Scene {
       selected ? 5 : 4,
       selected ? SELECTED_RAMP_STROKE_COLOR : strokeColor,
     );
-    if (this.editInteractionEnabled) {
+    if (this.editInteractionEnabled && component.editable) {
       component.shape.setInteractive({ useHandCursor: true });
     } else {
       component.shape.disableInteractive();

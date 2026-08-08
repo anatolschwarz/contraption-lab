@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import rawLevel from "../src/levels/prototype.json";
+import { isPlayerPart } from "../src/levels/levelTypes";
 import { validateLevel } from "../src/levels/validateLevel";
 
 describe("the bundled relay-ramp puzzle", () => {
@@ -27,7 +28,7 @@ describe("the bundled relay-ramp puzzle", () => {
     );
   });
 
-  it("defines an editable block away from the untouched puzzle path", () => {
+  it("defines a fixed guide block away from the untouched puzzle path", () => {
     expect(level.blocks.map((block) => block.id)).toEqual(["guide-block"]);
     const block = level.blocks[0]!;
     expect(level.ball.x + level.ball.radius).toBeLessThan(
@@ -36,5 +37,10 @@ describe("the bundled relay-ramp puzzle", () => {
     for (const ramp of level.ramps) {
       expect(block.y + block.height / 2).toBeLessThan(ramp.y - ramp.height / 2);
     }
+  });
+
+  it("labels ramps as preplaced player parts and the guide block as fixed", () => {
+    expect(level.ramps.every(isPlayerPart)).toBe(true);
+    expect(level.blocks.every(isPlayerPart)).toBe(false);
   });
 });
