@@ -4,6 +4,7 @@ import {
   getSimulationButtonLabel,
   INITIAL_GAME_STATE,
   transitionGameState,
+  updateBlockTransform,
   updateRampTransform,
 } from "../src/state/gameState";
 
@@ -15,6 +16,7 @@ const lowerRampTransform = {
   position: { x: 510, y: 350 },
   rotation: 0.35,
 };
+const blockTransform = { position: { x: 830, y: 180 } };
 
 describe("game-state transitions", () => {
   it("starts in Edit with only valid actions enabled", () => {
@@ -22,7 +24,8 @@ describe("game-state transitions", () => {
       mode: "edit",
       succeeded: false,
       rampTransforms: {},
-      selectedRampId: null,
+      blockTransforms: {},
+      selectedComponentId: null,
     });
     expect(getEnabledControls(INITIAL_GAME_STATE)).toEqual({
       edit: false,
@@ -47,35 +50,35 @@ describe("game-state transitions", () => {
     );
   });
 
-  it("selects exactly one ramp only in Edit mode", () => {
+  it("selects exactly one editable component only in Edit mode", () => {
     const upperSelected = transitionGameState(INITIAL_GAME_STATE, {
-      type: "select-ramp",
-      rampId: "upper-ramp",
+      type: "select-component",
+      componentId: "upper-ramp",
     });
-    const lowerSelected = transitionGameState(upperSelected, {
-      type: "select-ramp",
-      rampId: "lower-ramp",
+    const blockSelected = transitionGameState(upperSelected, {
+      type: "select-component",
+      componentId: "guide-block",
     });
-    expect(upperSelected.selectedRampId).toBe("upper-ramp");
-    expect(lowerSelected.selectedRampId).toBe("lower-ramp");
-    expect(transitionGameState(lowerSelected, "deselect").selectedRampId).toBe(
-      null,
-    );
+    expect(upperSelected.selectedComponentId).toBe("upper-ramp");
+    expect(blockSelected.selectedComponentId).toBe("guide-block");
+    expect(
+      transitionGameState(blockSelected, "deselect").selectedComponentId,
+    ).toBeNull();
 
     const running = transitionGameState(upperSelected, "toggle-simulation");
-    expect(running.selectedRampId).toBeNull();
+    expect(running.selectedComponentId).toBeNull();
     expect(
       transitionGameState(running, {
-        type: "select-ramp",
-        rampId: "lower-ramp",
+        type: "select-component",
+        componentId: "guide-block",
       }),
     ).toEqual(running);
   });
 
   it("moves and rotates only the selected ramp", () => {
     const upperSelected = transitionGameState(INITIAL_GAME_STATE, {
-      type: "select-ramp",
-      rampId: "upper-ramp",
+      type: "select-component",
+      componentId: "upper-ramp",
     });
     const movedUpper = updateRampTransform(
       upperSelected,
@@ -93,10 +96,25 @@ describe("game-state transitions", () => {
     expect(attemptedLower).toEqual(movedUpper);
   });
 
+  it("moves only the selected block", () => {
+    const selected = transitionGameState(INITIAL_GAME_STATE, {
+      type: "select-component",
+      componentId: "guide-block",
+    });
+    const moved = updateBlockTransform(selected, "guide-block", blockTransform);
+    const attemptedRamp = updateRampTransform(
+      moved,
+      "upper-ramp",
+      upperRampTransform,
+    );
+    expect(moved.blockTransforms).toEqual({ "guide-block": blockTransform });
+    expect(attemptedRamp).toEqual(moved);
+  });
+
   it("persists both ramp transforms through Run and Pause, but not Reset", () => {
     const upperSelected = transitionGameState(INITIAL_GAME_STATE, {
-      type: "select-ramp",
-      rampId: "upper-ramp",
+      type: "select-component",
+      componentId: "upper-ramp",
     });
     const movedUpper = updateRampTransform(
       upperSelected,
@@ -104,23 +122,35 @@ describe("game-state transitions", () => {
       upperRampTransform,
     );
     const lowerSelected = transitionGameState(movedUpper, {
-      type: "select-ramp",
-      rampId: "lower-ramp",
+      type: "select-component",
+      componentId: "lower-ramp",
     });
     const movedBoth = updateRampTransform(
       lowerSelected,
       "lower-ramp",
       lowerRampTransform,
     );
+    const blockSelected = transitionGameState(movedBoth, {
+      type: "select-component",
+      componentId: "guide-block",
+    });
+    const movedAll = updateBlockTransform(
+      blockSelected,
+      "guide-block",
+      blockTransform,
+    );
 
-    const running = transitionGameState(movedBoth, "toggle-simulation");
+    const running = transitionGameState(movedAll, "toggle-simulation");
     const paused = transitionGameState(running, "toggle-simulation");
     expect(running.rampTransforms).toEqual({
       "upper-ramp": upperRampTransform,
       "lower-ramp": lowerRampTransform,
     });
     expect(paused.rampTransforms).toEqual(running.rampTransforms);
+    expect(running.blockTransforms).toEqual({ "guide-block": blockTransform });
+    expect(paused.blockTransforms).toEqual(running.blockTransforms);
     expect(transitionGameState(paused, "reset").rampTransforms).toEqual({});
+    expect(transitionGameState(paused, "reset").blockTransforms).toEqual({});
   });
 
   it("pauses and locks controls after success", () => {
@@ -133,7 +163,8 @@ describe("game-state transitions", () => {
       mode: "paused",
       succeeded: true,
       rampTransforms: {},
-      selectedRampId: null,
+      blockTransforms: {},
+      selectedComponentId: null,
     });
     expect(getEnabledControls(success)).toEqual({
       edit: false,
@@ -152,7 +183,8 @@ describe("reset behavior", () => {
         "upper-ramp": upperRampTransform,
         "lower-ramp": lowerRampTransform,
       },
-      selectedRampId: "lower-ramp",
+      blockTransforms: { "guide-block": blockTransform },
+      selectedComponentId: "guide-block",
     };
     const firstReset = transitionGameState(changed, "reset");
     const secondReset = transitionGameState(firstReset, "reset");

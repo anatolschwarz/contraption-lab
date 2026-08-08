@@ -9,6 +9,7 @@ import {
   transitionGameState,
   type GameAction,
   type GameState,
+  updateBlockTransform,
   updateRampTransform,
 } from "./state/gameState";
 import { Controls } from "./ui/Controls";
@@ -23,9 +24,10 @@ function applyState(): void {
   scene.setSimulationRunning(state.mode === "running" && !state.succeeded);
   scene.setEditSelection(
     state.mode === "edit" && !state.succeeded,
-    state.selectedRampId,
+    state.selectedComponentId,
   );
   scene.setRampTransforms(state.rampTransforms);
+  scene.setBlockTransforms(state.blockTransforms);
 }
 
 function handleAction(action: GameAction): void {
@@ -38,10 +40,16 @@ function handleAction(action: GameAction): void {
 const scene = new PrototypeScene(
   level,
   () => handleAction("success"),
-  (rampId) =>
-    handleAction(rampId ? { type: "select-ramp", rampId } : "deselect"),
+  (componentId) =>
+    handleAction(
+      componentId ? { type: "select-component", componentId } : "deselect",
+    ),
   (rampId, transform) => {
     state = updateRampTransform(state, rampId, transform);
+    applyState();
+  },
+  (blockId, transform) => {
+    state = updateBlockTransform(state, blockId, transform);
     applyState();
   },
 );

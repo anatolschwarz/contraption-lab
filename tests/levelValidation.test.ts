@@ -27,4 +27,22 @@ describe("validateLevel", () => {
       }),
     ).toThrow(/unique/i);
   });
+
+  it("requires uniquely identified blocks that do not reuse ramp ids", () => {
+    expect(() => validateLevel({ ...rawLevel, blocks: [] })).toThrow(
+      /at least one/i,
+    );
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        blocks: [rawLevel.blocks[0], { ...rawLevel.blocks[0] }],
+      }),
+    ).toThrow(/block ids.*unique/i);
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        blocks: [{ ...rawLevel.blocks[0], id: "upper-ramp" }],
+      }),
+    ).toThrow(/editable component ids.*unique/i);
+  });
 });

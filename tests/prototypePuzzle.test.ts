@@ -26,4 +26,15 @@ describe("the bundled relay-ramp puzzle", () => {
       level.goal.width / 2 + level.ball.radius,
     );
   });
+
+  it("defines an editable block away from the untouched puzzle path", () => {
+    expect(level.blocks.map((block) => block.id)).toEqual(["guide-block"]);
+    const block = level.blocks[0]!;
+    expect(level.ball.x + level.ball.radius).toBeLessThan(
+      block.x - block.width / 2,
+    );
+    for (const ramp of level.ramps) {
+      expect(block.y + block.height / 2).toBeLessThan(ramp.y - ramp.height / 2);
+    }
+  });
 });

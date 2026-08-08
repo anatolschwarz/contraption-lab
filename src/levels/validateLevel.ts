@@ -1,4 +1,5 @@
 import type {
+  BlockDefinition,
   LevelDefinition,
   Point,
   RampDefinition,
@@ -38,12 +39,18 @@ const isRamp = (value: unknown): value is RampDefinition =>
   value.id.trim() !== "" &&
   isFiniteNumber(value.rotation);
 
+const isBlock = (value: unknown): value is BlockDefinition =>
+  isRecord(value) &&
+  isRectangle(value) &&
+  typeof value.id === "string" &&
+  value.id.trim() !== "";
+
 export function validateLevel(value: unknown): LevelDefinition {
   if (!isRecord(value)) {
     throw new Error("Level data must be an object.");
   }
 
-  const { id, title, ball, ramps, floor, goal, gravity } = value;
+  const { id, title, ball, ramps, blocks, floor, goal, gravity } = value;
   if (typeof id !== "string" || id.trim() === "") {
     throw new Error("Level id must be a non-empty string.");
   }
@@ -61,6 +68,20 @@ export function validateLevel(value: unknown): LevelDefinition {
   if (new Set(ramps.map((ramp) => ramp.id)).size !== ramps.length) {
     throw new Error("Level ramp ids must be unique.");
   }
+  if (!Array.isArray(blocks) || blocks.length < 1 || !blocks.every(isBlock)) {
+    throw new Error(
+      "Level blocks must contain at least one valid block with an id.",
+    );
+  }
+  if (new Set(blocks.map((block) => block.id)).size !== blocks.length) {
+    throw new Error("Level block ids must be unique.");
+  }
+  if (
+    new Set([...ramps, ...blocks].map((component) => component.id)).size !==
+    ramps.length + blocks.length
+  ) {
+    throw new Error("Level editable component ids must be unique.");
+  }
   if (!isRectangle(floor)) {
     throw new Error("Level floor must be a valid rectangle.");
   }
@@ -71,5 +92,5 @@ export function validateLevel(value: unknown): LevelDefinition {
     throw new Error("Level gravity must have finite x/y values.");
   }
 
-  return { id, title, ball, ramps, floor, goal, gravity };
+  return { id, title, ball, ramps, blocks, floor, goal, gravity };
 }

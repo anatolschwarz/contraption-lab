@@ -7,9 +7,13 @@ export interface RampTransform {
   rotation: number;
 }
 
-export interface SelectRampAction {
-  type: "select-ramp";
-  rampId: string;
+export interface BlockTransform {
+  position: Point;
+}
+
+export interface SelectComponentAction {
+  type: "select-component";
+  componentId: string;
 }
 
 export type GameAction =
@@ -18,20 +22,22 @@ export type GameAction =
   | "reset"
   | "success"
   | "deselect"
-  | SelectRampAction;
+  | SelectComponentAction;
 
 export interface GameState {
   mode: GameMode;
   succeeded: boolean;
   rampTransforms: Record<string, RampTransform>;
-  selectedRampId: string | null;
+  blockTransforms: Record<string, BlockTransform>;
+  selectedComponentId: string | null;
 }
 
 export const INITIAL_GAME_STATE: Readonly<GameState> = Object.freeze({
   mode: "edit",
   succeeded: false,
   rampTransforms: {},
-  selectedRampId: null,
+  blockTransforms: {},
+  selectedComponentId: null,
 });
 
 export interface EnabledControls {
@@ -45,26 +51,39 @@ export function transitionGameState(
   action: GameAction,
 ): GameState {
   if (action === "reset") {
-    return { ...INITIAL_GAME_STATE, rampTransforms: {} };
+    return {
+      ...INITIAL_GAME_STATE,
+      rampTransforms: {},
+      blockTransforms: {},
+    };
   }
   if (action === "success" && state.mode === "running") {
     return {
       mode: "paused",
       succeeded: true,
       rampTransforms: { ...state.rampTransforms },
-      selectedRampId: null,
+      blockTransforms: { ...state.blockTransforms },
+      selectedComponentId: null,
     };
   }
   if (state.succeeded) {
-    return { ...state, rampTransforms: { ...state.rampTransforms } };
+    return {
+      ...state,
+      rampTransforms: { ...state.rampTransforms },
+      blockTransforms: { ...state.blockTransforms },
+    };
   }
-  if (typeof action === "object" && action.type === "select-ramp") {
+  if (typeof action === "object" && action.type === "select-component") {
     return state.mode === "edit"
-      ? { ...state, selectedRampId: action.rampId }
-      : { ...state, rampTransforms: { ...state.rampTransforms } };
+      ? { ...state, selectedComponentId: action.componentId }
+      : {
+          ...state,
+          rampTransforms: { ...state.rampTransforms },
+          blockTransforms: { ...state.blockTransforms },
+        };
   }
   if (action === "deselect" && state.mode === "edit") {
-    return { ...state, selectedRampId: null };
+    return { ...state, selectedComponentId: null };
   }
   if (
     action === "toggle-simulation" &&
@@ -74,7 +93,8 @@ export function transitionGameState(
       mode: "running",
       succeeded: false,
       rampTransforms: { ...state.rampTransforms },
-      selectedRampId: null,
+      blockTransforms: { ...state.blockTransforms },
+      selectedComponentId: null,
     };
   }
   if (action === "toggle-simulation" && state.mode === "running") {
@@ -82,7 +102,8 @@ export function transitionGameState(
       mode: "paused",
       succeeded: false,
       rampTransforms: { ...state.rampTransforms },
-      selectedRampId: null,
+      blockTransforms: { ...state.blockTransforms },
+      selectedComponentId: null,
     };
   }
   if (action === "edit" && state.mode !== "edit") {
@@ -90,10 +111,15 @@ export function transitionGameState(
       mode: "edit",
       succeeded: false,
       rampTransforms: { ...state.rampTransforms },
-      selectedRampId: null,
+      blockTransforms: { ...state.blockTransforms },
+      selectedComponentId: null,
     };
   }
-  return { ...state, rampTransforms: { ...state.rampTransforms } };
+  return {
+    ...state,
+    rampTransforms: { ...state.rampTransforms },
+    blockTransforms: { ...state.blockTransforms },
+  };
 }
 
 export function updateRampTransform(
@@ -104,9 +130,13 @@ export function updateRampTransform(
   if (
     state.mode !== "edit" ||
     state.succeeded ||
-    state.selectedRampId !== rampId
+    state.selectedComponentId !== rampId
   ) {
-    return { ...state, rampTransforms: { ...state.rampTransforms } };
+    return {
+      ...state,
+      rampTransforms: { ...state.rampTransforms },
+      blockTransforms: { ...state.blockTransforms },
+    };
   }
   return {
     ...state,
@@ -116,6 +146,32 @@ export function updateRampTransform(
         position: { ...transform.position },
         rotation: transform.rotation,
       },
+    },
+  };
+}
+
+export function updateBlockTransform(
+  state: Readonly<GameState>,
+  blockId: string,
+  transform: Readonly<BlockTransform>,
+): GameState {
+  if (
+    state.mode !== "edit" ||
+    state.succeeded ||
+    state.selectedComponentId !== blockId
+  ) {
+    return {
+      ...state,
+      rampTransforms: { ...state.rampTransforms },
+      blockTransforms: { ...state.blockTransforms },
+    };
+  }
+  return {
+    ...state,
+    rampTransforms: { ...state.rampTransforms },
+    blockTransforms: {
+      ...state.blockTransforms,
+      [blockId]: { position: { ...transform.position } },
     },
   };
 }

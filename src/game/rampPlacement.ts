@@ -10,7 +10,7 @@ export interface RampGeometry {
   rotation: number;
 }
 
-export interface RampPlacement extends Point, RampGeometry {}
+export interface RectanglePlacement extends Point, RampGeometry {}
 
 export interface CircleGeometry extends Point {
   radius: number;
@@ -36,19 +36,21 @@ export function rotateRampByStep(rotation: number, direction: -1 | 1): number {
   return Math.atan2(Math.sin(nextRotation), Math.cos(nextRotation));
 }
 
-export function isRampPlacementValid(
-  ramp: Readonly<RampPlacement>,
+export function isRectanglePlacementValid(
+  ramp: Readonly<RectanglePlacement>,
   ball: Readonly<CircleGeometry>,
-  otherRamps: ReadonlyArray<Readonly<RampPlacement>>,
+  otherRectangles: ReadonlyArray<Readonly<RectanglePlacement>>,
 ): boolean {
   return (
     !rampPenetratesCircle(ramp, ball) &&
-    !otherRamps.some((otherRamp) => rectanglesPenetrate(ramp, otherRamp))
+    !otherRectangles.some((otherRectangle) =>
+      rectanglesPenetrate(ramp, otherRectangle),
+    )
   );
 }
 
 function rampPenetratesCircle(
-  ramp: Readonly<RampPlacement>,
+  ramp: Readonly<RectanglePlacement>,
   circle: Readonly<CircleGeometry>,
 ): boolean {
   const cosine = Math.cos(ramp.rotation);
@@ -69,8 +71,8 @@ function rampPenetratesCircle(
 }
 
 function rectanglesPenetrate(
-  first: Readonly<RampPlacement>,
-  second: Readonly<RampPlacement>,
+  first: Readonly<RectanglePlacement>,
+  second: Readonly<RectanglePlacement>,
 ): boolean {
   return [...rectangleAxes(first), ...rectangleAxes(second)].every((axis) => {
     const firstProjection = projectRectangle(first, axis);
@@ -83,7 +85,7 @@ function rectanglesPenetrate(
   });
 }
 
-function rectangleAxes(rectangle: Readonly<RampPlacement>): Point[] {
+function rectangleAxes(rectangle: Readonly<RectanglePlacement>): Point[] {
   const cosine = Math.cos(rectangle.rotation);
   const sine = Math.sin(rectangle.rotation);
   return [
@@ -93,7 +95,7 @@ function rectangleAxes(rectangle: Readonly<RampPlacement>): Point[] {
 }
 
 function projectRectangle(
-  rectangle: Readonly<RampPlacement>,
+  rectangle: Readonly<RectanglePlacement>,
   axis: Readonly<Point>,
 ): { min: number; max: number } {
   const cosine = Math.cos(rectangle.rotation);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   clampRampPosition,
-  isRampPlacementValid,
+  isRectanglePlacementValid,
   RAMP_ROTATION_STEP,
   rotateRampByStep,
 } from "../src/game/rampPlacement";
@@ -32,7 +32,7 @@ describe("clampRampPosition", () => {
   });
 });
 
-describe("isRampPlacementValid", () => {
+describe("isRectanglePlacementValid", () => {
   const ball = { x: 120, y: 120, radius: 20 };
   const otherRamp = {
     x: 320,
@@ -45,19 +45,23 @@ describe("isRampPlacementValid", () => {
 
   it("accepts a clear ramp placement", () => {
     expect(
-      isRampPlacementValid({ ...candidate, x: 300, y: 150 }, ball, [otherRamp]),
+      isRectanglePlacementValid({ ...candidate, x: 300, y: 150 }, ball, [
+        otherRamp,
+      ]),
     ).toBe(true);
   });
 
   it("rejects a ramp placement that penetrates the ball", () => {
     expect(
-      isRampPlacementValid({ ...candidate, x: 120, y: 120 }, ball, [otherRamp]),
+      isRectanglePlacementValid({ ...candidate, x: 120, y: 120 }, ball, [
+        otherRamp,
+      ]),
     ).toBe(false);
   });
 
   it("allows the intentional goal overlap used by the solution", () => {
     expect(
-      isRampPlacementValid(
+      isRectanglePlacementValid(
         {
           x: 540,
           y: 395,
@@ -81,11 +85,31 @@ describe("isRampPlacementValid", () => {
 
   it("rejects a rotated ramp placement that penetrates another ramp", () => {
     expect(
-      isRampPlacementValid(
+      isRectanglePlacementValid(
         { ...candidate, x: 320, y: 260, rotation: Math.PI / 6 },
         ball,
         [otherRamp],
       ),
     ).toBe(false);
+  });
+
+  it("rejects a block placement that penetrates a ramp or another block", () => {
+    const block = { x: 320, y: 260, width: 80, height: 60, rotation: 0 };
+    expect(isRectanglePlacementValid(block, ball, [otherRamp])).toBe(false);
+    expect(
+      isRectanglePlacementValid({ ...block, x: 700, y: 200 }, ball, [
+        { ...block, x: 720, y: 200 },
+      ]),
+    ).toBe(false);
+  });
+
+  it("accepts a clear unrotated block placement", () => {
+    expect(
+      isRectanglePlacementValid(
+        { x: 800, y: 140, width: 100, height: 80, rotation: 0 },
+        ball,
+        [otherRamp],
+      ),
+    ).toBe(true);
   });
 });
