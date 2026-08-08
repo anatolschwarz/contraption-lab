@@ -1,11 +1,15 @@
 import type { Point } from "../levels/levelTypes";
 
 export type GameMode = "edit" | "running" | "paused";
-export type SelectableComponent = "ramp";
 
 export interface RampTransform {
   position: Point;
   rotation: number;
+}
+
+export interface SelectRampAction {
+  type: "select-ramp";
+  rampId: string;
 }
 
 export type GameAction =
@@ -13,23 +17,21 @@ export type GameAction =
   | "toggle-simulation"
   | "reset"
   | "success"
-  | "select-ramp"
-  | "deselect";
+  | "deselect"
+  | SelectRampAction;
 
 export interface GameState {
   mode: GameMode;
   succeeded: boolean;
-  rampPosition: Point | null;
-  rampRotation: number | null;
-  selectedComponent: SelectableComponent | null;
+  rampTransforms: Record<string, RampTransform>;
+  selectedRampId: string | null;
 }
 
 export const INITIAL_GAME_STATE: Readonly<GameState> = Object.freeze({
   mode: "edit",
   succeeded: false,
-  rampPosition: null,
-  rampRotation: null,
-  selectedComponent: null,
+  rampTransforms: {},
+  selectedRampId: null,
 });
 
 export interface EnabledControls {
@@ -43,25 +45,26 @@ export function transitionGameState(
   action: GameAction,
 ): GameState {
   if (action === "reset") {
-    return { ...INITIAL_GAME_STATE };
+    return { ...INITIAL_GAME_STATE, rampTransforms: {} };
   }
   if (action === "success" && state.mode === "running") {
     return {
       mode: "paused",
       succeeded: true,
-      rampPosition: state.rampPosition,
-      rampRotation: state.rampRotation,
-      selectedComponent: null,
+      rampTransforms: { ...state.rampTransforms },
+      selectedRampId: null,
     };
   }
   if (state.succeeded) {
-    return { ...state };
+    return { ...state, rampTransforms: { ...state.rampTransforms } };
   }
-  if (action === "select-ramp" && state.mode === "edit") {
-    return { ...state, selectedComponent: "ramp" };
+  if (typeof action === "object" && action.type === "select-ramp") {
+    return state.mode === "edit"
+      ? { ...state, selectedRampId: action.rampId }
+      : { ...state, rampTransforms: { ...state.rampTransforms } };
   }
   if (action === "deselect" && state.mode === "edit") {
-    return { ...state, selectedComponent: null };
+    return { ...state, selectedRampId: null };
   }
   if (
     action === "toggle-simulation" &&
@@ -70,47 +73,50 @@ export function transitionGameState(
     return {
       mode: "running",
       succeeded: false,
-      rampPosition: state.rampPosition,
-      rampRotation: state.rampRotation,
-      selectedComponent: null,
+      rampTransforms: { ...state.rampTransforms },
+      selectedRampId: null,
     };
   }
   if (action === "toggle-simulation" && state.mode === "running") {
     return {
       mode: "paused",
       succeeded: false,
-      rampPosition: state.rampPosition,
-      rampRotation: state.rampRotation,
-      selectedComponent: null,
+      rampTransforms: { ...state.rampTransforms },
+      selectedRampId: null,
     };
   }
   if (action === "edit" && state.mode !== "edit") {
     return {
       mode: "edit",
       succeeded: false,
-      rampPosition: state.rampPosition,
-      rampRotation: state.rampRotation,
-      selectedComponent: null,
+      rampTransforms: { ...state.rampTransforms },
+      selectedRampId: null,
     };
   }
-  return { ...state };
+  return { ...state, rampTransforms: { ...state.rampTransforms } };
 }
 
 export function updateRampTransform(
   state: Readonly<GameState>,
+  rampId: string,
   transform: Readonly<RampTransform>,
 ): GameState {
   if (
     state.mode !== "edit" ||
     state.succeeded ||
-    state.selectedComponent !== "ramp"
+    state.selectedRampId !== rampId
   ) {
-    return { ...state };
+    return { ...state, rampTransforms: { ...state.rampTransforms } };
   }
   return {
     ...state,
-    rampPosition: { ...transform.position },
-    rampRotation: transform.rotation,
+    rampTransforms: {
+      ...state.rampTransforms,
+      [rampId]: {
+        position: { ...transform.position },
+        rotation: transform.rotation,
+      },
+    },
   };
 }
 

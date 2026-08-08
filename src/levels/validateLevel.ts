@@ -1,4 +1,9 @@
-import type { LevelDefinition, Point, RectangleDefinition } from "./levelTypes";
+import type {
+  LevelDefinition,
+  Point,
+  RampDefinition,
+  RectangleDefinition,
+} from "./levelTypes";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -26,15 +31,19 @@ const isBall = (value: unknown): value is LevelDefinition["ball"] =>
   isFiniteNumber(value.radius) &&
   value.radius > 0;
 
-const isRamp = (value: unknown): value is LevelDefinition["ramp"] =>
-  isRecord(value) && isRectangle(value) && isFiniteNumber(value.rotation);
+const isRamp = (value: unknown): value is RampDefinition =>
+  isRecord(value) &&
+  isRectangle(value) &&
+  typeof value.id === "string" &&
+  value.id.trim() !== "" &&
+  isFiniteNumber(value.rotation);
 
 export function validateLevel(value: unknown): LevelDefinition {
   if (!isRecord(value)) {
     throw new Error("Level data must be an object.");
   }
 
-  const { id, title, ball, ramp, floor, goal, gravity } = value;
+  const { id, title, ball, ramps, floor, goal, gravity } = value;
   if (typeof id !== "string" || id.trim() === "") {
     throw new Error("Level id must be a non-empty string.");
   }
@@ -44,10 +53,13 @@ export function validateLevel(value: unknown): LevelDefinition {
   if (!isBall(ball)) {
     throw new Error("Level ball must have finite x/y and a positive radius.");
   }
-  if (!isRamp(ramp)) {
+  if (!Array.isArray(ramps) || ramps.length < 2 || !ramps.every(isRamp)) {
     throw new Error(
-      "Level ramp must have finite x/y/rotation and positive dimensions.",
+      "Level ramps must contain at least two valid ramps with ids.",
     );
+  }
+  if (new Set(ramps.map((ramp) => ramp.id)).size !== ramps.length) {
+    throw new Error("Level ramp ids must be unique.");
   }
   if (!isRectangle(floor)) {
     throw new Error("Level floor must be a valid rectangle.");
@@ -59,5 +71,5 @@ export function validateLevel(value: unknown): LevelDefinition {
     throw new Error("Level gravity must have finite x/y values.");
   }
 
-  return { id, title, ball, ramp, floor, goal, gravity };
+  return { id, title, ball, ramps, floor, goal, gravity };
 }

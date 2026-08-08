@@ -1,6 +1,6 @@
 import Phaser from "phaser";
-import type { LevelDefinition } from "../levels/levelTypes";
-import type { RampTransform, SelectableComponent } from "../state/gameState";
+import type { LevelDefinition, RampDefinition } from "../levels/levelTypes";
+import type { RampTransform } from "../state/gameState";
 import {
   clampRampPosition,
   PLAYABLE_HEIGHT,
@@ -13,22 +13,28 @@ const GOAL_LABEL = "prototype-goal";
 const RAMP_STROKE_COLOR = 0x4c3526;
 const SELECTED_RAMP_STROKE_COLOR = 0xffd166;
 
+interface EditableRamp {
+  definition: RampDefinition;
+  shape: Phaser.GameObjects.Rectangle;
+  selectionText: Phaser.GameObjects.Text;
+}
+
 export class PrototypeScene extends Phaser.Scene {
   private ball?: Phaser.GameObjects.Arc;
-  private dragOffset?: Phaser.Math.Vector2;
+  private drag?: { rampId: string; offset: Phaser.Math.Vector2 };
   private editInteractionEnabled = false;
-  private rampShape?: Phaser.GameObjects.Rectangle;
-  private selectedComponent: SelectableComponent | null = null;
-  private selectionText?: Phaser.GameObjects.Text;
+  private readonly ramps = new Map<string, EditableRamp>();
+  private selectedRampId: string | null = null;
   private successText?: Phaser.GameObjects.Text;
 
   constructor(
     private readonly level: LevelDefinition,
     private readonly onSuccess: () => void,
-    private readonly onSelectionChange: (
-      component: SelectableComponent | null,
+    private readonly onSelectionChange: (rampId: string | null) => void,
+    private readonly onRampTransformChange: (
+      rampId: string,
+      transform: RampTransform,
     ) => void,
-    private readonly onRampTransformChange: (transform: RampTransform) => void,
   ) {
     super("prototype");
   }
@@ -56,26 +62,25 @@ export class PrototypeScene extends Phaser.Scene {
     this.input.on(
       Phaser.Input.Events.POINTER_MOVE,
       (pointer: Phaser.Input.Pointer) => {
-        if (
-          !this.editInteractionEnabled ||
-          !this.dragOffset ||
-          !pointer.isDown
-        ) {
+        if (!this.editInteractionEnabled || !this.drag || !pointer.isDown) {
           return;
         }
+        const ramp = this.ramps.get(this.drag.rampId);
+        if (!ramp) return;
         this.updateRampTransform(
-          pointer.worldX - this.dragOffset.x,
-          pointer.worldY - this.dragOffset.y,
-          this.rampShape?.rotation ?? this.level.ramp.rotation,
+          this.drag.rampId,
+          pointer.worldX - this.drag.offset.x,
+          pointer.worldY - this.drag.offset.y,
+          ramp.shape.rotation,
           true,
         );
       },
     );
     this.input.on(Phaser.Input.Events.POINTER_UP, () => {
-      this.dragOffset = undefined;
+      this.drag = undefined;
     });
     this.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, () => {
-      this.dragOffset = undefined;
+      this.drag = undefined;
     });
     this.input.keyboard?.on("keydown-Q", () => {
       this.rotateSelectedRamp(-1);
@@ -91,32 +96,31 @@ export class PrototypeScene extends Phaser.Scene {
     else this.matter.world.pause();
   }
 
-  setEditSelection(
-    enabled: boolean,
-    selectedComponent: SelectableComponent | null,
-  ): void {
+  setEditSelection(enabled: boolean, selectedRampId: string | null): void {
     this.editInteractionEnabled = enabled;
-    this.selectedComponent = selectedComponent;
+    this.selectedRampId = selectedRampId;
     this.updateSelectionDisplay();
   }
 
-  setRampTransform(
-    position: { x: number; y: number } | null,
-    rotation: number | null,
-  ): void {
-    const rampPosition = position ?? this.level.ramp;
-    const rampRotation = rotation ?? this.level.ramp.rotation;
-    this.updateRampTransform(
-      rampPosition.x,
-      rampPosition.y,
-      rampRotation,
-      false,
-    );
+  setRampTransforms(transforms: Readonly<Record<string, RampTransform>>): void {
+    for (const ramp of this.ramps.values()) {
+      const transform = transforms[ramp.definition.id] ?? {
+        position: ramp.definition,
+        rotation: ramp.definition.rotation,
+      };
+      this.updateRampTransform(
+        ramp.definition.id,
+        transform.position.x,
+        transform.position.y,
+        transform.rotation,
+        false,
+      );
+    }
   }
 
   resetLevel(): void {
     this.matter.world.pause();
-    this.setRampTransform(null, null);
+    this.setRampTransforms({});
     this.ball?.destroy();
     this.successText?.destroy();
     this.successText = undefined;
@@ -135,7 +139,7 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private createLevelObjects(): void {
-    const { floor, ramp, goal, gravity } = this.level;
+    const { floor, goal, gravity } = this.level;
     this.matter.world.setGravity(gravity.x, gravity.y);
 
     const floorShape = this.add
@@ -143,42 +147,9 @@ export class PrototypeScene extends Phaser.Scene {
       .setStrokeStyle(3, 0x252b2d);
     this.matter.add.gameObject(floorShape, { isStatic: true, label: "floor" });
 
-    this.rampShape = this.add
-      .rectangle(ramp.x, ramp.y, ramp.width, ramp.height, 0x9d6b45)
-      .setStrokeStyle(4, RAMP_STROKE_COLOR)
-      .setRotation(ramp.rotation);
-    this.matter.add.gameObject(this.rampShape, {
-      isStatic: true,
-      label: "ramp",
-    });
-    this.rampShape.on(
-      Phaser.Input.Events.POINTER_DOWN,
-      (
-        _pointer: Phaser.Input.Pointer,
-        _localX: number,
-        _localY: number,
-        event: Phaser.Types.Input.EventData,
-      ) => {
-        event.stopPropagation();
-        if (!this.editInteractionEnabled || !this.rampShape) return;
-        this.onSelectionChange("ramp");
-        this.dragOffset = new Phaser.Math.Vector2(
-          _pointer.worldX - this.rampShape.x,
-          _pointer.worldY - this.rampShape.y,
-        );
-      },
-    );
-
-    this.selectionText = this.add
-      .text(ramp.x, ramp.y - 34, "RAMP SELECTED", {
-        color: "#513a25",
-        fontFamily: "Arial, sans-serif",
-        fontSize: "14px",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5)
-      .setDepth(2)
-      .setVisible(false);
+    for (const ramp of this.level.ramps) {
+      this.createRamp(ramp);
+    }
 
     const goalShape = this.add
       .rectangle(goal.x, goal.y, goal.width, goal.height, 0x759c82, 0.28)
@@ -201,52 +172,103 @@ export class PrototypeScene extends Phaser.Scene {
     this.updateSelectionDisplay();
   }
 
+  private createRamp(definition: RampDefinition): void {
+    const shape = this.add
+      .rectangle(
+        definition.x,
+        definition.y,
+        definition.width,
+        definition.height,
+        0x9d6b45,
+      )
+      .setStrokeStyle(4, RAMP_STROKE_COLOR)
+      .setRotation(definition.rotation);
+    this.matter.add.gameObject(shape, {
+      isStatic: true,
+      label: `ramp:${definition.id}`,
+    });
+
+    const selectionText = this.add
+      .text(definition.x, definition.y - 34, "RAMP SELECTED", {
+        color: "#513a25",
+        fontFamily: "Arial, sans-serif",
+        fontSize: "14px",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(2)
+      .setVisible(false);
+
+    shape.on(
+      Phaser.Input.Events.POINTER_DOWN,
+      (
+        pointer: Phaser.Input.Pointer,
+        _localX: number,
+        _localY: number,
+        event: Phaser.Types.Input.EventData,
+      ) => {
+        event.stopPropagation();
+        if (!this.editInteractionEnabled) return;
+        this.onSelectionChange(definition.id);
+        this.drag = {
+          rampId: definition.id,
+          offset: new Phaser.Math.Vector2(
+            pointer.worldX - shape.x,
+            pointer.worldY - shape.y,
+          ),
+        };
+      },
+    );
+
+    this.ramps.set(definition.id, { definition, shape, selectionText });
+  }
+
   private updateRampTransform(
+    rampId: string,
     x: number,
     y: number,
     rotation: number,
     notify: boolean,
   ): void {
-    if (!this.rampShape) return;
+    const ramp = this.ramps.get(rampId);
+    if (!ramp) return;
     const position = clampRampPosition(
       { x, y },
-      { ...this.level.ramp, rotation },
+      { ...ramp.definition, rotation },
     );
-    this.rampShape.setPosition(position.x, position.y).setRotation(rotation);
-    this.selectionText?.setPosition(position.x, position.y - 34);
-    if (notify) this.onRampTransformChange({ position, rotation });
+    ramp.shape.setPosition(position.x, position.y).setRotation(rotation);
+    ramp.selectionText.setPosition(position.x, position.y - 34);
+    if (notify) this.onRampTransformChange(rampId, { position, rotation });
   }
 
   private rotateSelectedRamp(direction: -1 | 1): void {
-    if (
-      !this.editInteractionEnabled ||
-      this.selectedComponent !== "ramp" ||
-      !this.rampShape
-    ) {
-      return;
-    }
+    if (!this.editInteractionEnabled || !this.selectedRampId) return;
+    const ramp = this.ramps.get(this.selectedRampId);
+    if (!ramp) return;
     this.updateRampTransform(
-      this.rampShape.x,
-      this.rampShape.y,
-      rotateRampByStep(this.rampShape.rotation, direction),
+      ramp.definition.id,
+      ramp.shape.x,
+      ramp.shape.y,
+      rotateRampByStep(ramp.shape.rotation, direction),
       true,
     );
   }
 
   private updateSelectionDisplay(): void {
-    const isRampSelected =
-      this.editInteractionEnabled && this.selectedComponent === "ramp";
-    this.selectionText?.setVisible(isRampSelected);
-    this.rampShape?.setStrokeStyle(
-      isRampSelected ? 5 : 4,
-      isRampSelected ? SELECTED_RAMP_STROKE_COLOR : RAMP_STROKE_COLOR,
-    );
-
-    if (this.editInteractionEnabled) {
-      this.rampShape?.setInteractive({ useHandCursor: true });
-    } else {
-      this.dragOffset = undefined;
-      this.rampShape?.disableInteractive();
+    for (const [rampId, ramp] of this.ramps) {
+      const selected =
+        this.editInteractionEnabled && this.selectedRampId === rampId;
+      ramp.selectionText.setVisible(selected);
+      ramp.shape.setStrokeStyle(
+        selected ? 5 : 4,
+        selected ? SELECTED_RAMP_STROKE_COLOR : RAMP_STROKE_COLOR,
+      );
+      if (this.editInteractionEnabled) {
+        ramp.shape.setInteractive({ useHandCursor: true });
+      } else {
+        this.drag = undefined;
+        ramp.shape.disableInteractive();
+      }
     }
   }
 

@@ -8,11 +8,16 @@ export interface RectangleDefinition extends Point {
   height: number;
 }
 
+export interface RampDefinition extends RectangleDefinition {
+  id: string;
+  rotation: number;
+}
+
 export interface LevelDefinition {
   id: string;
   title: string;
   ball: Point & { radius: number };
-  ramp: RectangleDefinition & { rotation: number };
+  ramps: RampDefinition[];
   floor: RectangleDefinition;
   goal: RectangleDefinition;
   gravity: Point;

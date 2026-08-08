@@ -4,39 +4,82 @@
 
 Contraption Lab is a browser-only first playable physics puzzle. It loads a
 single level from JSON and renders generated Phaser shapes in a responsive 16:9
-simulation area. The level contains a ball, editable ramp, floor, and sensor-based goal.
+simulation area. The level contains a ball, two editable ramps, floor, and
+sensor-based goal.
 
 The prototype currently supports:
 
 - Edit mode with the Matter simulation frozen.
-- A first puzzle whose initial ramp placement does not reach the goal.
-- Ramp selection in Edit mode, plus pointer dragging and Q/E rotation in 5-degree
-  steps; its complete rotated bounds remain inside the simulation area.
+- A first relay puzzle whose initial two-ramp placement does not reach the goal.
+- Exclusive ramp selection in Edit mode, plus pointer dragging and Q/E rotation
+  in 5-degree steps for the selected ramp only; both ramps' complete rotated
+  bounds remain inside the simulation area.
 - A Run/Pause toggle for starting, freezing, and resuming physics.
-- Reset to reconstruct the ball and ramp from their exact JSON-defined transforms.
+- Reset to reconstruct the ball and both ramps from their exact JSON-defined
+  transforms.
 - Goal collision detection, a completion message, and locked simulation controls
   after success until Reset is selected.
 - Runtime validation of level JSON before it reaches the Phaser scene.
-- Browser-independent tests for game-state transitions, deterministic reset, and
-  level validation.
-- A Playwright Chromium smoke test covering page load, ramp editing, simulation
-  toggle behavior, reset, and first-puzzle completion.
+- Browser-independent tests for exclusive selection, two-ramp transform
+  persistence, deterministic reset, and level validation.
+- A Playwright Chromium smoke test covering page load, two-ramp editing,
+  simulation toggle behavior, reset, and relay-puzzle completion.
+
+## Active handover — Milestone #7 (in progress)
+
+Milestone #7 adds a second editable ramp. The implementation is partially
+complete and must not be committed or pushed yet.
+
+Completed changes:
+
+- Replaced the single `ramp` level property with two uniquely identified entries
+  in `ramps` (`upper-ramp` and `lower-ramp`).
+- Updated runtime validation to require at least two valid ramps and unique ids.
+- Replaced the single ramp transform in `GameState` with ID-keyed transforms and
+  an exclusive `selectedRampId`.
+- Updated `PrototypeScene` to render, select, drag, rotate, clamp, persist, and
+  reset each ramp independently.
+- Updated the relay-puzzle layout, unit tests, e2e flow, README, and UI hint.
+- Added the repository-local `.codex/config.toml` requested by the user:
+  `approval_policy = "never"` and `sandbox_mode = "workspace-write"`.
+
+Validation already run:
+
+- `npm run typecheck` — passed.
+- `npm test` — passed (4 files, 16 tests).
+- `npm run lint` — passed.
+
+Remaining work:
+
+1. Format `src/game/PrototypeScene.ts`; Prettier requires one line wrap in the
+   selection-display loop. The current session could not write with Prettier
+   because its filesystem sandbox was already active before the new local Codex
+   config was added.
+2. Resolve the `test-results/` formatting noise before rerunning
+   `npm run format:check`; those Playwright result artifacts are not shown by
+   `git status` but are scanned by Prettier.
+3. Run `npm run format:check`, `npm run build`, and `npm run test:e2e`.
+4. Verify the browser puzzle's proposed solution coordinates in
+   `e2e/puzzle.e2e.ts` physically requires both ramps and reaches the goal.
+5. Review the final diff and confirm no unrelated files changed. Do not commit
+   or push.
 
 ## Architecture and important files
 
 - `src/main.ts` composes the validated level, pure state transitions, DOM
   controls, Phaser configuration, and scene lifecycle.
-- `src/game/PrototypeScene.ts` owns Phaser rendering, Matter bodies, editable
-  ramp input and transforms, simulation pause/resume/reset behavior, and goal
+- `src/game/PrototypeScene.ts` owns Phaser rendering, Matter bodies, two-ramp
+  input and transforms, simulation pause/resume/reset behavior, and goal
   collision handling.
 - `src/game/rampPlacement.ts` calculates rotated ramp bounds and fixed rotation
   steps for the 960×540 simulation area.
-- `src/levels/prototype.json` is the source of truth for the initial level.
+- `src/levels/prototype.json` is the source of truth for the initial two-ramp
+  level and reset transforms.
 - `src/levels/levelTypes.ts`, `src/levels/loadLevel.ts`, and
   `src/levels/validateLevel.ts` keep level types and runtime parsing separate from
   rendering.
-- `src/state/gameState.ts` contains pure mode transitions, editable ramp
-  transform state, and control-enabled state.
+- `src/state/gameState.ts` contains pure mode transitions, exclusive selected
+  ramp state, editable ramp transforms, and control-enabled state.
 - `src/ui/Controls.ts` binds and renders the plain DOM controls.
 - `tests/gameState.test.ts`, `tests/rampPlacement.test.ts`, and
   `tests/levelValidation.test.ts` cover the pure, browser-independent behavior.
@@ -101,8 +144,8 @@ The individual commands are:
 
 ## Known limitations
 
-- There is one fixed puzzle and one editable component.
-- Edit mode supports only the predefined ramp; it has no general-purpose object
+- There is one fixed puzzle and two editable ramps.
+- Edit mode supports only the predefined ramps; it has no general-purpose object
   manipulation or level editor.
 - The Chromium smoke test covers the main browser flow, but cross-browser and
   touch-specific behavior remain untested.

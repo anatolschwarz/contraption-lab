@@ -1,6 +1,8 @@
 # Contraption Lab
 
-Contraption Lab is an original browser-based 2D physics puzzle prototype. Its first puzzle requires placing and angling a ramp to guide a ball into the goal, using Phaser's bundled Matter physics integration.
+Contraption Lab is an original browser-based 2D physics puzzle prototype. Its
+first puzzle requires placing and angling two ramps to guide a ball into the
+goal, using Phaser's bundled Matter physics integration.
 
 The project deliberately uses geometric shapes and text generated at runtime. It contains no external artwork, audio, backend, persistence, or protected game-specific content.
 
@@ -22,7 +24,13 @@ npm install
 npm run dev
 ```
 
-Open the local address printed by Vite. The puzzle starts in Edit mode with physics frozen, and its initial layout does not reach the goal. Click the ramp to select it, drag it to reposition it, and use Q/E to rotate it in 5-degree steps. The simulation toggle reads Run when stopped and Pause when running; Edit returns to the non-simulating mode, and Reset restores the exact JSON-defined ball and ramp transforms.
+Open the local address printed by Vite. The puzzle starts in Edit mode with
+physics frozen, and its initial layout does not reach the goal. Click either
+ramp to select it (only one can be selected), drag it to reposition it, and use
+Q/E to rotate the selected ramp in 5-degree steps. Both editable ramps remain
+inside the 960×540 playfield. The simulation toggle reads Run when stopped and
+Pause when running; Edit returns to the non-simulating mode, and Reset restores
+the exact JSON-defined ball and both-ramp transforms.
 
 ## Build
 
@@ -49,15 +57,19 @@ npm run test:e2e
 ## Architecture
 
 - `src/levels/` contains the JSON level, TypeScript level types, loading, and runtime validation.
-- `src/state/` contains the browser-independent simulation mode and editable ramp transform state.
-- `src/game/` contains the Phaser scene, generated visuals, Matter bodies, ramp placement bounds, and goal collision handling.
+- `src/state/` contains the browser-independent simulation mode, selected-ramp,
+  and editable ramp-transform state.
+- `src/game/` contains the Phaser scene, generated visuals, Matter bodies, ramp
+  placement bounds, and goal collision handling.
 - `src/ui/` owns the DOM control bindings and enabled states.
 - `src/main.ts` composes the level, state, controls, scene, and Phaser configuration.
-- `tests/` exercises validation, transitions, success, and deterministic reset logic without a browser canvas; `e2e/` covers the first puzzle in Chromium.
+- `tests/` exercises validation, transitions, success, and deterministic reset
+  logic without a browser canvas; `e2e/` covers the two-ramp puzzle in Chromium.
 
 ## Current limitations
 
-- One fixed puzzle with a single ball, editable ramp, floor, and goal.
-- Edit mode supports selection, dragging, and 5-degree rotation of the predefined ramp, but not a general-purpose level editor.
+- One fixed puzzle with a single ball, two editable ramps, floor, and goal.
+- Edit mode supports selection, dragging, and 5-degree rotation of the
+  predefined ramps, but not a general-purpose level editor.
 - Reset determinism covers the defined initial state; physics behavior can still vary slightly across browser/engine versions.
 - Keyboard controls, touch-specific interactions, audio, persistence, and additional components are intentionally out of scope.

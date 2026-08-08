@@ -23,9 +23,9 @@ function applyState(): void {
   scene.setSimulationRunning(state.mode === "running" && !state.succeeded);
   scene.setEditSelection(
     state.mode === "edit" && !state.succeeded,
-    state.selectedComponent,
+    state.selectedRampId,
   );
-  scene.setRampTransform(state.rampPosition, state.rampRotation);
+  scene.setRampTransforms(state.rampTransforms);
 }
 
 function handleAction(action: GameAction): void {
@@ -38,10 +38,10 @@ function handleAction(action: GameAction): void {
 const scene = new PrototypeScene(
   level,
   () => handleAction("success"),
-  (component) =>
-    handleAction(component === "ramp" ? "select-ramp" : "deselect"),
-  (transform) => {
-    state = updateRampTransform(state, transform);
+  (rampId) =>
+    handleAction(rampId ? { type: "select-ramp", rampId } : "deselect"),
+  (rampId, transform) => {
+    state = updateRampTransform(state, rampId, transform);
     applyState();
   },
 );

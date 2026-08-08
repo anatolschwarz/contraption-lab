@@ -15,4 +15,16 @@ describe("validateLevel", () => {
   it("rejects missing level fields", () => {
     expect(() => validateLevel({ id: "incomplete" })).toThrow(/title/i);
   });
+
+  it("requires at least two ramps with unique ids", () => {
+    expect(() =>
+      validateLevel({ ...rawLevel, ramps: [rawLevel.ramps[0]] }),
+    ).toThrow(/at least two/i);
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        ramps: [rawLevel.ramps[0], { ...rawLevel.ramps[1], id: "upper-ramp" }],
+      }),
+    ).toThrow(/unique/i);
+  });
 });
