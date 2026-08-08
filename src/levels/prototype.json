@@ -2,6 +2,12 @@
   "id": "aim-the-ramp-001",
   "title": "Relay Ramps",
   "inventory": { "block": 2, "ramp": 4 },
+  "contactRules": [
+    {
+      "contacts": ["ball", "block"],
+      "action": { "type": "destroy", "target": "block" }
+    }
+  ],
   "ball": { "x": 215, "y": 135, "radius": 24 },
   "ramps": [
     {

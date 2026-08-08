@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { executeContactRules } from "./contactRules";
 import {
   isClickMovementWithinTolerance,
   recordCompletedClick,
@@ -7,6 +8,7 @@ import {
 import {
   isEditablePart,
   type BlockDefinition,
+  type ContactTag,
   type LevelDefinition,
   type RampDefinition,
 } from "../levels/levelTypes";
@@ -73,6 +75,15 @@ interface EditableComponent {
   selectionText: Phaser.GameObjects.Text;
 }
 
+interface ContactObject {
+  tag: ContactTag;
+  destroy: () => void;
+}
+
+type MatterGameObject = Phaser.GameObjects.GameObject & {
+  body?: unknown;
+};
+
 interface RampPartSnapshot {
   componentType: "ramp";
   definition: RampDefinition;
@@ -99,6 +110,7 @@ export class PrototypeScene extends Phaser.Scene {
   private editInteractionEnabled = false;
   private lastComponentClick?: CompletedClick;
   private readonly blocks = new Map<string, EditableBlock>();
+  private readonly contactObjects = new Map<MatterJS.BodyType, ContactObject>();
   private readonly ramps = new Map<string, EditableRamp>();
   private runSnapshot?: PlayerPartSnapshot[];
   private selectedComponentId: string | null = null;
@@ -133,13 +145,7 @@ export class PrototypeScene extends Phaser.Scene {
         _event: Phaser.Physics.Matter.Events.CollisionStartEvent,
         bodyA: MatterJS.BodyType,
         bodyB: MatterJS.BodyType,
-      ) => {
-        const labels = [bodyA.label, bodyB.label];
-        if (labels.includes(BALL_LABEL) && labels.includes(GOAL_LABEL)) {
-          this.showSuccess();
-          this.onSuccess();
-        }
-      },
+      ) => this.handleContact(bodyA, bodyB),
     );
     this.input.on(Phaser.Input.Events.POINTER_DOWN, () => {
       if (!this.editInteractionEnabled) return;
@@ -330,7 +336,7 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private resetBallAndSuccess(): void {
-    this.ball?.destroy();
+    this.destroyBall();
     this.successText?.destroy();
     this.successText = undefined;
 
@@ -345,6 +351,7 @@ export class PrototypeScene extends Phaser.Scene {
       label: BALL_LABEL,
     });
     this.ball.setData("initial", { x, y, radius });
+    this.registerContactObject(this.ball, "ball", () => this.destroyBall());
   }
 
   private createLevelObjects(): void {
@@ -355,6 +362,7 @@ export class PrototypeScene extends Phaser.Scene {
       .rectangle(floor.x, floor.y, floor.width, floor.height, 0x465053)
       .setStrokeStyle(3, 0x252b2d);
     this.matter.add.gameObject(floorShape, { isStatic: true, label: "floor" });
+    this.registerContactObject(floorShape, "floor", () => floorShape.destroy());
 
     const goalShape = this.add
       .rectangle(goal.x, goal.y, goal.width, goal.height, 0x759c82, 0.28)
@@ -364,6 +372,7 @@ export class PrototypeScene extends Phaser.Scene {
       isSensor: true,
       label: GOAL_LABEL,
     });
+    this.registerContactObject(goalShape, "goal", () => goalShape.destroy());
     this.add
       .text(goal.x, goal.y, "GOAL", {
         color: "#294939",
@@ -429,6 +438,9 @@ export class PrototypeScene extends Phaser.Scene {
       shape,
       selectionText,
     });
+    this.registerContactObject(shape, "ramp", () =>
+      this.destroyRampFromContact(definition.id),
+    );
   }
 
   private createBlock(definition: BlockDefinition, fromTray = false): void {
@@ -498,6 +510,9 @@ export class PrototypeScene extends Phaser.Scene {
       shape,
       selectionText,
     });
+    this.registerContactObject(shape, "block", () =>
+      this.destroyBlockFromContact(definition.id),
+    );
   }
 
   private handleComponentPointerDown(
@@ -554,6 +569,7 @@ export class PrototypeScene extends Phaser.Scene {
     if (componentType === "ramp") {
       const ramp = this.ramps.get(componentId);
       if (!ramp || !ramp.editable) return;
+      this.unregisterContactObject(ramp.shape);
       ramp.shape.destroy();
       ramp.selectionText.destroy();
       this.ramps.delete(componentId);
@@ -565,6 +581,7 @@ export class PrototypeScene extends Phaser.Scene {
     }
     const block = this.blocks.get(componentId);
     if (!block || !block.editable) return;
+    this.unregisterContactObject(block.shape);
     block.shape.destroy();
     block.selectionText.destroy();
     block.fixedLabel?.destroy();
@@ -598,16 +615,92 @@ export class PrototypeScene extends Phaser.Scene {
 
   private destroyParts(): void {
     for (const ramp of this.ramps.values()) {
+      this.unregisterContactObject(ramp.shape);
       ramp.shape.destroy();
       ramp.selectionText.destroy();
     }
     for (const block of this.blocks.values()) {
+      this.unregisterContactObject(block.shape);
       block.shape.destroy();
       block.selectionText.destroy();
       block.fixedLabel?.destroy();
     }
     this.ramps.clear();
     this.blocks.clear();
+  }
+
+  private handleContact(
+    bodyA: MatterJS.BodyType,
+    bodyB: MatterJS.BodyType,
+  ): void {
+    const first = this.contactObjects.get(bodyA);
+    const second = this.contactObjects.get(bodyB);
+    if (!first || !second) return;
+
+    executeContactRules(
+      this.level.contactRules,
+      { ...first, destroy: () => this.destroyContactObject(bodyA) },
+      { ...second, destroy: () => this.destroyContactObject(bodyB) },
+    );
+    if (
+      (first.tag === "ball" && second.tag === "goal") ||
+      (first.tag === "goal" && second.tag === "ball")
+    ) {
+      this.showSuccess();
+      this.onSuccess();
+    }
+  }
+
+  private destroyContactObject(body: MatterJS.BodyType): void {
+    const contactObject = this.contactObjects.get(body);
+    if (!contactObject) return;
+    this.contactObjects.delete(body);
+    contactObject.destroy();
+  }
+
+  private registerContactObject(
+    gameObject: MatterGameObject,
+    tag: ContactTag,
+    destroy: () => void,
+  ): void {
+    if (gameObject.body) {
+      this.contactObjects.set(gameObject.body as MatterJS.BodyType, {
+        tag,
+        destroy,
+      });
+    }
+  }
+
+  private unregisterContactObject(gameObject: MatterGameObject): void {
+    if (gameObject.body) {
+      this.contactObjects.delete(gameObject.body as MatterJS.BodyType);
+    }
+  }
+
+  private destroyBall(): void {
+    if (!this.ball) return;
+    this.unregisterContactObject(this.ball);
+    this.ball.destroy();
+    this.ball = undefined;
+  }
+
+  private destroyRampFromContact(componentId: string): void {
+    const ramp = this.ramps.get(componentId);
+    if (!ramp) return;
+    this.unregisterContactObject(ramp.shape);
+    ramp.shape.destroy();
+    ramp.selectionText.destroy();
+    this.ramps.delete(componentId);
+  }
+
+  private destroyBlockFromContact(componentId: string): void {
+    const block = this.blocks.get(componentId);
+    if (!block) return;
+    this.unregisterContactObject(block.shape);
+    block.shape.destroy();
+    block.selectionText.destroy();
+    block.fixedLabel?.destroy();
+    this.blocks.delete(componentId);
   }
 
   private getNextTrayRampId(): string {

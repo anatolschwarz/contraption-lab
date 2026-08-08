@@ -1,11 +1,14 @@
 import type {
   BlockDefinition,
+  ContactRule,
+  ContactTag,
   InventoryDefinition,
   LevelDefinition,
   Point,
   RampDefinition,
   RectangleDefinition,
 } from "./levelTypes";
+import { CONTACT_TAGS } from "./levelTypes";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -57,13 +60,67 @@ const isInventory = (value: unknown): value is InventoryDefinition =>
   Number.isInteger(value.ramp) &&
   value.ramp >= 0;
 
+const isContactTag = (value: unknown): value is ContactTag =>
+  typeof value === "string" && CONTACT_TAGS.includes(value as ContactTag);
+
+function validateContactRules(value: unknown): ContactRule[] {
+  if (!Array.isArray(value)) {
+    throw new Error("Level contactRules must be an array.");
+  }
+  return value.map((rule, index) => {
+    if (!isRecord(rule) || !Array.isArray(rule.contacts)) {
+      throw new Error(`Level contact rule ${index} must define contacts.`);
+    }
+    const [firstTag, secondTag] = rule.contacts;
+    if (
+      rule.contacts.length !== 2 ||
+      !isContactTag(firstTag) ||
+      !isContactTag(secondTag) ||
+      firstTag === secondTag
+    ) {
+      throw new Error(
+        `Level contact rule ${index} must name two different known contact tags.`,
+      );
+    }
+    if (!isRecord(rule.action) || rule.action.type !== "destroy") {
+      throw new Error(
+        `Level contact rule ${index} has an unknown or invalid action.`,
+      );
+    }
+    if (!isContactTag(rule.action.target)) {
+      throw new Error(
+        `Level contact rule ${index} has an unknown destroy target tag.`,
+      );
+    }
+    if (rule.action.target !== firstTag && rule.action.target !== secondTag) {
+      throw new Error(
+        `Level contact rule ${index} must destroy one of its contact tags.`,
+      );
+    }
+    return {
+      contacts: [firstTag, secondTag],
+      action: { type: "destroy", target: rule.action.target },
+    };
+  });
+}
+
 export function validateLevel(value: unknown): LevelDefinition {
   if (!isRecord(value)) {
     throw new Error("Level data must be an object.");
   }
 
-  const { id, title, inventory, ball, ramps, blocks, floor, goal, gravity } =
-    value;
+  const {
+    id,
+    title,
+    inventory,
+    contactRules,
+    ball,
+    ramps,
+    blocks,
+    floor,
+    goal,
+    gravity,
+  } = value;
   if (typeof id !== "string" || id.trim() === "") {
     throw new Error("Level id must be a non-empty string.");
   }
@@ -75,6 +132,7 @@ export function validateLevel(value: unknown): LevelDefinition {
       "Level inventory must define non-negative integer block and ramp counts.",
     );
   }
+  const validatedContactRules = validateContactRules(contactRules);
   if (!isBall(ball)) {
     throw new Error("Level ball must have finite x/y and a positive radius.");
   }
@@ -110,5 +168,16 @@ export function validateLevel(value: unknown): LevelDefinition {
     throw new Error("Level gravity must have finite x/y values.");
   }
 
-  return { id, title, inventory, ball, ramps, blocks, floor, goal, gravity };
+  return {
+    id,
+    title,
+    inventory,
+    contactRules: validatedContactRules,
+    ball,
+    ramps,
+    blocks,
+    floor,
+    goal,
+    gravity,
+  };
 }

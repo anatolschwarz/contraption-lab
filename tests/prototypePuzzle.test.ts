@@ -47,4 +47,13 @@ describe("the bundled relay-ramp puzzle", () => {
   it("defines the initial tray inventory", () => {
     expect(level.inventory).toEqual({ block: 2, ramp: 4 });
   });
+
+  it("declares the block-destruction contact demo", () => {
+    expect(level.contactRules).toEqual([
+      {
+        contacts: ["ball", "block"],
+        action: { type: "destroy", target: "block" },
+      },
+    ]);
+  });
 });

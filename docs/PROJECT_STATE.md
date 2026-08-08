@@ -35,6 +35,10 @@ same 25° rotation (five 5° Q/E steps).
   generic tray counts, and reset of original parts plus original stock.
 - **#12 — Rerun:** captures the Run-start editable layout and inventory; Rerun
   restores that snapshot, resets physics/success, and starts simulation.
+- **#13 — State and documentation consolidation:** refreshed project
+  documentation, limitations, validation status, and roadmap.
+- **#15 — Contact/reaction rules:** added validated JSON contact rules, central
+  Matter contact dispatch, and the initial `destroy` action.
 
 ## Current behavior
 
@@ -61,6 +65,9 @@ same 25° rotation (five 5° Q/E steps).
 - Single clicks select. A double-click is two completed clicks on the same
   editable part within 350 ms, each below the 8 px movement threshold. Drags,
   slow clicks, and clicks across different parts do not remove a part.
+- Levels may declare contact rules over the supported `ball`, `goal`, `floor`,
+  `ramp`, and `block` tags. The initial action, `destroy`, removes its configured
+  contacted target. The prototype demo destroys a block contacted by the ball.
 
 ## Architecture
 
@@ -71,6 +78,7 @@ same 25° rotation (five 5° Q/E steps).
 | `src/game/PrototypeScene.ts` | Phaser rendering, Matter bodies, player interactions, collision success, and full scene-layout snapshots. |
 | `src/game/rampPlacement.ts`  | Bounds and penetration checks for editable rectangles.                                                    |
 | `src/game/doubleClick.ts`    | Pure completed-click and movement-tolerance logic.                                                        |
+| `src/game/contactRules.ts`   | Pure order-independent contact-rule matching and action execution.                                        |
 | `src/ui/Controls.ts`         | DOM buttons, tray counts, and enabled states.                                                             |
 | `src/main.ts`                | Connects state, scene snapshots, controls, and Phaser setup.                                              |
 | `tests/`                     | Vitest unit coverage for state, placement, validation, ownership, puzzle data, and gestures.              |
@@ -88,8 +96,8 @@ npm run format:check
 npm run build
 ```
 
-At the time of this document update, the Vitest suite contains 42 tests across
-6 files. `npm run test:e2e` is available separately and exercises the original
+At the time of this document update, the Vitest suite contains 46 tests across
+7 files. `npm run test:e2e` is available separately and exercises the original
 two-ramp browser flow, including the 10-second Success assertion. It does not
 currently cover tray, removal, or Rerun in a browser.
 
@@ -101,6 +109,8 @@ currently cover tray, removal, or Rerun in a browser.
 - Unit coverage is strong for pure interaction/state rules, but browser e2e
   coverage has not yet expanded to the newer tray, removal, ownership, and
   Rerun flows.
+- Contact rules currently support only type/tag matching and the `destroy`
+  action; they have no conditions, effects, or per-instance targeting.
 - Physics results can vary slightly between browser or engine versions.
 - Vite reports a production chunk-size warning because Phaser is bundled in the
   main chunk; the build still succeeds.

@@ -28,6 +28,42 @@ describe("validateLevel", () => {
     ).toThrow(/inventory/i);
   });
 
+  it("requires known contact tags and supported actions", () => {
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        contactRules: [
+          {
+            contacts: ["ball", "unknown"],
+            action: { type: "destroy", target: "unknown" },
+          },
+        ],
+      }),
+    ).toThrow(/known contact tags/i);
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        contactRules: [
+          {
+            contacts: ["ball", "block"],
+            action: { type: "bounce", target: "block" },
+          },
+        ],
+      }),
+    ).toThrow(/unknown or invalid action/i);
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        contactRules: [
+          {
+            contacts: ["ball", "block"],
+            action: { type: "destroy", target: "ramp" },
+          },
+        ],
+      }),
+    ).toThrow(/destroy one of its contact tags/i);
+  });
+
   it("requires at least two ramps with unique ids", () => {
     expect(() =>
       validateLevel({ ...rawLevel, ramps: [rawLevel.ramps[0]] }),

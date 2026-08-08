@@ -9,13 +9,20 @@ without a separate scoped milestone request.
 - Add a minimal level-selection flow and deterministic load/reset boundaries.
 - Keep each level's ownership and inventory data self-contained.
 
-## #15 — Third physics component
+## #15 — Contact/reaction event system (completed)
+
+- Added level-defined contact rules for the built-in object tags.
+- Added central Matter contact dispatch and the `destroy` action.
+- The initial demo destroys a block on ball/block contact without changing the
+  known two-ramp solution.
+
+## #16 — Third physics component and puzzle progression
 
 - Add one small, original component type with clearly bounded physics behavior.
 - Define JSON schema, ownership, placement, tray, reset, and validation rules.
 - Add focused unit and browser coverage before expanding the component set.
 
-## #16 — Puzzle progression
+### Puzzle progression
 
 - Define completion state across multiple levels.
 - Add a minimal progression presentation without accounts or persistence beyond

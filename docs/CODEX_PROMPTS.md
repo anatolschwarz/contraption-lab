@@ -3,6 +3,7 @@
 This archive collects the Codex prompts used for the `contraption-lab` / TIM-style game project.
 
 Legend:
+
 - **VERBATIM** — exact prompt text is available in the current conversation record.
 - **RECONSTRUCTED** — earlier prompt text is no longer available verbatim in the loaded conversation context; wording is reconstructed from preserved conversation/project summaries and is labeled rather than presented as exact.
 - **SUPERSEDED** — prompt was later corrected/replaced.
@@ -12,6 +13,7 @@ Legend:
 ## Early setup
 
 ### Step 6 — Inspect repo/environment
+
 **RECONSTRUCTED**
 
 ```text
@@ -32,6 +34,7 @@ Keep this inspection read-only.
 ```
 
 ### Step 7 — First playable technical prototype
+
 **RECONSTRUCTED**
 
 ```text
@@ -83,6 +86,7 @@ At completion report:
 # Milestones
 
 ## #1 — Ramp selection in Edit mode
+
 **RECONSTRUCTED**
 
 ```text
@@ -110,6 +114,7 @@ Report:
 ```
 
 ### #1 follow-up — Fix selection visual
+
 **RECONSTRUCTED**
 
 ```text
@@ -134,6 +139,7 @@ Do not commit or push.
 ---
 
 ## #2 — Drag selected ramp
+
 **RECONSTRUCTED**
 
 ```text
@@ -157,6 +163,7 @@ Do not commit or push.
 ---
 
 ## #3 — Rotate selected ramp
+
 **RECONSTRUCTED**
 
 ```text
@@ -180,6 +187,7 @@ Do not commit or push.
 ---
 
 ## #4 — First real solvable puzzle
+
 **RECONSTRUCTED**
 
 ```text
@@ -202,6 +210,7 @@ Do not commit or push.
 ---
 
 ## #5 — Combine Run/Pause
+
 **RECONSTRUCTED**
 
 ```text
@@ -223,6 +232,7 @@ Do not commit or push.
 ---
 
 ## #6 — Automated browser smoke test
+
 **RECONSTRUCTED**
 
 ```text
@@ -248,6 +258,7 @@ Do not commit or push.
 ---
 
 ## #7 — Two independently editable ramps
+
 **RECONSTRUCTED**
 
 ```text
@@ -270,6 +281,7 @@ Run typecheck, lint, tests, format check, build, and e2e where possible.
 ```
 
 ### #7 follow-up — e2e deterministic diagnostics
+
 **RECONSTRUCTED**
 
 ```text
@@ -293,6 +305,7 @@ Do not commit or push.
 ```
 
 ### #7 follow-up — Position tolerance
+
 **RECONSTRUCTED**
 
 ```text
@@ -313,6 +326,7 @@ Do not commit or push.
 ```
 
 ### #7 follow-up — Increase position tolerance
+
 **VERBATIM**
 
 ```text
@@ -332,6 +346,7 @@ Do not commit or push.
 ```
 
 ### #7 follow-up — Initial overlap investigation
+
 **VERBATIM, later superseded by a more precise bug description**
 
 ```text
@@ -365,6 +380,7 @@ Report:
 ```
 
 ### #7 follow-up — Correct overlap bug
+
 **VERBATIM**
 
 ```text
@@ -393,6 +409,7 @@ Fix Edit-mode placement validation:
 ```
 
 ### #7 follow-up — Allow intentional ramp/goal overlap
+
 **VERBATIM**
 
 ```text
@@ -415,6 +432,7 @@ Do not commit or push.
 ```
 
 ### #7 discarded alternative — Disallow goal overlap
+
 **VERBATIM, SUPERSEDED/DISCARDED**
 
 ```text
@@ -443,6 +461,7 @@ Report the new working ramp transforms and any goal-position change.
 ---
 
 ## #8 — Second editable component: Block
+
 **VERBATIM**
 
 ```text
@@ -468,6 +487,7 @@ Requirements:
 ---
 
 ## Original #9 — Parts tray
+
 **VERBATIM; later renumbered conceptually after removal was inserted first**
 
 ```text
@@ -490,7 +510,9 @@ Requirements:
 ---
 
 ## #9 — Remove selected parts
+
 ### Keyboard version
+
 **VERBATIM, SUPERSEDED**
 
 ```text
@@ -511,6 +533,7 @@ Requirements:
 ```
 
 ### Double-click version
+
 **VERBATIM, accepted**
 
 ```text
@@ -534,6 +557,7 @@ Requirements:
 ---
 
 ## #10 — Part ownership / fixed vs player-owned
+
 **VERBATIM**
 
 ```text
@@ -569,6 +593,7 @@ Do not commit or push.
 ```
 
 ### #10 follow-up — Unified ramp inventory
+
 **VERBATIM**
 
 ```text
@@ -613,6 +638,7 @@ Do not commit or push.
 ---
 
 ## #11 — Level-defined inventory
+
 **VERBATIM**
 
 ```text
@@ -636,6 +662,7 @@ Requirements:
 ```
 
 ### #11 follow-up — Reliable double-click removal
+
 **VERBATIM**
 
 ```text
@@ -677,6 +704,7 @@ Do not commit or push.
 ---
 
 ## #12 — Rerun current edited layout
+
 **VERBATIM**
 
 ```text
@@ -705,6 +733,7 @@ Do not commit or push.
 ---
 
 ## #13 — Consolidate project state/docs
+
 **VERBATIM**
 
 ```text
@@ -744,6 +773,7 @@ Report exactly which docs changed and any inconsistencies discovered.
 ---
 
 ## #14 — Multi-puzzle architecture
+
 **VERBATIM**
 
 ```text
@@ -809,6 +839,7 @@ Report:
 - **#19** Polish + broader e2e
 
 Feature ideas recorded:
+
 - time-limited puzzles
 - autonomous/randomly moving objects such as birds
 - declarative object-to-object contact behavior, e.g. bird touches balloon -> balloon pops
@@ -832,3 +863,42 @@ Potential future declarative interaction shape discussed:
 2. Prompts from the later conversation are preserved **VERBATIM**.
 3. Superseded prompts are retained intentionally so the archive reflects the actual development path rather than only the final decisions.
 4. No repository files were modified by generating this archive.
+
+---
+
+## #15 — Generic contact/reaction event system
+
+**VERBATIM**
+
+```text
+Start milestone #15: add a generic contact/reaction event system.
+
+Goal:
+Allow puzzle JSON to declare what happens when two object types contact each other.
+
+Implement a minimal generic system, not bird/balloon-specific logic.
+
+Example concept:
+- object A contacts object B
+- configured action executes
+
+Initial supported action:
+- destroy one contacted object
+
+Requirements:
+- Add declarative contact rules to puzzle JSON.
+- Detect Matter collision/contact events centrally.
+- Rules identify object type/tag and action.
+- Implement `destroy` as the first action.
+- Add one simple test/demo interaction using existing or minimal test objects.
+- Do not add birds/random movement yet.
+- Preserve existing puzzle behavior.
+- Invalid/unknown rules must fail validation clearly.
+- Add focused unit tests.
+- Update README.md, docs/PROJECT_STATE.md, docs/ROADMAP.md as needed.
+- Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md under milestone #15.
+- Run typecheck, lint, tests, format check, build.
+- Do not commit or push.
+
+Report architecture, JSON format, demo behavior, files changed, and validation results.
+```

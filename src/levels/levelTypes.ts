@@ -26,6 +26,20 @@ export interface InventoryDefinition {
   ramp: number;
 }
 
+export const CONTACT_TAGS = ["ball", "goal", "floor", "ramp", "block"] as const;
+
+export type ContactTag = (typeof CONTACT_TAGS)[number];
+
+export interface DestroyContactAction {
+  type: "destroy";
+  target: ContactTag;
+}
+
+export interface ContactRule {
+  contacts: [ContactTag, ContactTag];
+  action: DestroyContactAction;
+}
+
 export function isPlayerPart(
   definition: Readonly<LevelPartDefinition>,
 ): boolean {
@@ -43,6 +57,7 @@ export interface LevelDefinition {
   id: string;
   title: string;
   inventory: InventoryDefinition;
+  contactRules: ContactRule[];
   ball: Point & { radius: number };
   ramps: RampDefinition[];
   blocks: BlockDefinition[];

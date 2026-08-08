@@ -60,6 +60,25 @@ and may not penetrate the ball or any other ramp/block. A transform that would
 violate those rules is rejected and the last valid transform remains in use.
 Goal overlap is intentionally allowed.
 
+## Contact rules
+
+Levels can declare reactions to Matter contacts. A rule names two supported
+tags (`ball`, `goal`, `floor`, `ramp`, or `block`) and an action. The first
+supported action is `destroy`:
+
+```json
+{
+  "contacts": ["ball", "block"],
+  "action": { "type": "destroy", "target": "block" }
+}
+```
+
+Contact order does not matter. The prototype includes this as a simple demo:
+if the ball contacts a block while running, that block is destroyed. The known
+two-ramp solution avoids the fixed guide block, so the original puzzle outcome
+is unchanged. Contact destruction is a simulation event; Rerun and Reset
+restore their respective saved layouts.
+
 ## Build and validation
 
 ```bash
@@ -84,7 +103,8 @@ It requires Playwright Chromium and a usable local Vite server.
 - `src/state/` — browser-independent modes, transforms, inventory, and
   run-start snapshot transitions.
 - `src/game/` — Phaser scene, generated visuals, Matter bodies, placement
-  validation, double-click gesture logic, and scene-layout snapshots.
+  validation, contact-rule execution, double-click gesture logic, and
+  scene-layout snapshots.
 - `src/ui/` — plain DOM controls and tray rendering.
 - `src/main.ts` — composition of the level, state, controls, and Phaser game.
 - `tests/` — browser-independent unit tests.
