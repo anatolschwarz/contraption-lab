@@ -19,6 +19,8 @@ The prototype currently supports:
 - Runtime validation of level JSON before it reaches the Phaser scene.
 - Browser-independent tests for game-state transitions, deterministic reset, and
   level validation.
+- A Playwright Chromium smoke test covering page load, ramp editing, simulation
+  toggle behavior, reset, and first-puzzle completion.
 
 ## Architecture and important files
 
@@ -38,6 +40,7 @@ The prototype currently supports:
 - `src/ui/Controls.ts` binds and renders the plain DOM controls.
 - `tests/gameState.test.ts`, `tests/rampPlacement.test.ts`, and
   `tests/levelValidation.test.ts` cover the pure, browser-independent behavior.
+- `e2e/puzzle.e2e.ts` exercises the browser-level puzzle flow through Playwright.
 - `index.html` and `src/style.css` provide the page structure and responsive
   presentation.
 - `vite.config.ts`, `tsconfig.json`, and `eslint.config.js` configure the build
@@ -52,6 +55,7 @@ Runtime dependency:
 Development dependencies:
 
 - `@eslint/js@10.0.1`
+- `@playwright/test@1.62.1`
 - `eslint@10.7.0`
 - `globals@17.7.0`
 - `prettier@3.9.5`
@@ -93,14 +97,15 @@ The individual commands are:
 - `npm test` — run the Vitest unit suite once.
 - `npm run format:check` — verify Prettier formatting.
 - `npm run build` — type-check and create the production bundle in `dist/`.
+- `npm run test:e2e` — start Vite and run the Chromium smoke test.
 
 ## Known limitations
 
 - There is one fixed puzzle and one editable component.
 - Edit mode supports only the predefined ramp; it has no general-purpose object
   manipulation or level editor.
-- The browser canvas and Matter collision path are manually tested; the automated
-  suite covers only browser-independent logic.
+- The Chromium smoke test covers the main browser flow, but cross-browser and
+  touch-specific behavior remain untested.
 - Reset determinism covers the defined initial state. Small physics differences
   can still occur between browser or engine versions.
 - The production bundle includes Phaser in a large JavaScript chunk; Vite reports
@@ -110,6 +115,5 @@ The individual commands are:
 
 ## Recommended next milestone
 
-Add a focused browser smoke test that verifies startup, ramp placement and
-rotation controls, and completion of the first puzzle without expanding into a
-general-purpose level editor.
+Add cross-browser or touch-specific smoke coverage only when those platforms
+enter scope.

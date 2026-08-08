@@ -40,6 +40,12 @@ npm run format:check
 npm run build
 ```
 
+Run the browser smoke test (Playwright Chromium must be installed first):
+
+```bash
+npm run test:e2e
+```
+
 ## Architecture
 
 - `src/levels/` contains the JSON level, TypeScript level types, loading, and runtime validation.
@@ -47,7 +53,7 @@ npm run build
 - `src/game/` contains the Phaser scene, generated visuals, Matter bodies, ramp placement bounds, and goal collision handling.
 - `src/ui/` owns the DOM control bindings and enabled states.
 - `src/main.ts` composes the level, state, controls, scene, and Phaser configuration.
-- `tests/` exercises validation, transitions, success, and deterministic reset logic without a browser canvas.
+- `tests/` exercises validation, transitions, success, and deterministic reset logic without a browser canvas; `e2e/` covers the first puzzle in Chromium.
 
 ## Current limitations
 
