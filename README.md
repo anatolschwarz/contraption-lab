@@ -145,6 +145,21 @@ npm run test:e2e
 ```
 
 It requires Playwright Chromium and a usable local Vite server.
+The production build succeeds with the known Vite bundle-size warning for the
+Phaser main chunk.
+Milestone #19 is complete.
+
+The current browser suite has nine scenarios: solve/Next Puzzle, inventory
+removal and replacement, Rerun versus Reset, timed puzzle controls and timeout,
+locked-puzzle switching isolation, persisted progression, Unlock all,
+deterministic Bird/contact rules, and fixed-versus-editable parts.
+
+## Planned roadmap
+
+The next numbered milestones are: #20 Ball as a normal component/part, #21
+Compact Play toolbar, and #22 Dockable/collapsible Parts Palette. Later work
+remains TBD in the roadmap backlog. See
+[`docs/ROADMAP.md`](docs/ROADMAP.md) for scoped definitions.
 
 ## Architecture
 
@@ -175,5 +190,7 @@ For the detailed current state, known solution, and roadmap, see
   free placement preview.
 - Browser e2e is designed to run serially for deterministic simulation checks.
   It requires Playwright Chromium and a usable local Vite server.
+- The numbered roadmap defines planned ball and Play-screen UI work; later
+  editor, audio, library, and puzzle-content work remains TBD.
 - Touch-specific interaction, persistence, audio, networking, and a general
   purpose level editor are out of scope.

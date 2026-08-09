@@ -27,14 +27,10 @@ without a separate scoped milestone request.
 - Completed: added optional positive JSON time limits, countdown feedback, and
   deterministic Pause, Rerun, Reset, Success, and Timeout behavior.
 
-## #18 — Progression + editor UX
+## #18 — Progression and puzzle switching
 
 - Completed progression scope: three lightweight ordered built-ins, grouping,
   unlock/completion persistence, Settings Unlock all, and Next Puzzle.
-- Next: Puzzle Editor, a global object library, and separately stored
-  user-created puzzles that never overwrite bundled JSON.
-- Improve rotation UX, selection, placement feedback, tray affordances, and
-  input discoverability without broadening the editor beyond approved scope.
 
 ## #19 — Polish + broader e2e
 
@@ -42,13 +38,45 @@ without a separate scoped milestone request.
   control layout, plus visible rejected-edit feedback.
 - Completed: browser coverage now exercises the current MVP's solve/Next,
   inventory, Rerun/Reset, timed, progression/settings, actor/contact, and
-  ownership flows. Serial repeat runs remain the recommended external
-  determinism check.
+  ownership flows in nine scenarios. The fixed 60 Hz simulation remains the
+  basis for serial repeat determinism checks.
 - Future accessibility and performance work should remain separately scoped.
+- The known Vite production bundle-size warning remains acceptable while Phaser
+  is bundled in the main chunk.
 
-## Discussion backlog
+## #20 — Ball as a normal component/part
 
-- Music.
-- Rotation UX.
-- Puzzle editor plus object coloring.
-- Themed, original object libraries.
+- Integrate Ball into the general component/ownership model.
+- Let puzzle definitions determine whether Ball is fixed, preplaced/player-owned, or
+  available through inventory.
+- Reduce unnecessary Ball-specific assumptions.
+- Preserve existing ball physics and puzzle behavior.
+
+## #21 — Compact Play toolbar
+
+- Replace oversized Play controls with a compact toolbar.
+- Preserve Run/Pause, Rerun, Reset, and Next Puzzle behavior.
+- Keep the gameplay canvas as the primary visual focus.
+
+## #22 — Dockable/collapsible Parts Palette
+
+- Replace the current small Parts tray.
+- Open the palette beside the Play canvas so the puzzle remains visible.
+- Keep contents and counts per-puzzle.
+- The global object library defines supported types; individual puzzles define
+  allowed types and quantities.
+- Design so categories, icons, and scrolling can be added later.
+
+## Backlog / To Discuss
+
+- Music
+- Rotation UX
+  - mouse rotation
+  - arrow keys vs Q/E
+  - left/right vs up/down mapping
+- Puzzle Editor
+  - object coloring
+- Themed/original object libraries
+  - unicorn/fantasy
+  - other original themed packs
+  - avoid copyrighted/branded characters/assets

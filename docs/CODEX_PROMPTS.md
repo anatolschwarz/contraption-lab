@@ -1634,3 +1634,241 @@ Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
 Run normal validation.
 Do not commit or push.
 ```
+
+---
+
+## #19 documentation-only checkpoint
+
+**VERBATIM**
+
+```text
+Documentation-only checkpoint after milestone #19.
+
+Do not change gameplay code.
+
+Update:
+- README.md
+- docs/PROJECT_STATE.md
+- docs/ROADMAP.md
+- docs/CODEX_PROMPTS.md
+
+Record:
+- #19 completed
+- current 9-scenario e2e coverage
+- deterministic 60 Hz simulation
+- current progression/timer/actor/contact/inventory capabilities
+- known Vite bundle-size warning
+
+Update the next-phase roadmap with the agreed design:
+1. Ball becomes a normal component/part.
+2. Replace large controls with a compact toolbar.
+3. Replace the small Parts tray with a dockable/collapsible Parts Palette beside the Play canvas.
+4. Palette contents/counts remain per-puzzle.
+
+Keep discussion backlog:
+- music
+- rotation UX
+- Puzzle Editor + object coloring
+- themed/original object libraries
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Do not commit or push.
+Report exactly what changed.
+```
+
+---
+
+## #19 documentation-only checkpoint — numbered roadmap
+
+**VERBATIM**
+
+```text
+Documentation-only checkpoint after milestone #19.
+
+Do not change gameplay code.
+
+Update:
+- README.md
+- docs/PROJECT_STATE.md
+- docs/ROADMAP.md
+- docs/CODEX_PROMPTS.md
+
+Record current completed state:
+- #19 completed
+- current 9-scenario e2e coverage
+- deterministic fixed 60 Hz simulation
+- current progression, timer, autonomous actor, contact-rule, inventory, Rerun/Reset capabilities
+- known harmless Vite bundle-size warning
+
+Extend docs/ROADMAP.md explicitly with the next numbered milestones:
+
+#20 — Ball as a normal component/part
+- Remove unnecessary special-case assumptions around the current ball.
+- Support ball through the general component/ownership model.
+- Allow puzzles to define whether a ball is fixed, preplaced/player-owned, or available through inventory.
+- Do not imply multiple balls are implemented yet unless architecture naturally supports them.
+
+#21 — Compact Play toolbar
+- Replace oversized Play controls with a compact toolbar.
+- Preserve existing Run/Pause, Rerun, Reset, Next Puzzle behavior.
+- Keep gameplay canvas as the primary visual focus.
+
+#22 — Dockable Parts Palette
+- Replace the current small Parts tray with a dockable/collapsible palette beside the Play canvas.
+- Palette remains visible alongside gameplay when open.
+- Contents and quantities remain per-puzzle.
+- Global object library defines available object types; each puzzle defines its allowed subset/counts.
+- Design for future categories, icons, scrolling, and additional object types.
+
+#23 — Puzzle Editor foundation
+- Separate Puzzle Editor screen/workspace.
+- Create/edit puzzle scenes without overwriting bundled puzzles.
+- Object placement and configuration.
+- Configure fixed vs player-owned objects.
+- Configure per-puzzle inventory.
+- Include object coloring.
+- User-created puzzles stored separately from built-in puzzles.
+
+#24 — Rotation UX improvements
+- Mouse-based rotation in addition to keyboard controls.
+- Evaluate arrow keys vs Q/E.
+- Clarify left/right vs up/down rotation-control mapping.
+- Preserve deterministic placement/overlap validation.
+
+#25 — Music/audio system
+- Background music and gameplay sound-effect architecture.
+- Per-theme/per-puzzle possibilities.
+- Settings for volume/mute.
+- Do not choose copyrighted music/assets.
+
+#26 — Themed/original object libraries
+- Support themed visual/object packs.
+- Examples: fantasy/unicorn, workshop, space, fairy-tale-inspired.
+- Use original/non-infringing assets and designs.
+- Keep visual skin separate from physics/game behavior where practical.
+- Animated visual skins should be possible.
+
+#27 — Real puzzle pack / difficulty progression
+- Design and implement a meaningful puzzle set rather than only architecture/demo scenes.
+- Target structure can include approximately:
+  - 4 Basic
+  - 3 Medium
+  - 3 Hard
+- Puzzle is a concrete scene/challenge.
+- Difficulty is metadata.
+- Progression remains global sequential order.
+- Include TIM-like contraption puzzles using the mechanics built so far.
+
+Also record the agreed Play-screen architecture:
+- Play is the default/root screen.
+- No separate Home screen.
+- Puzzle selector lives on the Play screen.
+- Puzzle Editor and Settings are separate screens.
+- Current level/puzzle title/difficulty are visible during play.
+- Puzzle selector can open a grouped Basic / Medium / Hard panel.
+- Progress persists locally.
+- Sequential unlocking is default.
+- Settings can enable Unlock All without deleting earned progress.
+
+Maintain a clearly labeled discussion backlog for undecided details, but do not duplicate items already promoted into numbered roadmap milestones.
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Do not commit or push.
+
+Report:
+- exact documentation files changed
+- roadmap entries added/modified
+- any stale or contradictory documentation removed
+```
+
+---
+
+## #19 documentation-only checkpoint — scoped roadmap
+
+**VERBATIM**
+
+```text
+Documentation-only checkpoint after milestone #19.
+
+Do not change gameplay code.
+
+Update:
+- README.md
+- docs/PROJECT_STATE.md
+- docs/ROADMAP.md
+- docs/CODEX_PROMPTS.md
+
+Record current completed state:
+- #19 completed
+- current 9-scenario e2e coverage
+- deterministic fixed 60 Hz simulation
+- current progression, timer, autonomous actor, contact-rule, inventory, Rerun/Reset capabilities
+- known harmless Vite bundle-size warning
+
+Extend docs/ROADMAP.md only with these agreed numbered milestones:
+
+#20 — Ball as a normal component/part
+- Integrate Ball into the general component/ownership model.
+- Allow puzzle definitions to determine whether Ball is fixed, preplaced/player-owned, or available in inventory.
+- Reduce unnecessary Ball-specific assumptions.
+- Preserve existing ball physics and puzzle behavior.
+
+#21 — Compact Play toolbar
+- Replace oversized Play controls with a compact toolbar.
+- Preserve Run/Pause, Rerun, Reset and Next Puzzle behavior.
+- Keep the gameplay canvas as the visual focus.
+
+#22 — Dockable/collapsible Parts Palette
+- Replace the current small Parts tray.
+- Palette opens beside the Play canvas so the puzzle remains visible.
+- Contents/counts remain per-puzzle.
+- Global object library defines supported types.
+- Individual puzzles define allowed types and quantities.
+- Design so categories/icons/scrolling can be added later.
+
+Do NOT invent or number milestones beyond #22.
+Later milestones remain TBD until explicitly agreed.
+
+Also preserve/restore an UNNUMBERED section at the END of docs/ROADMAP.md:
+
+## Backlog / To Discuss
+- Music
+- Rotation UX
+  - mouse rotation
+  - arrow keys vs Q/E
+  - left/right vs up/down mapping
+- Puzzle Editor
+  - object coloring
+- Themed/original object libraries
+  - unicorn/fantasy
+  - other original themed packs
+  - avoid copyrighted/branded characters/assets
+
+Important:
+- Backlog stays in ROADMAP.md.
+- Backlog is NOT part of the numbered milestone sequence.
+- Do not promote backlog items into milestones.
+
+Record the agreed Play-screen architecture:
+- Play is the default/root screen.
+- No separate Home screen.
+- Puzzle selector lives on the Play screen.
+- Puzzle Editor and Settings are separate screens when implemented.
+- Current level/puzzle title/difficulty remain visible during play.
+- Puzzle selector can expose grouped Basic / Medium / Hard puzzles.
+- Progress persists locally.
+- Sequential unlocking is default.
+- Settings can enable Unlock All without deleting earned progress.
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Do not commit or push.
+
+Report:
+- exact documentation files changed
+- roadmap entries added/modified
+- backlog section restored/preserved
+- any stale or contradictory documentation removed
+```

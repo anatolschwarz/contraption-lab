@@ -36,11 +36,10 @@ same 25° rotation (five 5° Q/E steps).
   Progress persists locally through `localStorage`; Settings can enable manual
   Unlock all puzzles. Disabling it keeps earned completion and restores normal
   selection rules.
-- **Inventory and object library:** the global library defines supported object
-  types. Each puzzle JSON defines its available parts and counts, which supply
-  the Play-screen tray.
-- **User-created puzzles:** stored separately from bundled puzzles and never
-  overwrite bundled JSON.
+- **Inventory:** each puzzle JSON defines its available parts and counts, which
+  supply the Play-screen tray. A global object library is planned for #22.
+- **User-created puzzles:** future work; they will be stored separately from
+  bundled puzzles and never overwrite bundled JSON.
 - **Future screen:** Puzzle Editor. Settings currently contains Unlock all
   puzzles.
 
@@ -77,8 +76,8 @@ same 25° rotation (five 5° Q/E steps).
   all, Next Puzzle, and fully isolated puzzle runtime replacement.
 - **#19 — MVP polish and e2e coverage:** refined Play-screen hierarchy and
   controls, added visible rejected-edit feedback, and expanded browser coverage
-  across progression, inventory, timed, ownership, actor/contact, and reset
-  flows.
+  to nine scenarios across solve/Next Puzzle, inventory, Rerun/Reset, timed
+  controls/timeout, progression, Settings, actor/contact, and ownership flows.
 
 ## Current behavior
 
@@ -164,6 +163,18 @@ all, Bird patrol/contact rules, and fixed-versus-editable parts. Run
 `npx playwright test --repeat-each=5 --workers=1` externally to stress the
 deterministic browser path.
 
+## Agreed Play-screen architecture
+
+- Play is the default/root screen; there is no separate Home screen.
+- The selector lives on Play and opens a grouped Basic / Medium / Hard panel.
+- The current level, puzzle title, and difficulty remain visible during play.
+- Puzzle Editor and Settings are separate screens when implemented.
+- Progress persists locally. Sequential unlocking is the default; Settings can
+  enable Unlock all without deleting earned progress.
+- The next numbered milestones are #20 Ball as a normal component/part, #21
+  Compact Play toolbar, and #22 Dockable/collapsible Parts Palette. The Palette
+  remains per-puzzle for both contents and quantities.
+
 ## Known limitations and issues
 
 - Only three lightweight built-in puzzles exist; broader puzzle content is
@@ -182,12 +193,5 @@ deterministic browser path.
   main chunk; the build still succeeds.
 - Touch, accessibility-specific input behavior, audio, networking, and a
   general-purpose editor remain out of scope.
-
-## Discussion backlog
-
-- Music.
-- Rotation UX.
-- Puzzle editor plus object coloring.
-- Themed, original object libraries.
 
 See [`ROADMAP.md`](ROADMAP.md) for the next planned milestones.
