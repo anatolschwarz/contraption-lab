@@ -113,12 +113,7 @@ export class Controls {
       state.mode !== "edit" || state.succeeded || state.trayRampCount === 0;
     this.trayRampButton.textContent = `Ramp (${state.trayRampCount})`;
     this.rerunButton.disabled = state.mode === "edit" || !state.runSnapshot;
-    this.timerLabel.hidden = state.timeRemainingMs === undefined;
-    if (state.timeRemainingMs !== undefined) {
-      this.timerLabel.textContent = `Time: ${formatTimeRemaining(
-        state.timeRemainingMs,
-      )}`;
-    }
+    this.renderTimer(state);
     const label = state.succeeded
       ? "Success"
       : state.mode === "failed"
@@ -137,6 +132,17 @@ export class Controls {
     this.puzzleSelectorButton.textContent = `Puzzle: ${view.activePuzzle.title}`;
     this.unlockAllCheckbox.checked = view.unlockAll;
     this.renderPuzzleSelector(view);
+  }
+
+  renderTimer(state: Readonly<GameState>): void {
+    if (state.timeRemainingMs === undefined) {
+      this.timerLabel.hidden = true;
+      return;
+    }
+    this.timerLabel.hidden = false;
+    const label = `Time: ${formatTimeRemaining(state.timeRemainingMs)}`;
+    if (this.timerLabel.textContent !== label)
+      this.timerLabel.textContent = label;
   }
 
   private renderPuzzleSelector(view: Readonly<PlayScreenView>): void {

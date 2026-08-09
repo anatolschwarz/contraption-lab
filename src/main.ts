@@ -99,7 +99,7 @@ function handleAction(action: GameAction): void {
     const previousMode = state.mode;
     replaceGameState(transitionGameState(state, action));
     if (state.mode !== previousMode) applyState();
-    else controls.render(state, getPlayScreenView());
+    else controls.renderTimer(state);
     return;
   }
   if (action === "toggle-simulation" && state.mode === "edit") {

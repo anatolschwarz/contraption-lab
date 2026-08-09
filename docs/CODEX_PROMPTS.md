@@ -1220,3 +1220,58 @@ Requirements:
 - Run typecheck, lint, tests, format check, build.
 - Do not commit or push.
 ```
+
+---
+
+## #18 follow-up — Playwright solve regression
+
+**VERBATIM**
+
+```text
+Continue milestone #18.
+
+Regression:
+The existing Playwright puzzle solve test now fails.
+
+Observed:
+- Both ramps reach the known solution transforms:
+  upper: x=265.1754, y=245.1157, rotation=25°
+  lower: x=540.1170, y=394.1423, rotation=25°
+- After Run, mode remains "Running" for 10 seconds instead of reaching "Success".
+- This same e2e solution previously passed.
+
+Do NOT:
+- increase the Success timeout
+- change the known ramp solution
+- redesign puzzle physics
+- weaken the assertion
+
+Diagnose the regression first.
+
+Inspect:
+1. test-results error-context.md and failure screenshot
+2. which puzzle ID is actually active during e2e
+3. ball and goal starting/runtime positions
+4. autonomous Bird behavior during the run
+5. contact rules, especially Bird -> Ramp destruction
+6. whether any ramp/block is destroyed before the ball reaches the goal
+7. whether #18 progression/UI changes altered runtime initialization
+
+Add temporary deterministic logging/test hooks if needed to identify the first divergence from the previously passing flow.
+
+Report the exact cause before making gameplay changes.
+
+If the bug is test setup/state isolation, fix the test.
+If it is a real gameplay regression, make the smallest fix that preserves intended #15/#16/#18 behavior.
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run:
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+
+Do not commit or push.
+```
