@@ -1051,3 +1051,67 @@ Requirements:
 - Run typecheck, lint, tests, format check, build.
 - Do not commit or push.
 ```
+
+---
+
+## UI and progression architecture
+
+**VERBATIM**
+
+```text
+Update project documentation only. Do not change gameplay code.
+
+Record the agreed UI/progression architecture:
+
+Play screen
+- Default/root screen.
+- Contains gameplay canvas, per-puzzle parts tray, controls, timer/status.
+- Buttons to Puzzle Editor and Settings.
+- No separate Home screen.
+
+Puzzle switching
+- Compact selector in Play screen.
+- Clicking opens grouped panel/modal:
+  - Basic
+  - Medium
+  - Hard
+- Show locked / available / completed states.
+- Show timed-puzzle indicator.
+- Success offers prominent Next Puzzle action.
+
+Progression
+- Global sequential puzzle order.
+- Difficulty is metadata/grouping, not separate progression.
+- Example progression: Basic -> Medium -> Hard.
+- Progress persists locally using localStorage.
+- Settings can enable manual "Unlock all puzzles".
+
+Inventory
+- Parts tray is defined per puzzle.
+- Global object library contains supported object types.
+- Puzzle JSON defines which parts/counts are available.
+
+User-created puzzles
+- Stored separately from bundled/built-in puzzles.
+- Never overwrite bundled puzzle JSON.
+
+Future screens
+- Puzzle Editor
+- Settings
+
+Update:
+- README.md where relevant
+- docs/PROJECT_STATE.md
+- docs/ROADMAP.md
+
+Also record the current discussion backlog:
+- music
+- rotation UX
+- puzzle editor + object coloring
+- themed/original object libraries
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Do not commit or push.
+Report exactly which documentation sections changed.
+```

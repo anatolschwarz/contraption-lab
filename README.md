@@ -99,6 +99,28 @@ The prototype also declares `bird`/`block` → destroy block, demonstrating that
 the same contact system applies to autonomous actors without bird-specific
 reaction logic.
 
+## Agreed UI and progression architecture
+
+The future root screen is the **Play** screen; there is no separate Home
+screen. It contains the gameplay canvas, the active puzzle's parts tray,
+controls, timer/status, and buttons for the future Puzzle Editor and Settings
+screens.
+
+Puzzle switching will use a compact selector on the Play screen. It opens a
+grouped panel or modal for **Basic**, **Medium**, and **Hard** puzzles, showing
+each puzzle's locked, available, or completed state and a timed-puzzle
+indicator. Success will offer a prominent **Next Puzzle** action.
+
+Progression will follow one global sequential order (for example, Basic →
+Medium → Hard). Difficulty is grouping metadata, not a separate progression
+path. Progress will persist locally with `localStorage`; Settings will offer a
+manual **Unlock all puzzles** option.
+
+The parts tray remains puzzle-defined. A global object library will list the
+supported object types, while each puzzle JSON file defines which parts and
+counts are available. User-created puzzles will be stored separately from
+built-in puzzles and must never overwrite bundled JSON.
+
 ## Build and validation
 
 ```bash
@@ -137,6 +159,8 @@ For the detailed current state, known solution, and roadmap, see
 ## Current limitations
 
 - One level only; there is no level selection or progression.
+- The documented Play selector, local progression, Puzzle Editor, and Settings
+  screens are planned architecture; they are not implemented yet.
 - Tray spawn locations are a small predefined set of valid candidates, not a
   free placement preview.
 - Browser e2e coverage currently focuses on the original two-ramp solution;

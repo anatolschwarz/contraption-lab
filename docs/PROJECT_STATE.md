@@ -17,6 +17,26 @@ The untouched layout fails. The known working solution is:
 The Playwright flow checks these positions with ±1 px tolerance and uses the
 same 25° rotation (five 5° Q/E steps).
 
+## Agreed UI and progression architecture (planned)
+
+- **Play screen:** the default/root screen; it contains the gameplay canvas,
+  per-puzzle parts tray, controls, timer/status, and buttons to Puzzle Editor
+  and Settings. There will be no separate Home screen.
+- **Puzzle selector:** a compact Play-screen selector opens a grouped panel or
+  modal for Basic, Medium, and Hard. It shows locked, available, and completed
+  states plus a timed-puzzle indicator. Success offers a prominent Next Puzzle
+  action.
+- **Progression:** one global sequential order, such as Basic → Medium → Hard.
+  Difficulty is metadata/grouping only, not a separate progression system.
+  Progress persists locally through `localStorage`; Settings can enable manual
+  Unlock all puzzles.
+- **Inventory and object library:** the global library defines supported object
+  types. Each puzzle JSON defines its available parts and counts, which supply
+  the Play-screen tray.
+- **User-created puzzles:** stored separately from bundled puzzles and never
+  overwrite bundled JSON.
+- **Future screens:** Puzzle Editor and Settings.
+
 ## Completed milestones
 
 - **#1–#6 — Prototype foundation:** Vite/TypeScript/Phaser setup, JSON level
@@ -120,7 +140,8 @@ currently cover tray, removal, Rerun, or timed behavior in a browser.
 
 ## Known limitations and issues
 
-- Only one level exists; no level selection, progression, or save data exists.
+- Only one bundled level exists; the documented selector, progression, local
+  progress, Puzzle Editor, and Settings screens are not implemented yet.
 - The tray uses predefined valid spawn candidates instead of a placement preview
   or user-chosen initial spawn position.
 - Unit coverage is strong for pure interaction/state rules, but browser e2e
@@ -136,5 +157,12 @@ currently cover tray, removal, Rerun, or timed behavior in a browser.
   main chunk; the build still succeeds.
 - Touch, accessibility-specific input behavior, audio, networking, and a
   general-purpose editor remain out of scope.
+
+## Discussion backlog
+
+- Music.
+- Rotation UX.
+- Puzzle editor plus object coloring.
+- Themed, original object libraries.
 
 See [`ROADMAP.md`](ROADMAP.md) for the next planned milestones.

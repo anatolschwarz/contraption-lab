@@ -5,9 +5,14 @@ without a separate scoped milestone request.
 
 ## #14 — Multi-puzzle architecture
 
-- Support a validated catalog of puzzle JSON files and a minimal selector.
-- Keep puzzle state, inventory, Reset, and Rerun isolated to the active puzzle.
-- Avoid duplicated scene/gameplay logic across puzzles.
+- Make Play the default/root screen; do not add a separate Home screen.
+- Add a compact Play-screen puzzle selector that opens a Basic/Medium/Hard
+  grouped panel or modal with locked, available, completed, and timed states.
+- Keep one global sequential progression order; difficulty is grouping metadata
+  rather than a separate progression path.
+- Persist progress with `localStorage`, add Settings support for Unlock all
+  puzzles, and offer Next Puzzle prominently after Success.
+- Keep puzzle state, parts tray, Reset, and Rerun isolated to the active puzzle.
 
 ## #15 — Contact/reaction event system
 
@@ -29,11 +34,22 @@ without a separate scoped milestone request.
 
 ## #18 — Progression + editor UX
 
-- Define lightweight progression across puzzles.
-- Improve selection, placement feedback, tray affordances, and input
-  discoverability without expanding into a general-purpose editor.
+- Add the future Puzzle Editor and Settings screens accessible from Play.
+- Define a global object library of supported types while keeping available
+  tray parts and counts in each puzzle JSON.
+- Store user-created puzzles separately from bundled puzzles; never overwrite
+  bundled JSON.
+- Improve rotation UX, selection, placement feedback, tray affordances, and
+  input discoverability without broadening the editor beyond approved scope.
 
 ## #19 — Polish + broader e2e
 
 - Expand browser coverage to current and future puzzle interactions.
 - Review responsiveness, performance, accessibility, and MVP readiness.
+
+## Discussion backlog
+
+- Music.
+- Rotation UX.
+- Puzzle editor plus object coloring.
+- Themed, original object libraries.
