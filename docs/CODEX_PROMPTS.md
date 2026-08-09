@@ -409,6 +409,102 @@ Report:
 - all validation results
 ```
 
+---
+
+## #19 follow-up — External serial e2e failures
+
+**VERBATIM**
+
+```text
+Continue milestone #19.
+
+External serial result:
+40 runs = 20 passed / 20 failed.
+Exactly 4 scenarios fail repeatedly.
+
+Diagnose/fix each independently:
+
+1. Inventory removal
+- Expected Ramp (5), remains Ramp (4).
+- Verify whether double-click removal actually occurs.
+- Determine whether this is a broken test helper/coordinates or real gameplay regression.
+
+2. Progression persistence
+- Test has a 30s overall timeout and performs solve + reload.
+- Diagnose where time is spent.
+- Do not blindly increase timeout.
+- Prefer reducing unnecessary work / deterministic state setup if appropriate.
+
+3. Unlock All
+- Definite test locator bug:
+  getByRole("button", {name:/Puzzle:/}) matches both:
+  - Puzzle selector
+  - Next Puzzle button
+- Use a unique stable locator, preferably #puzzle-selector-button.
+
+4. Fixed-part feedback
+- Expected feedback never appears.
+- Verify whether fixed-part interaction is actually triggered.
+- Check canvas coordinates/helper semantics after #19 layout changes.
+- Fix test if gameplay is correct; fix gameplay only if manual behavior is broken.
+
+Do not weaken assertions or add retries.
+Preserve fixed-step simulation.
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run normal validation.
+Do not commit/push.
+
+Report root cause + fix separately for all 4 failures.
+```
+
+---
+
+## #19 follow-up — Inventory removal e2e diagnosis
+
+**VERBATIM**
+
+```text
+Continue milestone #19.
+
+Only remaining external e2e failure:
+
+"returns removed player parts to inventory and places them again"
+
+Observed:
+- Expected Ramp (5)
+- Actual Ramp (4)
+- upper-ramp is not being removed.
+
+Previous fix (wait for first click selection before second click) was insufficient.
+
+Diagnose the actual input sequence. Do not guess.
+
+Instrument/test:
+- pointerdown/up events received by upper-ramp
+- selection state after first click
+- double-click timing/state after second click
+- whether drag detection cancels removal
+- whether board state removes upper-ramp
+- whether inventory increment executes
+
+Determine whether the bug is:
+1. Playwright helper semantics, or
+2. real double-click interaction unreliability.
+
+Prefer making the real UI interaction deterministic rather than special-casing the test.
+
+Do not weaken the inventory assertion.
+Do not add retries.
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+Run normal validation.
+Do not commit or push.
+
+Report exact root cause and fix.
+```
+
 ### #7 follow-up — Correct overlap bug
 
 **VERBATIM**
@@ -1326,4 +1422,215 @@ Report:
 - exact root cause
 - exact fix
 - why identical state is now deterministic
+```
+
+---
+
+## #19 — MVP polish and broad regression/e2e coverage
+
+**VERBATIM**
+
+```text
+Start milestone #19: MVP polish and broad regression/e2e coverage.
+
+Do not add new gameplay mechanics.
+
+Goals:
+1. Stabilize the current Play-screen UX.
+2. Expand browser e2e coverage across the main MVP flows.
+3. Remove obvious stale/debug/test artifacts.
+4. Keep simulation deterministic.
+
+Play-screen polish:
+- Keep Level N / puzzle title / difficulty clearly visible.
+- Improve obvious spacing/alignment/readability issues.
+- Keep controls clear:
+  - Run/Pause
+  - Rerun
+  - Reset
+  - Next Puzzle
+- Keep puzzle selector states clear:
+  - locked
+  - available
+  - completed
+  - timed
+- Keep parts tray readable.
+- Add clear visual feedback when an edit placement/removal is rejected.
+- No major redesign.
+
+E2E coverage:
+1. Puzzle solve:
+   - edit ramps
+   - Run
+   - Success
+   - Next Puzzle
+
+2. Inventory:
+   - remove player-owned ramp
+   - inventory increments
+   - place it again
+   - inventory decrements
+
+3. Rerun vs Reset:
+   - modify layout
+   - Run
+   - Rerun restores run-start layout
+   - Reset restores original puzzle JSON/inventory
+
+4. Timed puzzle:
+   - countdown starts on Run
+   - Pause freezes timer
+   - Resume continues
+   - Rerun restarts full attempt timer
+   - Timeout reaches Failed
+   - Success stops timer
+
+5. Puzzle switching/progression:
+   - locked puzzle cannot be selected
+   - success unlocks next puzzle
+   - switching puzzles does not leak runtime state
+   - progress persists in localStorage
+
+6. Settings:
+   - Unlock all exposes all built-in puzzles
+   - disabling it preserves earned progress
+
+7. Autonomous actors/contact rules:
+   - Bird patrols deterministically
+   - configured Bird→Block and Bird→Ramp reactions occur
+
+8. Fixed vs editable parts:
+   - fixed objects cannot be selected/moved/removed
+   - player-owned parts can
+
+Reliability requirements:
+- Keep the fixed 60 Hz simulation stepping.
+- No arbitrary long sleeps.
+- Prefer state-based waits/assertions.
+- Do not increase timeouts merely to hide failures.
+- Do not add retries to mask flaky behavior.
+- Stable test hooks are allowed only where needed.
+- Run e2e serially when validating deterministic simulation.
+
+Cleanup:
+- Remove obsolete debug logging/artifacts.
+- Ensure test-results/ remains ignored.
+- Review console errors/warnings.
+- Preserve the known harmless Vite bundle-size warning unless there is an obvious low-risk fix.
+- Remove stale documentation that contradicts current behavior.
+
+Documentation:
+- Update README.md.
+- Update docs/PROJECT_STATE.md.
+- Update docs/ROADMAP.md.
+- Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Do NOT implement backlog items:
+- music
+- rotation UX changes
+- Puzzle Editor
+- object coloring
+- themed object libraries
+- new component types
+
+Validation:
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+- npm run test:e2e where environment permits
+
+Also run or recommend external verification:
+npx playwright test --repeat-each=5 --workers=1
+
+Do not commit or push.
+
+Report:
+- UI polish performed
+- e2e scenarios added
+- cleanup performed
+- any bugs/flakiness discovered and fixed
+- files changed
+- all validation results
+```
+
+---
+
+## #19 follow-up — Inventory double-click timing
+
+**VERBATIM**
+
+```text
+Continue milestone #19.
+
+Focused inventory e2e still fails.
+
+Observed after the second click:
+- pendingClickComponentId = "upper-ramp"
+- pendingClickCompletedAt is set
+- selectedComponentId = "upper-ramp"
+- upperRampPresent = true
+
+This indicates click #2 is being treated as a NEW first click, not as the second click of the double-click.
+
+Likely cause:
+The diagnostic assertions/waits inserted between click #1 and click #2 consume too much of the app's double-click interval.
+
+Fix the Playwright helper, not gameplay semantics.
+
+Requirements:
+- Keep the real double-click timing rule unchanged unless evidence shows the UI itself is unreliable.
+- Do not wait/poll for long intermediate assertions between the two clicks.
+- Send two realistic completed clicks within the configured double-click threshold.
+- You may capture/log the intermediate state without blocking long enough to invalidate the double-click.
+- Prefer Playwright's real mouse double-click semantics or an equivalent explicit down/up/down/up sequence with controlled short delay.
+- After the sequence, assert:
+  - upper-ramp removed
+  - pending click consumed
+  - no drag occurred
+  - Ramp inventory incremented exactly once
+
+Do not add retries.
+Do not weaken assertions.
+Do not increase unrelated test timeouts.
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+Run normal validation.
+Do not commit or push.
+
+Report the exact timing sequence before/after the fix.
+```
+
+---
+
+## #19 follow-up — Next Puzzle scenario timeout
+
+**VERBATIM**
+
+```text
+Continue milestone #19.
+
+Only remaining e2e failure:
+
+"solves the first puzzle and advances through Next Puzzle"
+
+Observed:
+- Puzzle solves successfully.
+- Next Puzzle button resolves visible, enabled, and stable.
+- Test reaches the click, but the overall 30-second Playwright test timeout expires during that click.
+- Other 8 scenarios pass.
+
+This is an overall scenario-budget problem, not a gameplay failure.
+
+Fix:
+- Set ONLY this long end-to-end scenario to a 60-second test timeout.
+- Do not change gameplay.
+- Do not increase locator/assertion timeouts.
+- Do not add retries.
+- Do not change the 10-second Success assertion.
+- Leave other tests at their existing timeout.
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+Run normal validation.
+Do not commit or push.
 ```

@@ -38,8 +38,13 @@ without a separate scoped milestone request.
 
 ## #19 — Polish + broader e2e
 
-- Expand browser coverage to current and future puzzle interactions.
-- Review responsiveness, performance, accessibility, and MVP readiness.
+- Completed: refined Play-screen spacing, hierarchy, selector states, tray and
+  control layout, plus visible rejected-edit feedback.
+- Completed: browser coverage now exercises the current MVP's solve/Next,
+  inventory, Rerun/Reset, timed, progression/settings, actor/contact, and
+  ownership flows. Serial repeat runs remain the recommended external
+  determinism check.
+- Future accessibility and performance work should remain separately scoped.
 
 ## Discussion backlog
 

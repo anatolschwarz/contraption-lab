@@ -52,6 +52,8 @@ export class Controls {
     requireElement<HTMLDivElement>("settings-panel");
   private readonly timerLabel =
     requireElement<HTMLParagraphElement>("timer-label");
+  private readonly editFeedback =
+    requireElement<HTMLParagraphElement>("edit-feedback");
   private readonly trayBlockButton =
     requireElement<HTMLButtonElement>("tray-block-button");
   private readonly trayRampButton =
@@ -145,6 +147,11 @@ export class Controls {
       this.timerLabel.textContent = label;
   }
 
+  setEditFeedback(message: string): void {
+    this.editFeedback.textContent = message;
+    this.editFeedback.hidden = message.length === 0;
+  }
+
   private renderPuzzleSelector(view: Readonly<PlayScreenView>): void {
     const viewKey = JSON.stringify({
       activePuzzleId: view.activePuzzle.id,
@@ -170,8 +177,13 @@ export class Controls {
       for (const { availability, puzzle } of puzzles) {
         const puzzleButton = document.createElement("button");
         puzzleButton.type = "button";
-        puzzleButton.className = "puzzle-option";
+        puzzleButton.className = `puzzle-option puzzle-option--${availability}`;
         puzzleButton.disabled = availability === "locked";
+        puzzleButton.dataset.puzzleId = puzzle.id;
+        puzzleButton.dataset.puzzleState = availability;
+        puzzleButton.dataset.timed = String(
+          puzzle.timeLimitSeconds !== undefined,
+        );
         puzzleButton.setAttribute(
           "aria-current",
           String(puzzle.id === view.activePuzzle.id),

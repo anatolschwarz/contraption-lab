@@ -27,10 +27,10 @@ body {
 
 header {
   display: flex;
-  align-items: end;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
 }
 
 h1,
@@ -64,6 +64,8 @@ h1 {
 .status-panel {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: end;
   gap: 8px;
 }
 
@@ -78,9 +80,13 @@ h1 {
 
 .level-summary {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-left: 4px solid #8c4a2f;
+  background: rgb(245 240 230 / 72%);
 }
 
 #level-progress-label {
@@ -109,6 +115,7 @@ h1 {
 
 .play-tools {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 12px;
 }
@@ -154,6 +161,22 @@ h1 {
   background: #6f4e37;
 }
 
+.puzzle-option--completed {
+  border-color: #315341;
+}
+
+.puzzle-option--available {
+  border-color: #526d62;
+}
+
+.puzzle-option--locked {
+  border-style: dashed;
+}
+
+.puzzle-option[data-timed="true"]::after {
+  content: "  ⏱";
+}
+
 #next-puzzle-button {
   border-color: #8c4a2f;
   background: #8c4a2f;
@@ -184,9 +207,14 @@ h1 {
 
 .parts-tray {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   margin-top: 12px;
+  padding: 10px 12px;
+  border: 2px solid #71827c;
+  border-radius: 8px;
+  background: rgb(245 240 230 / 72%);
   color: #344e41;
   font-size: 0.85rem;
   font-weight: 800;
@@ -199,9 +227,17 @@ h1 {
   text-transform: none;
 }
 
+.edit-feedback {
+  min-height: 1.3em;
+  margin-top: 8px;
+  color: #8c2f2f;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
 .controls {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 10px;
   margin-top: 14px;
 }
@@ -246,6 +282,6 @@ button:disabled {
   }
 
   .controls {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   }
 }

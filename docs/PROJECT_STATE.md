@@ -23,6 +23,10 @@ same 25° rotation (five 5° Q/E steps).
 - **Play screen:** the default/root screen; it contains the gameplay canvas,
   per-puzzle parts tray, controls, timer/status, puzzle selector, and Settings.
   There is no separate Home screen.
+- **Polish feedback:** the persistent level/title/difficulty summary stays
+  visible in every mode. Selector state is visually and textually distinct, the
+  tray and controls wrap cleanly, and invalid placement or fixed-part edit
+  attempts show a concise live message without changing the board.
 - **Puzzle selector:** a compact Play-screen selector opens a grouped panel for
   Basic, Medium, and Hard. It shows locked, available, and completed states
   plus a timed-puzzle indicator. Locked puzzles cannot be selected. Success
@@ -71,6 +75,10 @@ same 25° rotation (five 5° Q/E steps).
 - **#18 — Lightweight progression and switching:** added three ordered built-in
   JSON puzzles, selector grouping, local completion/unlock persistence, Unlock
   all, Next Puzzle, and fully isolated puzzle runtime replacement.
+- **#19 — MVP polish and e2e coverage:** refined Play-screen hierarchy and
+  controls, added visible rejected-edit feedback, and expanded browser coverage
+  across progression, inventory, timed, ownership, actor/contact, and reset
+  flows.
 
 ## Current behavior
 
@@ -113,9 +121,12 @@ same 25° rotation (five 5° Q/E steps).
   the ball.
 - Actors are fixed/non-editable JSON objects. The current Bird actor is a
   gravity-free dynamic Matter body on a horizontal patrol, so solid blocks stop
-  it and collision events still run the `bird`/`block` destroy rule. It pauses
-  with physics, resumes without resetting, and Rerun restores its run-start
-  position and direction.
+  it and collision events still run the declarative `bird`/`block` and
+  `bird`/`ramp` destroy rules. It pauses with physics, resumes without
+  resetting, and Rerun restores its run-start position and direction.
+- Simulation uses scene-owned fixed 60 Hz Matter steps from an elapsed-time
+  accumulator. Patrol velocity and timer progression advance with those same
+  steps, avoiding render-frame-dependent contact ordering.
 
 ## Architecture
 
@@ -128,10 +139,11 @@ same 25° rotation (five 5° Q/E steps).
 | `src/game/doubleClick.ts`      | Pure completed-click and movement-tolerance logic.                                                          |
 | `src/game/contactRules.ts`     | Pure order-independent contact-rule matching and action execution.                                          |
 | `src/game/autonomousActors.ts` | Pure patrol state/velocity helpers and collision-enabled actor-body options.                                |
+| `src/game/simulationClock.ts`  | Fixed 60 Hz elapsed-time accumulator used by the scene-owned Matter loop.                                   |
 | `src/ui/Controls.ts`           | DOM buttons, tray counts, and enabled states.                                                               |
 | `src/main.ts`                  | Connects state, scene snapshots, controls, and Phaser setup.                                                |
 | `tests/`                       | Vitest unit coverage for state, placement, validation, ownership, puzzle data, and gestures.                |
-| `e2e/puzzle.e2e.ts`            | Playwright flow for the known two-ramp solution.                                                            |
+| `e2e/puzzle.e2e.ts`            | Playwright MVP coverage for solve, progression, inventory, timer, ownership, actors, and contacts.          |
 
 ## Automated validation
 
@@ -145,9 +157,12 @@ npm run format:check
 npm run build
 ```
 
-`npm run test:e2e` is available separately and exercises the original
-two-ramp browser flow, including the 10-second Success assertion. It does not
-currently cover tray, removal, Rerun, or timed behavior in a browser.
+`npm run test:e2e -- --workers=1` is available separately and covers the
+two-ramp solution/Next Puzzle flow, inventory removal/replacement, Rerun and
+Reset, timed Run/Pause/Resume/Rerun/Timeout, progression persistence, Unlock
+all, Bird patrol/contact rules, and fixed-versus-editable parts. Run
+`npx playwright test --repeat-each=5 --workers=1` externally to stress the
+deterministic browser path.
 
 ## Known limitations and issues
 
@@ -157,15 +172,12 @@ currently cover tray, removal, Rerun, or timed behavior in a browser.
   not implemented. User-created puzzles are not part of built-in progression.
 - The tray uses predefined valid spawn candidates instead of a placement preview
   or user-chosen initial spawn position.
-- Unit coverage is strong for pure interaction/state rules, but browser e2e
-  coverage has not yet expanded to the newer tray, removal, ownership, and
-  Rerun flows.
 - Contact rules currently support only type/tag matching and the `destroy`
   action; they have no conditions, effects, or per-instance targeting.
 - Autonomous actors currently support only deterministic horizontal/vertical
   patrol movement. Random and path-based movement remain future work.
-- Timed behavior has unit coverage but no browser e2e coverage yet.
-- Physics results can vary slightly between browser or engine versions.
+- Fixed 60 Hz stepping is deterministic for the same scene inputs and elapsed
+  time; cross-version engine changes still require browser verification.
 - Vite reports a production chunk-size warning because Phaser is bundled in the
   main chunk; the build still succeeds.
 - Touch, accessibility-specific input behavior, audio, networking, and a

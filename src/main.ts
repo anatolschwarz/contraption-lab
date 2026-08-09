@@ -46,6 +46,20 @@ let state: GameState = runtime.gameState;
 let game: Phaser.Game | undefined;
 let scene: PrototypeScene | undefined;
 
+declare global {
+  interface Window {
+    __contraptionLabTest?: {
+      getPrototypeScene: () => PrototypeScene | undefined;
+    };
+  }
+}
+
+if (import.meta.env.DEV) {
+  window.__contraptionLabTest = {
+    getPrototypeScene: () => scene,
+  };
+}
+
 const controls = new Controls(
   handleAction,
   selectPuzzle,
@@ -114,7 +128,10 @@ function handleAction(action: GameAction): void {
     progression = completePuzzle(progression, activePuzzle.id, builtInPuzzles);
     saveProgression(storage, progression);
   }
-  if (action === "reset") scene?.resetLevel();
+  if (action === "reset") {
+    scene?.resetLevel();
+    controls.setEditFeedback("");
+  }
   applyState();
 }
 
@@ -132,6 +149,7 @@ function selectPuzzle(puzzleId: string): void {
   activePuzzle = nextPuzzle;
   runtime = nextRuntime;
   state = runtime.gameState;
+  controls.setEditFeedback("");
   controls.render(state, getPlayScreenView());
   game?.destroy(true);
   scene = undefined;
@@ -176,6 +194,7 @@ function createGame(): void {
         componentId,
         returnsTrayPart,
       }),
+    (message) => controls.setEditFeedback(message),
   );
 
   game = new Phaser.Game({

@@ -169,6 +169,7 @@ export class PrototypeScene extends Phaser.Scene {
       componentId: string,
       returnsTrayPart: "block" | "ramp" | null,
     ) => void,
+    private readonly onEditFeedback: (message: string) => void,
   ) {
     super("prototype");
   }
@@ -359,9 +360,11 @@ export class PrototypeScene extends Phaser.Scene {
         )
       ) {
         this.createBlock(definition, true);
+        this.onEditFeedback("");
         return id;
       }
     }
+    this.onEditFeedback("Placement rejected: no clear space is available.");
     return null;
   }
 
@@ -382,9 +385,11 @@ export class PrototypeScene extends Phaser.Scene {
         )
       ) {
         this.createRamp(definition, true);
+        this.onEditFeedback("");
         return id;
       }
     }
+    this.onEditFeedback("Placement rejected: no clear space is available.");
     return null;
   }
 
@@ -630,7 +635,11 @@ export class PrototypeScene extends Phaser.Scene {
       componentType === "ramp"
         ? this.ramps.get(componentId)
         : this.blocks.get(componentId);
-    if (!component?.editable) return;
+    if (!component?.editable) {
+      this.onEditFeedback("Fixed parts cannot be moved or removed.");
+      return;
+    }
+    this.onEditFeedback("");
     this.onSelectionChange(componentId);
     this.drag = {
       componentId,
@@ -679,6 +688,7 @@ export class PrototypeScene extends Phaser.Scene {
         componentId,
         isEditablePart(ramp.definition, ramp.fromTray) ? "ramp" : null,
       );
+      this.onEditFeedback("");
       return;
     }
     const block = this.blocks.get(componentId);
@@ -692,6 +702,7 @@ export class PrototypeScene extends Phaser.Scene {
       componentId,
       isEditablePart(block.definition, block.fromTray) ? "block" : null,
     );
+    this.onEditFeedback("");
   }
 
   private restoreLevelParts(): void {
@@ -910,11 +921,17 @@ export class PrototypeScene extends Phaser.Scene {
       { ...ramp.definition, rotation },
     );
     if (notify && !this.isValidRampEditPlacement(rampId, position, rotation)) {
+      this.onEditFeedback(
+        "Placement rejected: keep parts in bounds and clear of other parts.",
+      );
       return;
     }
     ramp.shape.setPosition(position.x, position.y).setRotation(rotation);
     ramp.selectionText.setPosition(position.x, position.y - 34);
-    if (notify) this.onRampTransformChange(rampId, { position, rotation });
+    if (notify) {
+      this.onEditFeedback("");
+      this.onRampTransformChange(rampId, { position, rotation });
+    }
   }
 
   private updateBlockPosition(
@@ -930,10 +947,18 @@ export class PrototypeScene extends Phaser.Scene {
       { x, y },
       { ...block.definition, rotation: 0 },
     );
-    if (notify && !this.isValidBlockEditPlacement(blockId, position)) return;
+    if (notify && !this.isValidBlockEditPlacement(blockId, position)) {
+      this.onEditFeedback(
+        "Placement rejected: keep parts in bounds and clear of other parts.",
+      );
+      return;
+    }
     block.shape.setPosition(position.x, position.y);
     block.selectionText.setPosition(position.x, position.y - 34);
-    if (notify) this.onBlockTransformChange(blockId, { position });
+    if (notify) {
+      this.onEditFeedback("");
+      this.onBlockTransformChange(blockId, { position });
+    }
   }
 
   private isValidRampEditPlacement(
@@ -1037,8 +1062,8 @@ export class PrototypeScene extends Phaser.Scene {
       selected ? 5 : 4,
       selected ? SELECTED_RAMP_STROKE_COLOR : strokeColor,
     );
-    if (this.editInteractionEnabled && component.editable) {
-      component.shape.setInteractive({ useHandCursor: true });
+    if (this.editInteractionEnabled) {
+      component.shape.setInteractive({ useHandCursor: component.editable });
     } else {
       component.shape.disableInteractive();
     }

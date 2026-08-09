@@ -72,6 +72,10 @@ gravity-free dynamic Matter bodies, so they physically collide with solid parts
 while still producing contact-rule events. Actors are not editable by the
 player.
 
+Matter advances through a scene-owned 60 Hz fixed-step accumulator. Patrol
+velocity, contacts, and timed countdowns advance on those same steps, keeping
+the simulation independent of browser render-frame partitioning.
+
 During Edit, an editable ramp or block must stay inside the 960×540 playfield
 and may not penetrate the ball or any other ramp/block. A transform that would
 violate those rules is rejected and the last valid transform remains in use.
@@ -98,7 +102,8 @@ restore their respective saved layouts.
 
 The prototype also declares `bird`/`block` → destroy block, demonstrating that
 the same contact system applies to autonomous actors without bird-specific
-reaction logic.
+reaction logic. Its `bird`/`ramp` → destroy ramp rule uses that same generic
+path.
 
 ## Puzzle selection and progression
 
@@ -153,7 +158,8 @@ It requires Playwright Chromium and a usable local Vite server.
 - `src/ui/` — plain DOM controls and tray rendering.
 - `src/main.ts` — composition of the level, state, controls, and Phaser game.
 - `tests/` — browser-independent unit tests.
-- `e2e/` — Playwright coverage for the original two-ramp puzzle flow.
+- `e2e/` — Playwright coverage for Play, progression, inventory, timed,
+  ownership, contact, and deterministic-patrol MVP flows.
 
 For the detailed current state, known solution, and roadmap, see
 [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) and
@@ -167,10 +173,7 @@ For the detailed current state, known solution, and roadmap, see
   not implemented yet.
 - Tray spawn locations are a small predefined set of valid candidates, not a
   free placement preview.
-- Browser e2e coverage currently focuses on the original two-ramp solution;
-  tray, removal, and Rerun flows are covered by unit tests rather than browser
-  automation.
-- Timer behavior has focused unit coverage; it is not yet covered by browser
-  e2e tests.
+- Browser e2e is designed to run serially for deterministic simulation checks.
+  It requires Playwright Chromium and a usable local Vite server.
 - Touch-specific interaction, persistence, audio, networking, and a general
   purpose level editor are out of scope.
