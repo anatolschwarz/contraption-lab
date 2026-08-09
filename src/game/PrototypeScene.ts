@@ -30,6 +30,7 @@ import {
   type RectanglePlacement,
   rotateRampByStep,
 } from "./rampPlacement";
+import { consumeSimulationSteps, SIMULATION_STEP_MS } from "./simulationClock";
 
 const BALL_LABEL = "prototype-ball";
 const GOAL_LABEL = "prototype-goal";
@@ -146,6 +147,7 @@ export class PrototypeScene extends Phaser.Scene {
   private readonly contactObjects = new Map<MatterJS.BodyType, ContactObject>();
   private readonly ramps = new Map<string, EditableRamp>();
   private runSnapshot?: SceneRunSnapshot;
+  private simulationAccumulatorMs = 0;
   private simulationRunning = false;
   private selectedComponentId: string | null = null;
   private successText?: Phaser.GameObjects.Text;
@@ -174,6 +176,7 @@ export class PrototypeScene extends Phaser.Scene {
   create(): void {
     this.drawWorkshop();
     this.createLevelObjects();
+    this.matter.world.autoUpdate = false;
     this.matter.world.on(
       "collisionstart",
       (
@@ -241,6 +244,7 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   setSimulationRunning(running: boolean): void {
+    if (this.simulationRunning !== running) this.simulationAccumulatorMs = 0;
     this.simulationRunning = running;
     if (running) this.matter.world.resume();
     else this.matter.world.pause();
@@ -248,10 +252,23 @@ export class PrototypeScene extends Phaser.Scene {
 
   update(_time: number, deltaMs: number): void {
     if (!this.simulationRunning) return;
-    if (this.level.timeLimitSeconds !== undefined) {
-      this.onTimerTick(deltaMs);
+
+    const clock = consumeSimulationSteps(this.simulationAccumulatorMs, deltaMs);
+    this.simulationAccumulatorMs = clock.remainingMs;
+    for (let step = 0; step < clock.stepCount; step += 1) {
+      this.updateActorVelocities();
+      this.matter.world.step(SIMULATION_STEP_MS);
+      this.updateActorLabels();
+
       if (!this.simulationRunning) return;
+      if (this.level.timeLimitSeconds !== undefined) {
+        this.onTimerTick(SIMULATION_STEP_MS);
+        if (!this.simulationRunning) return;
+      }
     }
+  }
+
+  private updateActorVelocities(): void {
     for (const actor of this.actors.values()) {
       const position =
         actor.definition.movement.axis === "horizontal"
@@ -265,6 +282,15 @@ export class PrototypeScene extends Phaser.Scene {
       const velocity = getPatrolVelocity(actor.definition.movement, direction);
       actor.patrol = { direction, position };
       actor.shape.setVelocity(velocity.x, velocity.y);
+    }
+  }
+
+  private updateActorLabels(): void {
+    for (const actor of this.actors.values()) {
+      const position =
+        actor.definition.movement.axis === "horizontal"
+          ? actor.shape.x
+          : actor.shape.y;
       const labelPosition = getActorPosition(
         actor.definition.movement.axis,
         position,
@@ -394,6 +420,7 @@ export class PrototypeScene extends Phaser.Scene {
 
   rerunFromSnapshot(): boolean {
     if (!this.runSnapshot) return false;
+    this.simulationAccumulatorMs = 0;
     this.matter.world.pause();
     this.restoreParts(this.runSnapshot.parts);
     this.restoreActors(this.runSnapshot.actors);
@@ -402,6 +429,7 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   resetLevel(): void {
+    this.simulationAccumulatorMs = 0;
     this.matter.world.pause();
     this.restoreLevelParts();
     this.restoreActors();

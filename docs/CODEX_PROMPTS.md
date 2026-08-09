@@ -1275,3 +1275,55 @@ Run:
 
 Do not commit or push.
 ```
+
+---
+
+## #18 follow-up — Simulation determinism regression
+
+**VERBATIM**
+
+```text
+Continue milestone #18.
+
+We confirmed a real deterministic-regression/flakiness issue.
+
+Serial Playwright result:
+- 3 runs with --workers=1
+- identical final ramp transforms every time
+- 2 passed
+- 1 remained Mode: Running after 10s
+
+Therefore this is no longer a browser-interaction problem.
+
+Do NOT:
+- increase the 10s Success timeout
+- add retries
+- weaken assertions
+- change the known ramp solution
+
+Diagnose simulation determinism.
+
+Inspect/log for each run:
+- ball position/velocity over time
+- physics delta/timestep
+- whether Bird/contact events occur
+- whether any object is destroyed
+- time at which ball should enter goal
+- any frame-rate-dependent movement or collision behavior
+
+Determine why identical initial state sometimes produces a different outcome.
+
+Prefer the smallest fix that makes simulation behavior deterministic, e.g. fixed-step/update behavior if appropriate.
+Do not introduce test-only gameplay behavior unless absolutely necessary.
+
+After fixing:
+- run all normal validation
+- update/add focused tests
+- append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md
+- do not commit or push
+
+Report:
+- exact root cause
+- exact fix
+- why identical state is now deterministic
+```
