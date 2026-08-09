@@ -5,14 +5,9 @@ without a separate scoped milestone request.
 
 ## #14 — Multi-puzzle architecture
 
-- Make Play the default/root screen; do not add a separate Home screen.
-- Add a compact Play-screen puzzle selector that opens a Basic/Medium/Hard
-  grouped panel or modal with locked, available, completed, and timed states.
-- Keep one global sequential progression order; difficulty is grouping metadata
-  rather than a separate progression path.
-- Persist progress with `localStorage`, add Settings support for Unlock all
-  puzzles, and offer Next Puzzle prominently after Success.
-- Keep puzzle state, parts tray, Reset, and Rerun isolated to the active puzzle.
+- Completed by #18: Play is the root screen with a Basic/Medium/Hard selector,
+  ordered built-in JSON catalog, local progress, Unlock all, Next Puzzle, and
+  isolated active-puzzle runtime state.
 
 ## #15 — Contact/reaction event system
 
@@ -34,11 +29,10 @@ without a separate scoped milestone request.
 
 ## #18 — Progression + editor UX
 
-- Add the future Puzzle Editor and Settings screens accessible from Play.
-- Define a global object library of supported types while keeping available
-  tray parts and counts in each puzzle JSON.
-- Store user-created puzzles separately from bundled puzzles; never overwrite
-  bundled JSON.
+- Completed progression scope: three lightweight ordered built-ins, grouping,
+  unlock/completion persistence, Settings Unlock all, and Next Puzzle.
+- Next: Puzzle Editor, a global object library, and separately stored
+  user-created puzzles that never overwrite bundled JSON.
 - Improve rotation UX, selection, placement feedback, tray affordances, and
   input discoverability without broadening the editor beyond approved scope.
 

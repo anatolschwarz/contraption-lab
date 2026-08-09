@@ -2,10 +2,11 @@
 
 ## Status
 
-Contraption Lab is a browser-only, single-level physics-puzzle prototype. The
-current level, **Relay Ramps**, is playable in a fixed 960×540 simulation area.
-It has a ball, goal, floor, two preplaced player ramps, one fixed guide block,
-and level-defined tray inventory (currently Block 2 and Ramp 4).
+Contraption Lab is a browser-only physics-puzzle prototype with three
+lightweight built-in puzzles in a global sequence: Basic, Medium, and Hard.
+The initial level, **Relay Ramps**, is playable in a fixed 960×540 simulation
+area. It has a ball, goal, floor, two preplaced player ramps, one fixed guide
+block, and level-defined tray inventory (currently Block 2 and Ramp 4).
 
 The untouched layout fails. The known working solution is:
 
@@ -17,25 +18,27 @@ The untouched layout fails. The known working solution is:
 The Playwright flow checks these positions with ±1 px tolerance and uses the
 same 25° rotation (five 5° Q/E steps).
 
-## Agreed UI and progression architecture (planned)
+## Play and progression
 
 - **Play screen:** the default/root screen; it contains the gameplay canvas,
-  per-puzzle parts tray, controls, timer/status, and buttons to Puzzle Editor
-  and Settings. There will be no separate Home screen.
-- **Puzzle selector:** a compact Play-screen selector opens a grouped panel or
-  modal for Basic, Medium, and Hard. It shows locked, available, and completed
-  states plus a timed-puzzle indicator. Success offers a prominent Next Puzzle
-  action.
+  per-puzzle parts tray, controls, timer/status, puzzle selector, and Settings.
+  There is no separate Home screen.
+- **Puzzle selector:** a compact Play-screen selector opens a grouped panel for
+  Basic, Medium, and Hard. It shows locked, available, and completed states
+  plus a timed-puzzle indicator. Locked puzzles cannot be selected. Success
+  offers Next Puzzle when another unlocked puzzle exists.
 - **Progression:** one global sequential order, such as Basic → Medium → Hard.
   Difficulty is metadata/grouping only, not a separate progression system.
   Progress persists locally through `localStorage`; Settings can enable manual
-  Unlock all puzzles.
+  Unlock all puzzles. Disabling it keeps earned completion and restores normal
+  selection rules.
 - **Inventory and object library:** the global library defines supported object
   types. Each puzzle JSON defines its available parts and counts, which supply
   the Play-screen tray.
 - **User-created puzzles:** stored separately from bundled puzzles and never
   overwrite bundled JSON.
-- **Future screens:** Puzzle Editor and Settings.
+- **Future screen:** Puzzle Editor. Settings currently contains Unlock all
+  puzzles.
 
 ## Completed milestones
 
@@ -65,6 +68,9 @@ same 25° rotation (five 5° Q/E steps).
 - **#17 — Timed puzzle constraints:** added optional positive JSON time limits,
   a level-driven countdown, and deterministic timeout, Pause, Rerun, Reset,
   and Success behavior.
+- **#18 — Lightweight progression and switching:** added three ordered built-in
+  JSON puzzles, selector grouping, local completion/unlock persistence, Unlock
+  all, Next Puzzle, and fully isolated puzzle runtime replacement.
 
 ## Current behavior
 
@@ -84,6 +90,11 @@ same 25° rotation (five 5° Q/E steps).
 - **Rerun:** restores the specific layout, part set, transforms, and inventory
   captured when Run was last started from Edit, then runs immediately.
 - **Reset:** restores the original level JSON and initial JSON inventory.
+- **Puzzle switching:** the selector groups Basic, Medium, and Hard built-ins.
+  Completion unlocks the next global puzzle; completed/available/locked and
+  timed states are visible. Switching destroys and recreates the Phaser runtime
+  from the selected built-in JSON, so no transforms, inventory, timers, or
+  snapshots carry over.
 
 ### Part ownership, placement, and inventory
 
@@ -108,19 +119,19 @@ same 25° rotation (five 5° Q/E steps).
 
 ## Architecture
 
-| Area                           | Responsibility                                                                                            |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| `src/levels/`                  | Level JSON, ownership/inventory types, runtime schema validation, and loading.                            |
-| `src/state/gameState.ts`       | Pure mode, timer, transform, inventory, reset, and run-snapshot transitions.                              |
-| `src/game/PrototypeScene.ts`   | Phaser rendering, Matter bodies, player interactions, collision success, and full scene-layout snapshots. |
-| `src/game/rampPlacement.ts`    | Bounds and penetration checks for editable rectangles.                                                    |
-| `src/game/doubleClick.ts`      | Pure completed-click and movement-tolerance logic.                                                        |
-| `src/game/contactRules.ts`     | Pure order-independent contact-rule matching and action execution.                                        |
-| `src/game/autonomousActors.ts` | Pure patrol state/velocity helpers and collision-enabled actor-body options.                              |
-| `src/ui/Controls.ts`           | DOM buttons, tray counts, and enabled states.                                                             |
-| `src/main.ts`                  | Connects state, scene snapshots, controls, and Phaser setup.                                              |
-| `tests/`                       | Vitest unit coverage for state, placement, validation, ownership, puzzle data, and gestures.              |
-| `e2e/puzzle.e2e.ts`            | Playwright flow for the known two-ramp solution.                                                          |
+| Area                           | Responsibility                                                                                              |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `src/levels/`                  | Built-in puzzle catalog, level JSON metadata, ownership/inventory types, validation, and loading.           |
+| `src/state/`                   | Pure game-state and progression persistence, puzzle selection, timer, transforms, inventory, and snapshots. |
+| `src/game/PrototypeScene.ts`   | Phaser rendering, Matter bodies, player interactions, collision success, and full scene-layout snapshots.   |
+| `src/game/rampPlacement.ts`    | Bounds and penetration checks for editable rectangles.                                                      |
+| `src/game/doubleClick.ts`      | Pure completed-click and movement-tolerance logic.                                                          |
+| `src/game/contactRules.ts`     | Pure order-independent contact-rule matching and action execution.                                          |
+| `src/game/autonomousActors.ts` | Pure patrol state/velocity helpers and collision-enabled actor-body options.                                |
+| `src/ui/Controls.ts`           | DOM buttons, tray counts, and enabled states.                                                               |
+| `src/main.ts`                  | Connects state, scene snapshots, controls, and Phaser setup.                                                |
+| `tests/`                       | Vitest unit coverage for state, placement, validation, ownership, puzzle data, and gestures.                |
+| `e2e/puzzle.e2e.ts`            | Playwright flow for the known two-ramp solution.                                                            |
 
 ## Automated validation
 
@@ -140,8 +151,10 @@ currently cover tray, removal, Rerun, or timed behavior in a browser.
 
 ## Known limitations and issues
 
-- Only one bundled level exists; the documented selector, progression, local
-  progress, Puzzle Editor, and Settings screens are not implemented yet.
+- Only three lightweight built-in puzzles exist; broader puzzle content is
+  intentionally deferred.
+- Puzzle Editor, user-created puzzle storage, and the global object library are
+  not implemented. User-created puzzles are not part of built-in progression.
 - The tray uses predefined valid spawn candidates instead of a placement preview
   or user-chosen initial spawn position.
 - Unit coverage is strong for pure interaction/state rules, but browser e2e

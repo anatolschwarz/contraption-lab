@@ -6,6 +6,11 @@ import { validateLevel } from "../src/levels/validateLevel";
 describe("the bundled relay-ramp puzzle", () => {
   const level = validateLevel(rawLevel);
 
+  it("defines Basic metadata and first global puzzle order", () => {
+    expect(level.difficulty).toBe("Basic");
+    expect(level.order).toBe(1);
+  });
+
   it("uses a puzzle-defined 45-second time limit", () => {
     expect(level.timeLimitSeconds).toBe(45);
   });

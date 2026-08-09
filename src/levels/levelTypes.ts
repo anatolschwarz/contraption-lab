@@ -26,6 +26,9 @@ export interface InventoryDefinition {
   ramp: number;
 }
 
+export const PUZZLE_DIFFICULTIES = ["Basic", "Medium", "Hard"] as const;
+export type PuzzleDifficulty = (typeof PUZZLE_DIFFICULTIES)[number];
+
 export const CONTACT_TAGS = [
   "ball",
   "goal",
@@ -81,6 +84,8 @@ export function isEditablePart(
 export interface LevelDefinition {
   id: string;
   title: string;
+  difficulty: PuzzleDifficulty;
+  order: number;
   timeLimitSeconds?: number;
   inventory: InventoryDefinition;
   contactRules: ContactRule[];

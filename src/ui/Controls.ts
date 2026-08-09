@@ -1,3 +1,5 @@
+import type { LevelDefinition, PuzzleDifficulty } from "../levels/levelTypes";
+import type { PuzzleProgress } from "../state/progression";
 import type {
   EnabledControls,
   GameAction,
@@ -5,16 +7,49 @@ import type {
 } from "../state/gameState";
 import { getEnabledControls } from "../state/gameState";
 
+const difficultyGroups: PuzzleDifficulty[] = ["Basic", "Medium", "Hard"];
+
 const requireElement = <T extends HTMLElement>(id: string): T => {
   const element = document.querySelector<T>(`#${id}`);
   if (!element) throw new Error(`Missing required UI element: #${id}`);
   return element;
 };
 
+export interface PlayScreenView {
+  activePuzzle: LevelDefinition;
+  levelNumber: number;
+  nextPuzzle?: LevelDefinition;
+  puzzleProgress: readonly PuzzleProgress[];
+  totalBuiltInPuzzles: number;
+  unlockAll: boolean;
+}
+
 export class Controls {
   private readonly buttons: Record<keyof EnabledControls, HTMLButtonElement>;
   private readonly modeLabel =
     requireElement<HTMLParagraphElement>("mode-label");
+  private readonly levelProgressLabel = requireElement<HTMLParagraphElement>(
+    "level-progress-label",
+  );
+  private readonly puzzleTitleLabel =
+    requireElement<HTMLParagraphElement>("puzzle-title-label");
+  private readonly timedIndicator =
+    requireElement<HTMLSpanElement>("timed-indicator");
+  private readonly nextPuzzleButton =
+    requireElement<HTMLButtonElement>("next-puzzle-button");
+  private readonly puzzleSelectorButton = requireElement<HTMLButtonElement>(
+    "puzzle-selector-button",
+  );
+  private readonly puzzleSelectorList = requireElement<HTMLDivElement>(
+    "puzzle-selector-list",
+  );
+  private readonly puzzleSelectorPanel = requireElement<HTMLDivElement>(
+    "puzzle-selector-panel",
+  );
+  private readonly settingsButton =
+    requireElement<HTMLButtonElement>("settings-button");
+  private readonly settingsPanel =
+    requireElement<HTMLDivElement>("settings-panel");
   private readonly timerLabel =
     requireElement<HTMLParagraphElement>("timer-label");
   private readonly trayBlockButton =
@@ -23,8 +58,17 @@ export class Controls {
     requireElement<HTMLButtonElement>("tray-ramp-button");
   private readonly rerunButton =
     requireElement<HTMLButtonElement>("rerun-button");
+  private readonly unlockAllCheckbox = requireElement<HTMLInputElement>(
+    "unlock-all-checkbox",
+  );
+  private puzzleViewKey?: string;
 
-  constructor(onAction: (action: GameAction) => void) {
+  constructor(
+    onAction: (action: GameAction) => void,
+    private readonly onPuzzleSelect: (puzzleId: string) => void,
+    private readonly onSetUnlockAll: (unlockAll: boolean) => void,
+    private readonly onNextPuzzle: () => void,
+  ) {
     this.buttons = {
       edit: requireElement("edit-button"),
       simulation: requireElement("simulation-button"),
@@ -43,9 +87,19 @@ export class Controls {
     this.trayRampButton.addEventListener("click", () =>
       onAction({ type: "spawn-tray-ramp", componentId: "" }),
     );
+    this.puzzleSelectorButton.addEventListener("click", () => {
+      this.puzzleSelectorPanel.hidden = !this.puzzleSelectorPanel.hidden;
+    });
+    this.settingsButton.addEventListener("click", () => {
+      this.settingsPanel.hidden = !this.settingsPanel.hidden;
+    });
+    this.unlockAllCheckbox.addEventListener("change", () =>
+      this.onSetUnlockAll(this.unlockAllCheckbox.checked),
+    );
+    this.nextPuzzleButton.addEventListener("click", () => this.onNextPuzzle());
   }
 
-  render(state: Readonly<GameState>): void {
+  render(state: Readonly<GameState>, view: Readonly<PlayScreenView>): void {
     const enabled = getEnabledControls(state);
     for (const key of Object.keys(this.buttons) as (keyof EnabledControls)[]) {
       this.buttons[key].disabled = !enabled[key];
@@ -71,6 +125,62 @@ export class Controls {
         ? "Failed — Time expired"
         : state.mode.charAt(0).toUpperCase() + state.mode.slice(1);
     this.modeLabel.textContent = `Mode: ${label}`;
+    this.levelProgressLabel.textContent = `Level ${view.levelNumber} of ${view.totalBuiltInPuzzles} — ${view.activePuzzle.difficulty}`;
+    this.puzzleTitleLabel.textContent = view.activePuzzle.title;
+    this.timedIndicator.hidden =
+      view.activePuzzle.timeLimitSeconds === undefined;
+    this.nextPuzzleButton.hidden = !state.succeeded;
+    this.nextPuzzleButton.disabled = !state.succeeded || !view.nextPuzzle;
+    this.nextPuzzleButton.textContent = view.nextPuzzle
+      ? `Next Puzzle: ${view.nextPuzzle.title}`
+      : "Last Puzzle Complete";
+    this.puzzleSelectorButton.textContent = `Puzzle: ${view.activePuzzle.title}`;
+    this.unlockAllCheckbox.checked = view.unlockAll;
+    this.renderPuzzleSelector(view);
+  }
+
+  private renderPuzzleSelector(view: Readonly<PlayScreenView>): void {
+    const viewKey = JSON.stringify({
+      activePuzzleId: view.activePuzzle.id,
+      puzzleProgress: view.puzzleProgress.map(({ availability, puzzle }) => [
+        puzzle.id,
+        availability,
+      ]),
+      unlockAll: view.unlockAll,
+    });
+    if (viewKey === this.puzzleViewKey) return;
+    this.puzzleViewKey = viewKey;
+    const fragment = document.createDocumentFragment();
+    for (const difficulty of difficultyGroups) {
+      const puzzles = view.puzzleProgress.filter(
+        ({ puzzle }) => puzzle.difficulty === difficulty,
+      );
+      if (puzzles.length === 0) continue;
+      const group = document.createElement("section");
+      group.className = "puzzle-selector-group";
+      const heading = document.createElement("h2");
+      heading.textContent = difficulty;
+      group.append(heading);
+      for (const { availability, puzzle } of puzzles) {
+        const puzzleButton = document.createElement("button");
+        puzzleButton.type = "button";
+        puzzleButton.className = "puzzle-option";
+        puzzleButton.disabled = availability === "locked";
+        puzzleButton.setAttribute(
+          "aria-current",
+          String(puzzle.id === view.activePuzzle.id),
+        );
+        const timed = puzzle.timeLimitSeconds ? "Timed" : "Untimed";
+        puzzleButton.textContent = `${puzzle.title} — ${availability} · ${timed}`;
+        puzzleButton.addEventListener("click", () => {
+          this.puzzleSelectorPanel.hidden = true;
+          this.onPuzzleSelect(puzzle.id);
+        });
+        group.append(puzzleButton);
+      }
+      fragment.append(group);
+    }
+    this.puzzleSelectorList.replaceChildren(fragment);
   }
 }
 

@@ -76,6 +76,96 @@ h1 {
   font-weight: 800;
 }
 
+.level-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+#level-progress-label {
+  color: #344e41;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+#puzzle-title-label {
+  color: #22333b;
+  font-family: Georgia, serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.timed-indicator {
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: #6c341f;
+  background: #fff3d8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.play-tools {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.play-tools button {
+  min-height: 38px;
+  padding: 0 14px;
+}
+
+.overlay-panel {
+  position: relative;
+  z-index: 2;
+  margin: 0 0 12px;
+  padding: 14px;
+  border: 2px solid #344e41;
+  border-radius: 8px;
+  background: #f5f0e6;
+  box-shadow: 0 8px 18px rgb(40 43 45 / 18%);
+}
+
+.puzzle-selector-group + .puzzle-selector-group {
+  margin-top: 12px;
+}
+
+.puzzle-selector-group h2 {
+  margin: 0 0 6px;
+  color: #344e41;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.puzzle-option {
+  display: block;
+  width: 100%;
+  min-height: 38px;
+  margin-top: 6px;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.puzzle-option[aria-current="true"] {
+  border-color: #dca15d;
+  background: #6f4e37;
+}
+
+#next-puzzle-button {
+  border-color: #8c4a2f;
+  background: #8c4a2f;
+}
+
+.settings-panel label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+
 #game-container {
   overflow: hidden;
   width: 100%;

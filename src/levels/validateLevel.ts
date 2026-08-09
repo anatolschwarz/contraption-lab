@@ -6,10 +6,11 @@ import type {
   InventoryDefinition,
   LevelDefinition,
   Point,
+  PuzzleDifficulty,
   RampDefinition,
   RectangleDefinition,
 } from "./levelTypes";
-import { CONTACT_TAGS } from "./levelTypes";
+import { CONTACT_TAGS, PUZZLE_DIFFICULTIES } from "./levelTypes";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -185,6 +186,8 @@ export function validateLevel(value: unknown): LevelDefinition {
   const {
     id,
     title,
+    difficulty,
+    order,
     timeLimitSeconds,
     inventory,
     contactRules,
@@ -201,6 +204,12 @@ export function validateLevel(value: unknown): LevelDefinition {
   }
   if (typeof title !== "string" || title.trim() === "") {
     throw new Error("Level title must be a non-empty string.");
+  }
+  if (!PUZZLE_DIFFICULTIES.includes(difficulty as PuzzleDifficulty)) {
+    throw new Error("Level difficulty must be Basic, Medium, or Hard.");
+  }
+  if (!isFiniteNumber(order) || !Number.isInteger(order) || order < 1) {
+    throw new Error("Level order must be a positive integer.");
   }
   if (timeLimitSeconds !== undefined && !isTimeLimitSeconds(timeLimitSeconds)) {
     throw new Error("Level timeLimitSeconds must be a positive finite number.");
@@ -250,6 +259,8 @@ export function validateLevel(value: unknown): LevelDefinition {
   return {
     id,
     title,
+    difficulty: difficulty as PuzzleDifficulty,
+    order,
     ...(timeLimitSeconds === undefined ? {} : { timeLimitSeconds }),
     inventory,
     contactRules: validatedContactRules,

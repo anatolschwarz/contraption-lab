@@ -1,42 +1,17 @@
 {
-  "id": "aim-the-ramp-001",
-  "title": "Relay Ramps",
-  "difficulty": "Basic",
-  "order": 1,
-  "timeLimitSeconds": 45,
-  "inventory": { "block": 2, "ramp": 4 },
+  "id": "timed-relay-003",
+  "title": "Timed Relay",
+  "difficulty": "Hard",
+  "order": 3,
+  "timeLimitSeconds": 30,
+  "inventory": { "block": 0, "ramp": 2 },
   "contactRules": [
     {
       "contacts": ["ball", "block"],
       "action": { "type": "destroy", "target": "block" }
-    },
-    {
-      "contacts": ["bird", "block"],
-      "action": { "type": "destroy", "target": "block" }
-    },
-    {
-      "contacts": ["bird", "ramp"],
-      "action": { "type": "destroy", "target": "ramp" }
     }
   ],
-  "actors": [
-    {
-      "id": "patrol-bird",
-      "tag": "bird",
-      "x": 680,
-      "y": 150,
-      "width": 36,
-      "height": 24,
-      "movement": {
-        "type": "patrol",
-        "axis": "horizontal",
-        "speed": 40,
-        "min": 680,
-        "max": 920,
-        "direction": 1
-      }
-    }
-  ],
+  "actors": [],
   "ball": { "x": 215, "y": 135, "radius": 24 },
   "ramps": [
     {

@@ -2,11 +2,12 @@
 
 Contraption Lab is an original browser-based 2D physics-puzzle prototype built
 with TypeScript, Vite, Phaser 3, and Phaser's bundled Matter integration. The
-current prototype has one level, **Relay Ramps**: arrange player-owned parts so
-the ball reaches the goal.
+current prototype has three lightweight built-in puzzles, starting with
+**Relay Ramps**: arrange player-owned parts so the ball reaches the goal.
 
 The game uses generated shapes and text only. It has no external artwork,
-audio, backend, persistence, or copied game content.
+audio, backend, or copied game content. Built-in puzzle progression is stored
+locally in the browser.
 
 ## Requirements
 
@@ -99,27 +100,28 @@ The prototype also declares `bird`/`block` → destroy block, demonstrating that
 the same contact system applies to autonomous actors without bird-specific
 reaction logic.
 
-## Agreed UI and progression architecture
+## Puzzle selection and progression
 
-The future root screen is the **Play** screen; there is no separate Home
-screen. It contains the gameplay canvas, the active puzzle's parts tray,
-controls, timer/status, and buttons for the future Puzzle Editor and Settings
-screens.
+**Play** is the default/root screen; there is no separate Home screen. It
+contains the gameplay canvas, active puzzle's parts tray, controls,
+timer/status, a puzzle selector, and Settings.
 
-Puzzle switching will use a compact selector on the Play screen. It opens a
-grouped panel or modal for **Basic**, **Medium**, and **Hard** puzzles, showing
-each puzzle's locked, available, or completed state and a timed-puzzle
-indicator. Success will offer a prominent **Next Puzzle** action.
+The compact selector opens a grouped panel for **Basic**, **Medium**, and
+**Hard** puzzles. It shows locked, available, and completed states plus timed
+indicators. Locked puzzles cannot be selected. Switching recreates the active
+puzzle from its JSON definition, isolating its simulation, inventory, timer,
+and run snapshot.
 
-Progression will follow one global sequential order (for example, Basic →
-Medium → Hard). Difficulty is grouping metadata, not a separate progression
-path. Progress will persist locally with `localStorage`; Settings will offer a
-manual **Unlock all puzzles** option.
+Progression follows one global sequential order: completing a puzzle unlocks
+the next one. Difficulty is grouping metadata, not a separate progression
+path. Completion and the Settings **Unlock all puzzles** flag persist in
+`localStorage`. Turning that flag off restores normal unlock rules while
+keeping earned completion. Success offers **Next Puzzle** when another unlocked
+puzzle exists; the final puzzle displays a disabled completion action.
 
-The parts tray remains puzzle-defined. A global object library will list the
-supported object types, while each puzzle JSON file defines which parts and
-counts are available. User-created puzzles will be stored separately from
-built-in puzzles and must never overwrite bundled JSON.
+Each puzzle JSON supplies its own parts tray inventory. The global object
+library and user-created puzzle storage remain future work; user-created
+puzzles will stay separate from built-ins and never overwrite bundled JSON.
 
 ## Build and validation
 
@@ -141,9 +143,10 @@ It requires Playwright Chromium and a usable local Vite server.
 
 ## Architecture
 
-- `src/levels/` — level JSON, schema/types, loading, and validation.
-- `src/state/` — browser-independent modes, timer, transforms, inventory, and
-  run-start snapshot transitions.
+- `src/levels/` — built-in puzzle catalog, level JSON, schema/types, loading,
+  and validation.
+- `src/state/` — browser-independent modes, progression persistence, timer,
+  transforms, inventory, and run-start snapshot transitions.
 - `src/game/` — Phaser scene, generated visuals, Matter bodies, placement
   validation, autonomous patrols, contact-rule execution, double-click gesture logic, and
   scene-layout snapshots.
@@ -158,9 +161,10 @@ For the detailed current state, known solution, and roadmap, see
 
 ## Current limitations
 
-- One level only; there is no level selection or progression.
-- The documented Play selector, local progression, Puzzle Editor, and Settings
-  screens are planned architecture; they are not implemented yet.
+- Three lightweight built-in puzzles exercise the progression UI; broader
+  puzzle content is intentionally deferred.
+- Puzzle Editor, user-created puzzle storage, and the global object library are
+  not implemented yet.
 - Tray spawn locations are a small predefined set of valid candidates, not a
   free placement preview.
 - Browser e2e coverage currently focuses on the original two-ramp solution;

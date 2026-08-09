@@ -1115,3 +1115,108 @@ Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
 Do not commit or push.
 Report exactly which documentation sections changed.
 ```
+
+---
+
+## #18 — Lightweight progression and puzzle switching
+
+**VERBATIM**
+
+```text
+Start milestone #18: implement lightweight puzzle progression and puzzle switching.
+
+Use the currently documented architecture.
+
+Progression:
+- Puzzles have a global sequential order.
+- Difficulty is metadata/grouping: Basic / Medium / Hard.
+- Initially only the first puzzle is unlocked.
+- Completing puzzle N unlocks puzzle N+1.
+- Completion/unlock state persists in localStorage.
+- Built-in puzzle JSON must never be modified by progression state.
+- Add a Settings flag: "Unlock all puzzles".
+- When enabled, all built-in puzzles are selectable.
+- Disabling it returns to normal progression rules without deleting earned progress.
+
+Play-screen UI:
+- Play remains the default/root screen.
+- Add a compact current-puzzle selector in the Play screen.
+- Opening it shows a panel/modal grouped by:
+  - Basic
+  - Medium
+  - Hard
+- Each puzzle shows:
+  - locked
+  - available
+  - completed
+  - timed indicator where applicable
+- Locked puzzles cannot be selected.
+- Switching puzzles fully resets runtime state using the existing multi-puzzle architecture.
+- On Success show a prominent "Next Puzzle" action.
+- Next Puzzle loads the next unlocked puzzle.
+- Last puzzle should handle Next gracefully.
+
+Data:
+- Add/order enough lightweight puzzle metadata to exercise grouping/progression.
+- Do NOT build 10 finished puzzles yet.
+- Keep inventory per puzzle.
+- User-created puzzles remain separate from built-ins and are not part of progression yet.
+
+Do NOT implement the Puzzle Editor in this milestone.
+
+Tests:
+- initial unlock state
+- success unlocks next puzzle
+- completion persistence
+- localStorage reload
+- Unlock All setting
+- disabling Unlock All preserves earned progression
+- locked selection rejection
+- puzzle switching state isolation
+- Next Puzzle behavior
+
+Update README.md, docs/PROJECT_STATE.md and docs/ROADMAP.md.
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run:
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+
+Do not commit or push.
+
+Report architecture, storage schema, UI behavior, files changed and validation results.
+```
+
+---
+
+## #18 follow-up — Persistent current-level information
+
+**VERBATIM**
+
+```text
+Continue milestone #18.
+
+Add persistent current-level information to the Play screen.
+
+Display:
+- Level N of total built-in progression puzzles
+- puzzle title/name
+- difficulty: Basic / Medium / Hard
+- timed indicator if applicable
+
+Example:
+Level 2 of 3 — Medium
+Relay Ramps
+
+Requirements:
+- Update immediately when switching puzzles or using Next Puzzle.
+- Keep it visible during Edit, Run, Pause, Success and Timeout.
+- Do not confuse progression level number with difficulty.
+- Use catalog order as the level number.
+- Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+- Run typecheck, lint, tests, format check, build.
+- Do not commit or push.
+```

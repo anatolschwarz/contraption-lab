@@ -32,6 +32,15 @@ describe("validateLevel", () => {
     expect(() => validateLevel({ id: "incomplete" })).toThrow(/title/i);
   });
 
+  it("requires valid puzzle difficulty metadata and global order", () => {
+    expect(() => validateLevel({ ...rawLevel, difficulty: "Expert" })).toThrow(
+      /difficulty.*Basic.*Medium.*Hard/i,
+    );
+    expect(() => validateLevel({ ...rawLevel, order: 0 })).toThrow(
+      /order.*positive integer/i,
+    );
+  });
+
   it("requires non-negative integer inventory counts", () => {
     expect(() =>
       validateLevel({ ...rawLevel, inventory: { block: -1, ramp: 0 } }),

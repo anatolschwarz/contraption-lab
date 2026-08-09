@@ -21,6 +21,36 @@
           <p id="mode-label" class="mode-label">Mode: Edit</p>
         </div>
       </header>
+      <section class="level-summary" aria-live="polite">
+        <p id="level-progress-label">Level 1 of 3 — Basic</p>
+        <p id="puzzle-title-label">Relay Ramps</p>
+        <span id="timed-indicator" class="timed-indicator">Timed</span>
+      </section>
+      <section class="play-tools" aria-label="Puzzle and settings">
+        <button id="puzzle-selector-button" type="button">
+          Puzzle: Relay Ramps
+        </button>
+        <button id="settings-button" type="button">Settings</button>
+      </section>
+      <section
+        id="puzzle-selector-panel"
+        class="overlay-panel"
+        aria-label="Puzzle selector"
+        hidden
+      >
+        <div id="puzzle-selector-list"></div>
+      </section>
+      <section
+        id="settings-panel"
+        class="overlay-panel settings-panel"
+        aria-label="Settings"
+        hidden
+      >
+        <label>
+          <input id="unlock-all-checkbox" type="checkbox" />
+          Unlock all puzzles
+        </label>
+      </section>
       <section
         id="game-container"
         aria-label="Physics puzzle play area"
@@ -35,6 +65,9 @@
         <button id="simulation-button" type="button">Run</button>
         <button id="rerun-button" type="button" disabled>Rerun</button>
         <button id="reset-button" type="button">Reset</button>
+        <button id="next-puzzle-button" type="button" hidden>
+          Next Puzzle
+        </button>
       </nav>
       <p class="hint">
         Use both brass ramps to guide the ball into the striped goal.

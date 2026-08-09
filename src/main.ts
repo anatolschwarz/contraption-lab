@@ -1,113 +1,206 @@
 import Phaser from "phaser";
 import "./style.css";
-import rawLevel from "./levels/prototype.json";
 import { PrototypeScene } from "./game/PrototypeScene";
-import { PLAYABLE_HEIGHT, PLAYABLE_WIDTH } from "./game/rampPlacement";
-import { loadLevel } from "./levels/loadLevel";
 import {
-  createInitialGameState,
+  builtInPuzzles,
+  getBuiltInPuzzle,
+  getBuiltInPuzzlePosition,
+} from "./levels/puzzleCatalog";
+import { PLAYABLE_HEIGHT, PLAYABLE_WIDTH } from "./game/rampPlacement";
+import {
+  canSelectPuzzle,
+  completePuzzle,
+  createPuzzleRuntime,
+  getNextUnlockedPuzzle,
+  getPuzzleProgress,
+  loadProgression,
+  saveProgression,
+  setUnlockAll,
+  switchPuzzle,
+  type ProgressionState,
+  type PuzzleRuntime,
+  type StorageAdapter,
+} from "./state/progression";
+import {
   transitionGameState,
   type GameAction,
   type GameState,
   updateBlockTransform,
   updateRampTransform,
 } from "./state/gameState";
-import { Controls } from "./ui/Controls";
+import { Controls, type PlayScreenView } from "./ui/Controls";
 
-const level = loadLevel(rawLevel);
-let state: GameState = createInitialGameState(
-  level.inventory,
-  level.timeLimitSeconds,
+function getLocalStorage(): StorageAdapter | undefined {
+  try {
+    return window.localStorage;
+  } catch {
+    return undefined;
+  }
+}
+
+const storage = getLocalStorage();
+let progression: ProgressionState = loadProgression(storage, builtInPuzzles);
+let activePuzzle = builtInPuzzles[0]!;
+let runtime: PuzzleRuntime = createPuzzleRuntime(activePuzzle);
+let state: GameState = runtime.gameState;
+let game: Phaser.Game | undefined;
+let scene: PrototypeScene | undefined;
+
+const controls = new Controls(
+  handleAction,
+  selectPuzzle,
+  updateUnlockAll,
+  loadNextPuzzle,
 );
 
-const controls = new Controls(handleAction);
+function getPlayScreenView(): PlayScreenView {
+  return {
+    activePuzzle,
+    levelNumber: getBuiltInPuzzlePosition(activePuzzle.id) ?? 1,
+    nextPuzzle: getNextUnlockedPuzzle(
+      activePuzzle.id,
+      builtInPuzzles,
+      progression,
+    ),
+    puzzleProgress: getPuzzleProgress(builtInPuzzles, progression),
+    totalBuiltInPuzzles: builtInPuzzles.length,
+    unlockAll: progression.unlockAll,
+  };
+}
+
+function replaceGameState(nextState: GameState): void {
+  state = nextState;
+  runtime = { ...runtime, gameState: state };
+}
 
 function applyState(): void {
-  controls.render(state);
-  scene.setSimulationRunning(state.mode === "running" && !state.succeeded);
-  scene.setEditSelection(
+  controls.render(state, getPlayScreenView());
+  scene?.setSimulationRunning(state.mode === "running" && !state.succeeded);
+  scene?.setEditSelection(
     state.mode === "edit" && !state.succeeded,
     state.selectedComponentId,
   );
-  scene.setRampTransforms(state.rampTransforms);
-  scene.setBlockTransforms(state.blockTransforms);
+  scene?.setRampTransforms(state.rampTransforms);
+  scene?.setBlockTransforms(state.blockTransforms);
 }
 
 function handleAction(action: GameAction): void {
   if (typeof action === "object" && action.type === "spawn-tray-block") {
-    const componentId = scene.spawnTrayBlock(state.trayBlockCount);
+    const componentId = scene?.spawnTrayBlock(state.trayBlockCount);
     if (!componentId) return;
     action = { ...action, componentId };
   }
   if (typeof action === "object" && action.type === "spawn-tray-ramp") {
-    const componentId = scene.spawnTrayRamp(state.trayRampCount);
+    const componentId = scene?.spawnTrayRamp(state.trayRampCount);
     if (!componentId) return;
     action = { ...action, componentId };
   }
   if (typeof action === "object" && action.type === "advance-time") {
     const previousMode = state.mode;
-    state = transitionGameState(state, action);
+    replaceGameState(transitionGameState(state, action));
     if (state.mode !== previousMode) applyState();
-    else controls.render(state);
+    else controls.render(state, getPlayScreenView());
     return;
   }
   if (action === "toggle-simulation" && state.mode === "edit") {
-    scene.captureRunLayout();
+    scene?.captureRunLayout();
   }
-  if (action === "rerun" && !scene.rerunFromSnapshot()) {
+  if (action === "rerun" && !scene?.rerunFromSnapshot()) {
     return;
   }
-  const nextState = transitionGameState(state, action);
-  if (action === "reset") scene.resetLevel();
-  state = nextState;
+  const didSucceed = action === "success" && !state.succeeded;
+  replaceGameState(transitionGameState(state, action));
+  if (didSucceed && state.succeeded) {
+    progression = completePuzzle(progression, activePuzzle.id, builtInPuzzles);
+    saveProgression(storage, progression);
+  }
+  if (action === "reset") scene?.resetLevel();
   applyState();
 }
 
-const scene = new PrototypeScene(
-  level,
-  () => handleAction("success"),
-  (deltaMs) => handleAction({ type: "advance-time", deltaMs }),
-  (componentId) =>
-    handleAction(
-      componentId ? { type: "select-component", componentId } : "deselect",
-    ),
-  (rampId, transform) => {
-    state = updateRampTransform(state, rampId, transform);
-    applyState();
-  },
-  (blockId, transform) => {
-    state = updateBlockTransform(state, blockId, transform);
-    applyState();
-  },
-  (componentId, returnsTrayPart) =>
-    handleAction({
-      type: "remove-component",
-      componentId,
-      returnsTrayPart,
-    }),
-);
+function selectPuzzle(puzzleId: string): void {
+  if (puzzleId === activePuzzle.id) return;
+  if (!canSelectPuzzle(puzzleId, builtInPuzzles, progression)) return;
+  const nextRuntime = switchPuzzle(
+    runtime,
+    puzzleId,
+    builtInPuzzles,
+    progression,
+  );
+  const nextPuzzle = getBuiltInPuzzle(nextRuntime.puzzleId);
+  if (!nextPuzzle) return;
+  activePuzzle = nextPuzzle;
+  runtime = nextRuntime;
+  state = runtime.gameState;
+  controls.render(state, getPlayScreenView());
+  game?.destroy(true);
+  scene = undefined;
+  createGame();
+}
 
-new Phaser.Game({
-  type: Phaser.AUTO,
-  parent: "game-container",
-  width: PLAYABLE_WIDTH,
-  height: PLAYABLE_HEIGHT,
-  backgroundColor: "#c7cec6",
-  physics: {
-    default: "matter",
-    matter: {
-      gravity: level.gravity,
-      debug: false,
+function updateUnlockAll(unlockAll: boolean): void {
+  progression = setUnlockAll(progression, unlockAll);
+  saveProgression(storage, progression);
+  controls.render(state, getPlayScreenView());
+}
+
+function loadNextPuzzle(): void {
+  const nextPuzzle = getNextUnlockedPuzzle(
+    activePuzzle.id,
+    builtInPuzzles,
+    progression,
+  );
+  if (nextPuzzle) selectPuzzle(nextPuzzle.id);
+}
+
+function createGame(): void {
+  scene = new PrototypeScene(
+    activePuzzle,
+    () => handleAction("success"),
+    (deltaMs) => handleAction({ type: "advance-time", deltaMs }),
+    (componentId) =>
+      handleAction(
+        componentId ? { type: "select-component", componentId } : "deselect",
+      ),
+    (rampId, transform) => {
+      replaceGameState(updateRampTransform(state, rampId, transform));
+      applyState();
     },
-  },
-  scale: {
-    mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-  },
-  scene,
-  callbacks: {
-    postBoot: applyState,
-  },
-});
+    (blockId, transform) => {
+      replaceGameState(updateBlockTransform(state, blockId, transform));
+      applyState();
+    },
+    (componentId, returnsTrayPart) =>
+      handleAction({
+        type: "remove-component",
+        componentId,
+        returnsTrayPart,
+      }),
+  );
 
-controls.render(state);
+  game = new Phaser.Game({
+    type: Phaser.AUTO,
+    parent: "game-container",
+    width: PLAYABLE_WIDTH,
+    height: PLAYABLE_HEIGHT,
+    backgroundColor: "#c7cec6",
+    physics: {
+      default: "matter",
+      matter: {
+        gravity: activePuzzle.gravity,
+        debug: false,
+      },
+    },
+    scale: {
+      mode: Phaser.Scale.FIT,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+    },
+    scene,
+    callbacks: {
+      postBoot: applyState,
+    },
+  });
+}
+
+createGame();
+controls.render(state, getPlayScreenView());
