@@ -24,8 +24,8 @@ without a separate scoped milestone request.
 
 ## #17 — Timed puzzle constraints
 
-- Add scoped time-based puzzle constraints and clear player feedback.
-- Define deterministic Pause, Rerun, Reset, and success behavior for timers.
+- Completed: added optional positive JSON time limits, countdown feedback, and
+  deterministic Pause, Rerun, Reset, Success, and Timeout behavior.
 
 ## #18 — Progression + editor UX
 

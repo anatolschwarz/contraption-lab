@@ -61,6 +61,9 @@ const isInventory = (value: unknown): value is InventoryDefinition =>
   Number.isInteger(value.ramp) &&
   value.ramp >= 0;
 
+const isTimeLimitSeconds = (value: unknown): value is number =>
+  isFiniteNumber(value) && value > 0;
+
 function validateActors(value: unknown): ActorDefinition[] {
   if (!Array.isArray(value)) {
     throw new Error("Level actors must be an array.");
@@ -182,6 +185,7 @@ export function validateLevel(value: unknown): LevelDefinition {
   const {
     id,
     title,
+    timeLimitSeconds,
     inventory,
     contactRules,
     actors,
@@ -197,6 +201,9 @@ export function validateLevel(value: unknown): LevelDefinition {
   }
   if (typeof title !== "string" || title.trim() === "") {
     throw new Error("Level title must be a non-empty string.");
+  }
+  if (timeLimitSeconds !== undefined && !isTimeLimitSeconds(timeLimitSeconds)) {
+    throw new Error("Level timeLimitSeconds must be a positive finite number.");
   }
   if (!isInventory(inventory)) {
     throw new Error(
@@ -243,6 +250,7 @@ export function validateLevel(value: unknown): LevelDefinition {
   return {
     id,
     title,
+    ...(timeLimitSeconds === undefined ? {} : { timeLimitSeconds }),
     inventory,
     contactRules: validatedContactRules,
     actors: validatedActors,

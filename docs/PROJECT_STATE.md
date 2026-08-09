@@ -42,6 +42,9 @@ same 25° rotation (five 5° Q/E steps).
 - **#16 — Autonomous actors:** added JSON-defined fixed actors, deterministic
   collision-enabled patrol movement, actor contact tags, and run-snapshot/reset
   behavior.
+- **#17 — Timed puzzle constraints:** added optional positive JSON time limits,
+  a level-driven countdown, and deterministic timeout, Pause, Rerun, Reset,
+  and Success behavior.
 
 ## Current behavior
 
@@ -53,6 +56,11 @@ same 25° rotation (five 5° Q/E steps).
   Editing and tray controls are disabled.
 - **Success:** goal contact pauses the simulation and locks Edit/Run. Rerun and
   Reset remain available.
+- **Timed puzzles:** an optional positive `timeLimitSeconds` starts counting
+  down with Run, freezes in Pause, and resumes with Run. Success freezes the
+  remaining time. Reaching zero first enters `Failed — Time expired`; Rerun and
+  Reset remain available. Rerun restores the full time limit and Reset returns
+  to Edit with the original limit. Untimed levels have no countdown.
 - **Rerun:** restores the specific layout, part set, transforms, and inventory
   captured when Run was last started from Edit, then runs immediately.
 - **Reset:** restores the original level JSON and initial JSON inventory.
@@ -83,7 +91,7 @@ same 25° rotation (five 5° Q/E steps).
 | Area                           | Responsibility                                                                                            |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | `src/levels/`                  | Level JSON, ownership/inventory types, runtime schema validation, and loading.                            |
-| `src/state/gameState.ts`       | Pure mode, transform, inventory, reset, and run-snapshot transitions.                                     |
+| `src/state/gameState.ts`       | Pure mode, timer, transform, inventory, reset, and run-snapshot transitions.                              |
 | `src/game/PrototypeScene.ts`   | Phaser rendering, Matter bodies, player interactions, collision success, and full scene-layout snapshots. |
 | `src/game/rampPlacement.ts`    | Bounds and penetration checks for editable rectangles.                                                    |
 | `src/game/doubleClick.ts`      | Pure completed-click and movement-tolerance logic.                                                        |
@@ -106,10 +114,9 @@ npm run format:check
 npm run build
 ```
 
-At the time of this document update, the Vitest suite contains 54 tests across
-8 files. `npm run test:e2e` is available separately and exercises the original
+`npm run test:e2e` is available separately and exercises the original
 two-ramp browser flow, including the 10-second Success assertion. It does not
-currently cover tray, removal, or Rerun in a browser.
+currently cover tray, removal, Rerun, or timed behavior in a browser.
 
 ## Known limitations and issues
 
@@ -123,6 +130,7 @@ currently cover tray, removal, or Rerun in a browser.
   action; they have no conditions, effects, or per-instance targeting.
 - Autonomous actors currently support only deterministic horizontal/vertical
   patrol movement. Random and path-based movement remain future work.
+- Timed behavior has unit coverage but no browser e2e coverage yet.
 - Physics results can vary slightly between browser or engine versions.
 - Vite reports a production chunk-size warning because Phaser is bundled in the
   main chunk; the build still succeeds.

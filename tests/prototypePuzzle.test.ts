@@ -6,6 +6,10 @@ import { validateLevel } from "../src/levels/validateLevel";
 describe("the bundled relay-ramp puzzle", () => {
   const level = validateLevel(rawLevel);
 
+  it("uses a puzzle-defined 45-second time limit", () => {
+    expect(level.timeLimitSeconds).toBe(45);
+  });
+
   it("defines two uniquely identified ramps outside the ball's fall path", () => {
     expect(level.ramps.map((ramp) => ramp.id)).toEqual([
       "upper-ramp",

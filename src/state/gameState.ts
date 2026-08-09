@@ -1,6 +1,6 @@
 import type { InventoryDefinition, Point } from "../levels/levelTypes";
 
-export type GameMode = "edit" | "running" | "paused";
+export type GameMode = "edit" | "running" | "paused" | "failed";
 export const TRAY_BLOCK_ID = "tray-block-1";
 export const TRAY_BLOCK_ID_PREFIX = "tray-block-";
 export const TRAY_RAMP_ID_PREFIX = "tray-ramp-";
@@ -42,6 +42,11 @@ export interface RemoveComponentAction {
   returnsTrayPart: "block" | "ramp" | null;
 }
 
+export interface AdvanceTimeAction {
+  type: "advance-time";
+  deltaMs: number;
+}
+
 export type GameAction =
   | "edit"
   | "toggle-simulation"
@@ -52,12 +57,15 @@ export type GameAction =
   | SelectComponentAction
   | SpawnTrayBlockAction
   | SpawnTrayRampAction
-  | RemoveComponentAction;
+  | RemoveComponentAction
+  | AdvanceTimeAction;
 
 export interface GameState {
   initialInventory: InventoryDefinition;
   mode: GameMode;
   succeeded: boolean;
+  timeLimitSeconds?: number;
+  timeRemainingMs?: number;
   rampTransforms: Record<string, RampTransform>;
   blockTransforms: Record<string, BlockTransform>;
   selectedComponentId: string | null;
@@ -68,17 +76,46 @@ export interface GameState {
 
 export function createInitialGameState(
   inventory: Readonly<InventoryDefinition>,
+  timeLimitSeconds?: number,
 ): GameState {
   return {
     initialInventory: { ...inventory },
     mode: "edit",
     succeeded: false,
+    ...(timeLimitSeconds === undefined
+      ? {}
+      : {
+          timeLimitSeconds,
+          timeRemainingMs: timeLimitSeconds * 1_000,
+        }),
     rampTransforms: {},
     blockTransforms: {},
     selectedComponentId: null,
     trayBlockCount: inventory.block,
     trayRampCount: inventory.ramp,
   };
+}
+
+function cloneTimerState(
+  state: Readonly<GameState>,
+): Pick<GameState, "timeLimitSeconds" | "timeRemainingMs"> {
+  return state.timeLimitSeconds === undefined
+    ? {}
+    : {
+        timeLimitSeconds: state.timeLimitSeconds,
+        timeRemainingMs: state.timeRemainingMs,
+      };
+}
+
+function resetTimerState(
+  state: Readonly<GameState>,
+): Pick<GameState, "timeLimitSeconds" | "timeRemainingMs"> {
+  return state.timeLimitSeconds === undefined
+    ? {}
+    : {
+        timeLimitSeconds: state.timeLimitSeconds,
+        timeRemainingMs: state.timeLimitSeconds * 1_000,
+      };
 }
 
 export interface EnabledControls {
@@ -114,12 +151,16 @@ export function transitionGameState(
   action: GameAction,
 ): GameState {
   if (action === "reset") {
-    return createInitialGameState(state.initialInventory);
+    return createInitialGameState(
+      state.initialInventory,
+      state.timeLimitSeconds,
+    );
   }
   if (action === "rerun" && state.mode !== "edit" && state.runSnapshot) {
     return {
       mode: "running",
       succeeded: false,
+      ...resetTimerState(state),
       initialInventory: { ...state.initialInventory },
       rampTransforms: { ...state.runSnapshot.rampTransforms },
       blockTransforms: { ...state.runSnapshot.blockTransforms },
@@ -129,10 +170,31 @@ export function transitionGameState(
       runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }
+  if (typeof action === "object" && action.type === "advance-time") {
+    if (state.mode !== "running" || state.timeRemainingMs === undefined) {
+      return {
+        ...state,
+        rampTransforms: { ...state.rampTransforms },
+        blockTransforms: { ...state.blockTransforms },
+      };
+    }
+    const timeRemainingMs = Math.max(
+      0,
+      state.timeRemainingMs - Math.max(0, action.deltaMs),
+    );
+    return {
+      ...state,
+      mode: timeRemainingMs === 0 ? "failed" : "running",
+      timeRemainingMs,
+      rampTransforms: { ...state.rampTransforms },
+      blockTransforms: { ...state.blockTransforms },
+    };
+  }
   if (action === "success" && state.mode === "running") {
     return {
       mode: "paused",
       succeeded: true,
+      ...cloneTimerState(state),
       initialInventory: { ...state.initialInventory },
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
@@ -142,7 +204,7 @@ export function transitionGameState(
       runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }
-  if (state.succeeded) {
+  if (state.succeeded || state.mode === "failed") {
     return {
       ...state,
       rampTransforms: { ...state.rampTransforms },
@@ -224,6 +286,7 @@ export function transitionGameState(
     return {
       mode: "running",
       succeeded: false,
+      ...resetTimerState(state),
       initialInventory: { ...state.initialInventory },
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
@@ -237,6 +300,7 @@ export function transitionGameState(
     return {
       mode: "running",
       succeeded: false,
+      ...cloneTimerState(state),
       initialInventory: { ...state.initialInventory },
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
@@ -250,6 +314,7 @@ export function transitionGameState(
     return {
       mode: "paused",
       succeeded: false,
+      ...cloneTimerState(state),
       initialInventory: { ...state.initialInventory },
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
@@ -263,6 +328,7 @@ export function transitionGameState(
     return {
       mode: "edit",
       succeeded: false,
+      ...cloneTimerState(state),
       initialInventory: { ...state.initialInventory },
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
@@ -336,7 +402,7 @@ export function updateBlockTransform(
 export function getEnabledControls(
   state: Readonly<GameState>,
 ): EnabledControls {
-  if (state.succeeded) {
+  if (state.succeeded || state.mode === "failed") {
     return { edit: false, simulation: false, reset: true };
   }
   return {

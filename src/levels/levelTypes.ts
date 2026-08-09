@@ -81,6 +81,7 @@ export function isEditablePart(
 export interface LevelDefinition {
   id: string;
   title: string;
+  timeLimitSeconds?: number;
   inventory: InventoryDefinition;
   contactRules: ContactRule[];
   actors: ActorDefinition[];

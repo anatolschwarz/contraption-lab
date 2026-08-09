@@ -15,7 +15,10 @@ import {
 import { Controls } from "./ui/Controls";
 
 const level = loadLevel(rawLevel);
-let state: GameState = createInitialGameState(level.inventory);
+let state: GameState = createInitialGameState(
+  level.inventory,
+  level.timeLimitSeconds,
+);
 
 const controls = new Controls(handleAction);
 
@@ -41,6 +44,13 @@ function handleAction(action: GameAction): void {
     if (!componentId) return;
     action = { ...action, componentId };
   }
+  if (typeof action === "object" && action.type === "advance-time") {
+    const previousMode = state.mode;
+    state = transitionGameState(state, action);
+    if (state.mode !== previousMode) applyState();
+    else controls.render(state);
+    return;
+  }
   if (action === "toggle-simulation" && state.mode === "edit") {
     scene.captureRunLayout();
   }
@@ -56,6 +66,7 @@ function handleAction(action: GameAction): void {
 const scene = new PrototypeScene(
   level,
   () => handleAction("success"),
+  (deltaMs) => handleAction({ type: "advance-time", deltaMs }),
   (componentId) =>
     handleAction(
       componentId ? { type: "select-component", componentId } : "deselect",

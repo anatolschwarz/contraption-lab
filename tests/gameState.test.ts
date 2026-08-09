@@ -67,6 +67,17 @@ describe("game-state transitions", () => {
     );
   });
 
+  it("leaves untimed puzzles without timer state", () => {
+    expect(initialGameState.timeLimitSeconds).toBeUndefined();
+    expect(initialGameState.timeRemainingMs).toBeUndefined();
+    expect(
+      transitionGameState(initialGameState, {
+        type: "advance-time",
+        deltaMs: 1_000,
+      }),
+    ).toEqual(initialGameState);
+  });
+
   it("selects exactly one editable component only in Edit mode", () => {
     const upperSelected = transitionGameState(initialGameState, {
       type: "select-component",
@@ -377,6 +388,75 @@ describe("game-state transitions", () => {
       },
     });
     expect(getEnabledControls(success)).toEqual({
+      edit: false,
+      simulation: false,
+      reset: true,
+    });
+  });
+});
+
+describe("timed puzzle state", () => {
+  const timedInitialState = createInitialGameState(initialInventory, 10);
+
+  it("starts its countdown on Run and freezes it while paused", () => {
+    const running = transitionGameState(timedInitialState, "toggle-simulation");
+    const advanced = transitionGameState(running, {
+      type: "advance-time",
+      deltaMs: 2_500,
+    });
+    const paused = transitionGameState(advanced, "toggle-simulation");
+    const pausedTick = transitionGameState(paused, {
+      type: "advance-time",
+      deltaMs: 5_000,
+    });
+    const resumed = transitionGameState(pausedTick, "toggle-simulation");
+
+    expect(running.timeRemainingMs).toBe(10_000);
+    expect(advanced.timeRemainingMs).toBe(7_500);
+    expect(pausedTick.timeRemainingMs).toBe(7_500);
+    expect(resumed).toMatchObject({ mode: "running", timeRemainingMs: 7_500 });
+  });
+
+  it("reruns with the full limit and Reset restores Edit with the original timer", () => {
+    const running = transitionGameState(timedInitialState, "toggle-simulation");
+    const elapsed = transitionGameState(running, {
+      type: "advance-time",
+      deltaMs: 9_000,
+    });
+    const rerun = transitionGameState(elapsed, "rerun");
+    const reset = transitionGameState(elapsed, "reset");
+
+    expect(rerun).toMatchObject({ mode: "running", timeRemainingMs: 10_000 });
+    expect(reset).toEqual(timedInitialState);
+  });
+
+  it("stops on Success and enters Failed when the timer reaches zero first", () => {
+    const running = transitionGameState(timedInitialState, "toggle-simulation");
+    const partiallyElapsed = transitionGameState(running, {
+      type: "advance-time",
+      deltaMs: 4_000,
+    });
+    const success = transitionGameState(partiallyElapsed, "success");
+    const tickAfterSuccess = transitionGameState(success, {
+      type: "advance-time",
+      deltaMs: 6_000,
+    });
+    const timeout = transitionGameState(running, {
+      type: "advance-time",
+      deltaMs: 10_000,
+    });
+
+    expect(tickAfterSuccess).toMatchObject({
+      mode: "paused",
+      succeeded: true,
+      timeRemainingMs: 6_000,
+    });
+    expect(timeout).toMatchObject({
+      mode: "failed",
+      succeeded: false,
+      timeRemainingMs: 0,
+    });
+    expect(getEnabledControls(timeout)).toEqual({
       edit: false,
       simulation: false,
       reset: true,

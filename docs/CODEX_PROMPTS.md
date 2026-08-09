@@ -1022,3 +1022,32 @@ Required behavior:
 
 Report the Matter-body strategy used for moving collision-enabled actors.
 ```
+
+---
+
+## #17 — Timed puzzle constraints
+
+**VERBATIM**
+
+```text
+Start milestone #17: add optional time-limited puzzles.
+
+Requirements:
+- Add optional `timeLimitSeconds` to puzzle JSON.
+- If absent, puzzle behaves exactly as today.
+- Countdown starts when Run starts.
+- Pause freezes the timer.
+- Resume continues it.
+- Rerun restores the run-start layout and restarts the full timer.
+- Reset restores Edit mode and the original timer.
+- Reaching Success stops the timer.
+- Reaching 0 before Success sets a clear Failed/Timeout state.
+- Timer must be puzzle-driven, not hardcoded.
+- Add one demo timed puzzle/configuration without breaking the existing solution.
+- Validate invalid/negative/zero limits clearly.
+- Add focused tests for Run/Pause/Rerun/Reset/Success/Timeout.
+- Update README, PROJECT_STATE, ROADMAP.
+- Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+- Run typecheck, lint, tests, format check, build.
+- Do not commit or push.
+```

@@ -153,6 +153,7 @@ export class PrototypeScene extends Phaser.Scene {
   constructor(
     private readonly level: LevelDefinition,
     private readonly onSuccess: () => void,
+    private readonly onTimerTick: (deltaMs: number) => void,
     private readonly onSelectionChange: (componentId: string | null) => void,
     private readonly onRampTransformChange: (
       rampId: string,
@@ -245,8 +246,12 @@ export class PrototypeScene extends Phaser.Scene {
     else this.matter.world.pause();
   }
 
-  update(): void {
+  update(_time: number, deltaMs: number): void {
     if (!this.simulationRunning) return;
+    if (this.level.timeLimitSeconds !== undefined) {
+      this.onTimerTick(deltaMs);
+      if (!this.simulationRunning) return;
+    }
     for (const actor of this.actors.values()) {
       const position =
         actor.definition.movement.axis === "horizontal"

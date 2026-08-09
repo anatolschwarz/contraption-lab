@@ -1,6 +1,7 @@
 {
   "id": "aim-the-ramp-001",
   "title": "Relay Ramps",
+  "timeLimitSeconds": 45,
   "inventory": { "block": 2, "ramp": 4 },
   "contactRules": [
     {

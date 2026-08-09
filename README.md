@@ -42,6 +42,14 @@ level does not solve itself.
 - **Reset** — restores the original JSON level layout and JSON-defined initial
   inventory. It is different from Rerun.
 
+Levels can optionally declare a positive `timeLimitSeconds`. The configured
+countdown starts with Run, freezes during Pause, and resumes with Run. Rerun
+restores the Run-start layout and the full time limit; Reset returns to Edit
+with that original limit. Goal success stops the countdown. If it reaches zero
+first, the UI shows `Failed — Time expired`; Rerun or Reset can start over.
+Untimed levels omit the field and otherwise behave as before. Relay Ramps is
+the timed demo and declares a 45-second limit in its JSON.
+
 The Parts tray is also available only in Edit. Its counts come from the level
 JSON; the current prototype starts with Block (2) and Ramp (4). Choosing an
 available tray part places a valid new part and selects it. Placing consumes
@@ -112,7 +120,7 @@ It requires Playwright Chromium and a usable local Vite server.
 ## Architecture
 
 - `src/levels/` — level JSON, schema/types, loading, and validation.
-- `src/state/` — browser-independent modes, transforms, inventory, and
+- `src/state/` — browser-independent modes, timer, transforms, inventory, and
   run-start snapshot transitions.
 - `src/game/` — Phaser scene, generated visuals, Matter bodies, placement
   validation, autonomous patrols, contact-rule execution, double-click gesture logic, and
@@ -134,5 +142,7 @@ For the detailed current state, known solution, and roadmap, see
 - Browser e2e coverage currently focuses on the original two-ramp solution;
   tray, removal, and Rerun flows are covered by unit tests rather than browser
   automation.
+- Timer behavior has focused unit coverage; it is not yet covered by browser
+  e2e tests.
 - Touch-specific interaction, persistence, audio, networking, and a general
   purpose level editor are out of scope.

@@ -15,6 +15,8 @@ export class Controls {
   private readonly buttons: Record<keyof EnabledControls, HTMLButtonElement>;
   private readonly modeLabel =
     requireElement<HTMLParagraphElement>("mode-label");
+  private readonly timerLabel =
+    requireElement<HTMLParagraphElement>("timer-label");
   private readonly trayBlockButton =
     requireElement<HTMLButtonElement>("tray-block-button");
   private readonly trayRampButton =
@@ -57,9 +59,24 @@ export class Controls {
       state.mode !== "edit" || state.succeeded || state.trayRampCount === 0;
     this.trayRampButton.textContent = `Ramp (${state.trayRampCount})`;
     this.rerunButton.disabled = state.mode === "edit" || !state.runSnapshot;
+    this.timerLabel.hidden = state.timeRemainingMs === undefined;
+    if (state.timeRemainingMs !== undefined) {
+      this.timerLabel.textContent = `Time: ${formatTimeRemaining(
+        state.timeRemainingMs,
+      )}`;
+    }
     const label = state.succeeded
       ? "Success"
-      : state.mode.charAt(0).toUpperCase() + state.mode.slice(1);
+      : state.mode === "failed"
+        ? "Failed — Time expired"
+        : state.mode.charAt(0).toUpperCase() + state.mode.slice(1);
     this.modeLabel.textContent = `Mode: ${label}`;
   }
+}
+
+function formatTimeRemaining(timeRemainingMs: number): string {
+  const totalSeconds = Math.ceil(timeRemainingMs / 1_000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }

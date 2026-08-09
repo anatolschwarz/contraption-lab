@@ -12,6 +12,22 @@ describe("validateLevel", () => {
     expect(() => validateLevel(invalid)).toThrow(/ball.*positive radius/i);
   });
 
+  it("accepts an omitted time limit and rejects invalid limits clearly", () => {
+    const untimed = Object.fromEntries(
+      Object.entries(rawLevel).filter(([key]) => key !== "timeLimitSeconds"),
+    );
+    expect(validateLevel(untimed).timeLimitSeconds).toBeUndefined();
+    expect(() => validateLevel({ ...rawLevel, timeLimitSeconds: 0 })).toThrow(
+      /timeLimitSeconds.*positive finite number/i,
+    );
+    expect(() => validateLevel({ ...rawLevel, timeLimitSeconds: -5 })).toThrow(
+      /timeLimitSeconds.*positive finite number/i,
+    );
+    expect(() =>
+      validateLevel({ ...rawLevel, timeLimitSeconds: "fast" }),
+    ).toThrow(/timeLimitSeconds.*positive finite number/i);
+  });
+
   it("rejects missing level fields", () => {
     expect(() => validateLevel({ id: "incomplete" })).toThrow(/title/i);
   });
