@@ -26,7 +26,14 @@ export interface InventoryDefinition {
   ramp: number;
 }
 
-export const CONTACT_TAGS = ["ball", "goal", "floor", "ramp", "block"] as const;
+export const CONTACT_TAGS = [
+  "ball",
+  "goal",
+  "floor",
+  "ramp",
+  "block",
+  "bird",
+] as const;
 
 export type ContactTag = (typeof CONTACT_TAGS)[number];
 
@@ -38,6 +45,24 @@ export interface DestroyContactAction {
 export interface ContactRule {
   contacts: [ContactTag, ContactTag];
   action: DestroyContactAction;
+}
+
+export type ActorTag = "bird";
+export type PatrolAxis = "horizontal" | "vertical";
+
+export interface PatrolMovementDefinition {
+  type: "patrol";
+  axis: PatrolAxis;
+  speed: number;
+  min: number;
+  max: number;
+  direction: -1 | 1;
+}
+
+export interface ActorDefinition extends RectangleDefinition {
+  id: string;
+  tag: ActorTag;
+  movement: PatrolMovementDefinition;
 }
 
 export function isPlayerPart(
@@ -58,6 +83,7 @@ export interface LevelDefinition {
   title: string;
   inventory: InventoryDefinition;
   contactRules: ContactRule[];
+  actors: ActorDefinition[];
   ball: Point & { radius: number };
   ramps: RampDefinition[];
   blocks: BlockDefinition[];

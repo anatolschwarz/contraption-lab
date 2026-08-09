@@ -50,4 +50,32 @@ describe("contact rules", () => {
     expect(target.wasDestroyed()).toBe(true);
     expect(target.destroyCount()).toBe(1);
   });
+
+  it("executes the bird-to-block destroy rule after their physical contact", () => {
+    const bird = participant("bird");
+    const block = participant("block");
+    const destroyBirdBlock: ContactRule = {
+      contacts: ["bird", "block"],
+      action: { type: "destroy", target: "block" },
+    };
+
+    executeContactRules([destroyBirdBlock], bird, block);
+
+    expect(bird.wasDestroyed()).toBe(false);
+    expect(block.destroyCount()).toBe(1);
+  });
+
+  it("executes a declarative bird-to-ramp destroy rule without actor-specific logic", () => {
+    const bird = participant("bird");
+    const ramp = participant("ramp");
+    const destroyBirdRamp: ContactRule = {
+      contacts: ["bird", "ramp"],
+      action: { type: "destroy", target: "ramp" },
+    };
+
+    executeContactRules([destroyBirdRamp], ramp, bird);
+
+    expect(bird.wasDestroyed()).toBe(false);
+    expect(ramp.destroyCount()).toBe(1);
+  });
 });

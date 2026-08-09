@@ -55,6 +55,14 @@ Level parts have explicit ownership:
 - **Player-owned** parts may be preplaced in JSON or spawned from the tray.
   They are editable according to their component capabilities.
 
+The prototype also includes a fixed Bird actor defined entirely in level JSON.
+During Run it follows a deterministic horizontal patrol, reversing at its
+configured bounds. Pause freezes its patrol, Run resumes it, Rerun restores its
+run-start patrol state, and Reset restores its JSON state. Actors are regular
+gravity-free dynamic Matter bodies, so they physically collide with solid parts
+while still producing contact-rule events. Actors are not editable by the
+player.
+
 During Edit, an editable ramp or block must stay inside the 960×540 playfield
 and may not penetrate the ball or any other ramp/block. A transform that would
 violate those rules is rejected and the last valid transform remains in use.
@@ -63,7 +71,7 @@ Goal overlap is intentionally allowed.
 ## Contact rules
 
 Levels can declare reactions to Matter contacts. A rule names two supported
-tags (`ball`, `goal`, `floor`, `ramp`, or `block`) and an action. The first
+tags (`ball`, `goal`, `floor`, `ramp`, `block`, or `bird`) and an action. The first
 supported action is `destroy`:
 
 ```json
@@ -78,6 +86,10 @@ if the ball contacts a block while running, that block is destroyed. The known
 two-ramp solution avoids the fixed guide block, so the original puzzle outcome
 is unchanged. Contact destruction is a simulation event; Rerun and Reset
 restore their respective saved layouts.
+
+The prototype also declares `bird`/`block` → destroy block, demonstrating that
+the same contact system applies to autonomous actors without bird-specific
+reaction logic.
 
 ## Build and validation
 
@@ -103,7 +115,7 @@ It requires Playwright Chromium and a usable local Vite server.
 - `src/state/` — browser-independent modes, transforms, inventory, and
   run-start snapshot transitions.
 - `src/game/` — Phaser scene, generated visuals, Matter bodies, placement
-  validation, contact-rule execution, double-click gesture logic, and
+  validation, autonomous patrols, contact-rule execution, double-click gesture logic, and
   scene-layout snapshots.
 - `src/ui/` — plain DOM controls and tray rendering.
 - `src/main.ts` — composition of the level, state, controls, and Phaser game.

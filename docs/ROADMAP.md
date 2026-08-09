@@ -3,44 +3,37 @@
 This roadmap is planning guidance, not a commitment to implement every item
 without a separate scoped milestone request.
 
-## #14 — Multi-level architecture and selection
+## #14 — Multi-puzzle architecture
 
-- Support a validated catalog of level JSON files.
-- Add a minimal level-selection flow and deterministic load/reset boundaries.
-- Keep each level's ownership and inventory data self-contained.
+- Support a validated catalog of puzzle JSON files and a minimal selector.
+- Keep puzzle state, inventory, Reset, and Rerun isolated to the active puzzle.
+- Avoid duplicated scene/gameplay logic across puzzles.
 
-## #15 — Contact/reaction event system (completed)
+## #15 — Contact/reaction event system
 
-- Added level-defined contact rules for the built-in object tags.
-- Added central Matter contact dispatch and the `destroy` action.
-- The initial demo destroys a block on ball/block contact without changing the
-  known two-ramp solution.
+- Completed: validated level-defined contact rules, central Matter contact
+  dispatch, and the `destroy` action.
 
-## #16 — Third physics component and puzzle progression
+## #16 — Autonomous actors / moving objects
 
-- Add one small, original component type with clearly bounded physics behavior.
-- Define JSON schema, ownership, placement, tray, reset, and validation rules.
-- Add focused unit and browser coverage before expanding the component set.
+- Completed: added JSON-defined Bird actors with deterministic collision-enabled
+  patrol movement, contact tags, Pause/Resume behavior, and Rerun/Reset
+  restoration.
+- Future actor movement modes should remain declarative and avoid actor-specific
+  gameplay code.
 
-### Puzzle progression
+## #17 — Timed puzzle constraints
 
-- Define completion state across multiple levels.
-- Add a minimal progression presentation without accounts or persistence beyond
-  the explicitly approved scope.
-- Verify reset/Rerun semantics at level boundaries.
+- Add scoped time-based puzzle constraints and clear player feedback.
+- Define deterministic Pause, Rerun, Reset, and success behavior for timers.
 
-## #17 — Editor UX improvements
+## #18 — Progression + editor UX
 
-- Improve selection visibility, placement feedback, and invalid-placement
-  messaging.
-- Evaluate keyboard discoverability, tray affordances, and input accessibility.
-- Preserve the constrained prototype editor rather than broadening it into a
-  general-purpose level editor.
+- Define lightweight progression across puzzles.
+- Improve selection, placement feedback, tray affordances, and input
+  discoverability without expanding into a general-purpose editor.
 
-## #18 — E2E, polish, and MVP review
+## #19 — Polish + broader e2e
 
-- Expand Playwright coverage to tray, ownership, removal, Rerun, and additional
-  levels/components.
-- Review manual browser behavior, responsiveness, performance, and build size.
-- Assess the prototype against an explicit MVP checklist before adding broader
-  scope.
+- Expand browser coverage to current and future puzzle interactions.
+- Review responsiveness, performance, accessibility, and MVP readiness.

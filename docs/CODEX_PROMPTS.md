@@ -33,6 +33,36 @@ Report:
 Keep this inspection read-only.
 ```
 
+---
+
+## #16 follow-up — Bird contact behavior and speed
+
+**VERBATIM**
+
+```text
+Continue milestone #16.
+
+Two gameplay adjustments:
+
+1. Bird contact behavior
+- Currently bird destroys blocks but not ramps.
+- Add level contact rules so Bird destroys BOTH blocks and ramps on contact.
+- Keep this declarative in puzzle JSON; no bird-specific reaction code.
+- Preserve the generic #15 contact/reaction architecture.
+
+2. Bird speed
+- Current patrol speed 90 is too fast.
+- Change the prototype Bird patrol speed to 40.
+- Do not change the generic movement implementation.
+
+Preserve Pause/Resume, Rerun, Reset and deterministic patrol behavior.
+Update focused tests as necessary.
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run typecheck, lint, tests, format check, build.
+Do not commit or push.
+```
+
 ### Step 7 — First playable technical prototype
 
 **RECONSTRUCTED**
@@ -901,4 +931,94 @@ Requirements:
 - Do not commit or push.
 
 Report architecture, JSON format, demo behavior, files changed, and validation results.
+```
+
+## Roadmap correction
+
+**VERBATIM**
+
+```text
+Update docs/ROADMAP.md to the currently agreed roadmap:
+
+#14 Multi-puzzle architecture
+#15 Contact/reaction event system
+#16 Autonomous actors / moving objects
+#17 Timed puzzle constraints
+#18 Progression + editor UX
+#19 Polish + broader e2e
+
+Remove/supersede the old "#16 — Third physics component and puzzle progression" entry.
+
+Also append this prompt verbatim to docs/CODEX_PROMPTS.md.
+
+Do not change gameplay code.
+Do not commit or push.
+```
+
+---
+
+## #16 — Autonomous moving actors
+
+**VERBATIM**
+
+```text
+Start milestone #16: add autonomous moving actors.
+
+Implement a generic autonomous-actor system, with Bird as the first actor.
+
+Requirements:
+- Bird defined entirely in puzzle JSON.
+- Bird is fixed/non-editable by player.
+- During Run it moves autonomously.
+- Support deterministic movement first:
+  - horizontal/vertical patrol
+  - speed
+  - movement bounds / reversal
+- Pause freezes it; resume continues.
+- Rerun reproduces the same movement from the run-start state.
+- Reset restores JSON state.
+- Bird participates in the #15 contact-rule system using tag `bird`.
+- Add a demo rule: bird contacts block -> destroy block.
+- Architecture must allow future random/path movement without bird-specific game logic.
+- Validate malformed movement definitions.
+- Preserve existing puzzles/solution.
+- Add focused tests.
+- Update README, PROJECT_STATE, ROADMAP.
+- Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+- Run typecheck, lint, tests, format check, build.
+- Do not commit or push.
+
+Report architecture, JSON format, demo behavior, files changed, and validation results.
+```
+
+---
+
+## #16 follow-up — Solid actor collision
+
+**VERBATIM**
+
+```text
+Continue milestone #16.
+
+Bug:
+The Bird currently passes through solid Block objects because autonomous actors are implemented as Matter sensors.
+
+Required behavior:
+- Autonomous actors must participate in normal physical collision with solid objects.
+- Bird must NOT pass through a solid block.
+- Contact rules must still fire on collision.
+- For the existing bird + block -> destroy block rule:
+  - contact occurs
+  - rule destroys the block
+  - bird may then continue its patrol after the block is removed
+- Do not make all actors sensors by default.
+- Keep the actor movement system generic; no bird-specific collision logic.
+- Preserve deterministic patrol, Pause/Resume, Rerun, Reset, and existing puzzle behavior.
+- Add focused tests for physical actor/block collision plus contact-rule execution.
+- Update docs if actor collision semantics changed.
+- Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+- Run typecheck, lint, tests, format check, build.
+- Do not commit or push.
+
+Report the Matter-body strategy used for moving collision-enabled actors.
 ```

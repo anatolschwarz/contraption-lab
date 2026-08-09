@@ -1,4 +1,11 @@
 import Phaser from "phaser";
+import {
+  COLLISION_ACTOR_BODY_OPTIONS,
+  getActorPosition,
+  getPatrolVelocity,
+  resolvePatrolDirection,
+  type PatrolState,
+} from "./autonomousActors";
 import { executeContactRules } from "./contactRules";
 import {
   isClickMovementWithinTolerance,
@@ -7,6 +14,7 @@ import {
 } from "./doubleClick";
 import {
   isEditablePart,
+  type ActorDefinition,
   type BlockDefinition,
   type ContactTag,
   type LevelDefinition,
@@ -31,6 +39,8 @@ const BLOCK_FILL_COLOR = 0x6f7d78;
 const BLOCK_STROKE_COLOR = 0x344e41;
 const FIXED_BLOCK_FILL_COLOR = 0x465053;
 const FIXED_BLOCK_STROKE_COLOR = 0x252b2d;
+const ACTOR_FILL_COLOR = 0x5b7cfa;
+const ACTOR_STROKE_COLOR = 0x2d3a8c;
 const TRAY_BLOCK_DEFINITION: Omit<BlockDefinition, "id" | "x" | "y"> = {
   width: 80,
   height: 60,
@@ -80,6 +90,18 @@ interface ContactObject {
   destroy: () => void;
 }
 
+type MatterRectangle = Phaser.GameObjects.Rectangle &
+  Phaser.Physics.Matter.Components.Gravity &
+  Phaser.Physics.Matter.Components.Transform &
+  Phaser.Physics.Matter.Components.Velocity;
+
+interface AutonomousActor {
+  definition: ActorDefinition;
+  patrol: PatrolState;
+  shape: MatterRectangle;
+  label: Phaser.GameObjects.Text;
+}
+
 type MatterGameObject = Phaser.GameObjects.GameObject & {
   body?: unknown;
 };
@@ -98,6 +120,16 @@ interface BlockPartSnapshot {
 
 type PlayerPartSnapshot = RampPartSnapshot | BlockPartSnapshot;
 
+interface ActorSnapshot {
+  id: string;
+  patrol: PatrolState;
+}
+
+interface SceneRunSnapshot {
+  actors: ActorSnapshot[];
+  parts: PlayerPartSnapshot[];
+}
+
 export class PrototypeScene extends Phaser.Scene {
   private ball?: Phaser.GameObjects.Arc;
   private drag?: {
@@ -110,9 +142,11 @@ export class PrototypeScene extends Phaser.Scene {
   private editInteractionEnabled = false;
   private lastComponentClick?: CompletedClick;
   private readonly blocks = new Map<string, EditableBlock>();
+  private readonly actors = new Map<string, AutonomousActor>();
   private readonly contactObjects = new Map<MatterJS.BodyType, ContactObject>();
   private readonly ramps = new Map<string, EditableRamp>();
-  private runSnapshot?: PlayerPartSnapshot[];
+  private runSnapshot?: SceneRunSnapshot;
+  private simulationRunning = false;
   private selectedComponentId: string | null = null;
   private successText?: Phaser.GameObjects.Text;
 
@@ -206,8 +240,35 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   setSimulationRunning(running: boolean): void {
+    this.simulationRunning = running;
     if (running) this.matter.world.resume();
     else this.matter.world.pause();
+  }
+
+  update(): void {
+    if (!this.simulationRunning) return;
+    for (const actor of this.actors.values()) {
+      const position =
+        actor.definition.movement.axis === "horizontal"
+          ? actor.shape.x
+          : actor.shape.y;
+      const direction = resolvePatrolDirection(
+        actor.definition.movement,
+        position,
+        actor.patrol.direction,
+      );
+      const velocity = getPatrolVelocity(actor.definition.movement, direction);
+      actor.patrol = { direction, position };
+      actor.shape.setVelocity(velocity.x, velocity.y);
+      const labelPosition = getActorPosition(
+        actor.definition.movement.axis,
+        position,
+        actor.definition.movement.axis === "horizontal"
+          ? actor.definition.y
+          : actor.definition.x,
+      );
+      actor.label.setPosition(labelPosition.x, labelPosition.y);
+    }
   }
 
   setEditSelection(enabled: boolean, selectedComponentId: string | null): void {
@@ -297,33 +358,40 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   captureRunLayout(): void {
-    this.runSnapshot = [
-      ...[...this.ramps.values()].map((ramp): RampPartSnapshot => ({
-        componentType: "ramp",
-        definition: {
-          ...ramp.definition,
-          x: ramp.shape.x,
-          y: ramp.shape.y,
-          rotation: ramp.shape.rotation,
-        },
-        fromTray: ramp.fromTray,
+    this.runSnapshot = {
+      parts: [
+        ...[...this.ramps.values()].map((ramp): RampPartSnapshot => ({
+          componentType: "ramp",
+          definition: {
+            ...ramp.definition,
+            x: ramp.shape.x,
+            y: ramp.shape.y,
+            rotation: ramp.shape.rotation,
+          },
+          fromTray: ramp.fromTray,
+        })),
+        ...[...this.blocks.values()].map((block): BlockPartSnapshot => ({
+          componentType: "block",
+          definition: {
+            ...block.definition,
+            x: block.shape.x,
+            y: block.shape.y,
+          },
+          fromTray: block.fromTray,
+        })),
+      ],
+      actors: [...this.actors.values()].map((actor) => ({
+        id: actor.definition.id,
+        patrol: { ...actor.patrol },
       })),
-      ...[...this.blocks.values()].map((block): BlockPartSnapshot => ({
-        componentType: "block",
-        definition: {
-          ...block.definition,
-          x: block.shape.x,
-          y: block.shape.y,
-        },
-        fromTray: block.fromTray,
-      })),
-    ];
+    };
   }
 
   rerunFromSnapshot(): boolean {
     if (!this.runSnapshot) return false;
     this.matter.world.pause();
-    this.restoreParts(this.runSnapshot);
+    this.restoreParts(this.runSnapshot.parts);
+    this.restoreActors(this.runSnapshot.actors);
     this.resetBallAndSuccess();
     return true;
   }
@@ -331,6 +399,7 @@ export class PrototypeScene extends Phaser.Scene {
   resetLevel(): void {
     this.matter.world.pause();
     this.restoreLevelParts();
+    this.restoreActors();
     this.runSnapshot = undefined;
     this.resetBallAndSuccess();
   }
@@ -602,6 +671,66 @@ export class PrototypeScene extends Phaser.Scene {
     }
   }
 
+  private restoreActors(snapshot: readonly ActorSnapshot[] = []): void {
+    this.destroyActors();
+    const snapshotsById = new Map(
+      snapshot.map((actorSnapshot) => [actorSnapshot.id, actorSnapshot]),
+    );
+    for (const actor of this.level.actors) {
+      this.createActor(actor, snapshotsById.get(actor.id)?.patrol);
+    }
+  }
+
+  private createActor(
+    definition: ActorDefinition,
+    patrol: PatrolState = {
+      position:
+        definition.movement.axis === "horizontal" ? definition.x : definition.y,
+      direction: definition.movement.direction,
+    },
+  ): void {
+    const position = getActorPosition(
+      definition.movement.axis,
+      patrol.position,
+      definition.movement.axis === "horizontal" ? definition.y : definition.x,
+    );
+    const shape = this.matter.add.gameObject(
+      this.add
+        .rectangle(
+          position.x,
+          position.y,
+          definition.width,
+          definition.height,
+          ACTOR_FILL_COLOR,
+        )
+        .setStrokeStyle(3, ACTOR_STROKE_COLOR)
+        .setDepth(2),
+      {
+        ...COLLISION_ACTOR_BODY_OPTIONS,
+        label: `actor:${definition.id}`,
+      },
+    ) as MatterRectangle;
+    shape.setIgnoreGravity(true).setFixedRotation();
+    const label = this.add
+      .text(position.x, position.y, definition.tag.toUpperCase(), {
+        color: "#f7f3ea",
+        fontFamily: "Arial, sans-serif",
+        fontSize: "11px",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(3);
+    this.actors.set(definition.id, {
+      definition,
+      patrol: { ...patrol },
+      shape,
+      label,
+    });
+    this.registerContactObject(shape, definition.tag, () =>
+      this.destroyActorFromContact(definition.id),
+    );
+  }
+
   private restoreParts(snapshot: readonly PlayerPartSnapshot[]): void {
     this.destroyParts();
     for (const part of snapshot) {
@@ -627,6 +756,15 @@ export class PrototypeScene extends Phaser.Scene {
     }
     this.ramps.clear();
     this.blocks.clear();
+  }
+
+  private destroyActors(): void {
+    for (const actor of this.actors.values()) {
+      this.unregisterContactObject(actor.shape);
+      actor.shape.destroy();
+      actor.label.destroy();
+    }
+    this.actors.clear();
   }
 
   private handleContact(
@@ -701,6 +839,15 @@ export class PrototypeScene extends Phaser.Scene {
     block.selectionText.destroy();
     block.fixedLabel?.destroy();
     this.blocks.delete(componentId);
+  }
+
+  private destroyActorFromContact(actorId: string): void {
+    const actor = this.actors.get(actorId);
+    if (!actor) return;
+    this.unregisterContactObject(actor.shape);
+    actor.shape.destroy();
+    actor.label.destroy();
+    this.actors.delete(actorId);
   }
 
   private getNextTrayRampId(): string {

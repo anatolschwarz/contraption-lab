@@ -49,11 +49,38 @@ describe("the bundled relay-ramp puzzle", () => {
   });
 
   it("declares the block-destruction contact demo", () => {
-    expect(level.contactRules).toEqual([
+    expect(level.contactRules).toContainEqual({
+      contacts: ["ball", "block"],
+      action: { type: "destroy", target: "block" },
+    });
+  });
+
+  it("defines a fixed bird actor with a horizontal patrol", () => {
+    expect(level.actors).toEqual([
       {
-        contacts: ["ball", "block"],
-        action: { type: "destroy", target: "block" },
+        id: "patrol-bird",
+        tag: "bird",
+        x: 680,
+        y: 150,
+        width: 36,
+        height: 24,
+        movement: {
+          type: "patrol",
+          axis: "horizontal",
+          speed: 40,
+          min: 680,
+          max: 920,
+          direction: 1,
+        },
       },
     ]);
+    expect(level.contactRules).toContainEqual({
+      contacts: ["bird", "block"],
+      action: { type: "destroy", target: "block" },
+    });
+    expect(level.contactRules).toContainEqual({
+      contacts: ["bird", "ramp"],
+      action: { type: "destroy", target: "ramp" },
+    });
   });
 });

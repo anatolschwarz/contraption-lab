@@ -39,6 +39,9 @@ same 25° rotation (five 5° Q/E steps).
   documentation, limitations, validation status, and roadmap.
 - **#15 — Contact/reaction rules:** added validated JSON contact rules, central
   Matter contact dispatch, and the initial `destroy` action.
+- **#16 — Autonomous actors:** added JSON-defined fixed actors, deterministic
+  collision-enabled patrol movement, actor contact tags, and run-snapshot/reset
+  behavior.
 
 ## Current behavior
 
@@ -66,23 +69,30 @@ same 25° rotation (five 5° Q/E steps).
   editable part within 350 ms, each below the 8 px movement threshold. Drags,
   slow clicks, and clicks across different parts do not remove a part.
 - Levels may declare contact rules over the supported `ball`, `goal`, `floor`,
-  `ramp`, and `block` tags. The initial action, `destroy`, removes its configured
-  contacted target. The prototype demo destroys a block contacted by the ball.
+  `ramp`, `block`, and `bird` tags. The initial action, `destroy`, removes its
+  configured contacted target. The prototype demo destroys a block contacted by
+  the ball.
+- Actors are fixed/non-editable JSON objects. The current Bird actor is a
+  gravity-free dynamic Matter body on a horizontal patrol, so solid blocks stop
+  it and collision events still run the `bird`/`block` destroy rule. It pauses
+  with physics, resumes without resetting, and Rerun restores its run-start
+  position and direction.
 
 ## Architecture
 
-| Area                         | Responsibility                                                                                            |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `src/levels/`                | Level JSON, ownership/inventory types, runtime schema validation, and loading.                            |
-| `src/state/gameState.ts`     | Pure mode, transform, inventory, reset, and run-snapshot transitions.                                     |
-| `src/game/PrototypeScene.ts` | Phaser rendering, Matter bodies, player interactions, collision success, and full scene-layout snapshots. |
-| `src/game/rampPlacement.ts`  | Bounds and penetration checks for editable rectangles.                                                    |
-| `src/game/doubleClick.ts`    | Pure completed-click and movement-tolerance logic.                                                        |
-| `src/game/contactRules.ts`   | Pure order-independent contact-rule matching and action execution.                                        |
-| `src/ui/Controls.ts`         | DOM buttons, tray counts, and enabled states.                                                             |
-| `src/main.ts`                | Connects state, scene snapshots, controls, and Phaser setup.                                              |
-| `tests/`                     | Vitest unit coverage for state, placement, validation, ownership, puzzle data, and gestures.              |
-| `e2e/puzzle.e2e.ts`          | Playwright flow for the known two-ramp solution.                                                          |
+| Area                           | Responsibility                                                                                            |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `src/levels/`                  | Level JSON, ownership/inventory types, runtime schema validation, and loading.                            |
+| `src/state/gameState.ts`       | Pure mode, transform, inventory, reset, and run-snapshot transitions.                                     |
+| `src/game/PrototypeScene.ts`   | Phaser rendering, Matter bodies, player interactions, collision success, and full scene-layout snapshots. |
+| `src/game/rampPlacement.ts`    | Bounds and penetration checks for editable rectangles.                                                    |
+| `src/game/doubleClick.ts`      | Pure completed-click and movement-tolerance logic.                                                        |
+| `src/game/contactRules.ts`     | Pure order-independent contact-rule matching and action execution.                                        |
+| `src/game/autonomousActors.ts` | Pure patrol state/velocity helpers and collision-enabled actor-body options.                              |
+| `src/ui/Controls.ts`           | DOM buttons, tray counts, and enabled states.                                                             |
+| `src/main.ts`                  | Connects state, scene snapshots, controls, and Phaser setup.                                              |
+| `tests/`                       | Vitest unit coverage for state, placement, validation, ownership, puzzle data, and gestures.              |
+| `e2e/puzzle.e2e.ts`            | Playwright flow for the known two-ramp solution.                                                          |
 
 ## Automated validation
 
@@ -96,8 +106,8 @@ npm run format:check
 npm run build
 ```
 
-At the time of this document update, the Vitest suite contains 46 tests across
-7 files. `npm run test:e2e` is available separately and exercises the original
+At the time of this document update, the Vitest suite contains 54 tests across
+8 files. `npm run test:e2e` is available separately and exercises the original
 two-ramp browser flow, including the 10-second Success assertion. It does not
 currently cover tray, removal, or Rerun in a browser.
 
@@ -111,6 +121,8 @@ currently cover tray, removal, or Rerun in a browser.
   Rerun flows.
 - Contact rules currently support only type/tag matching and the `destroy`
   action; they have no conditions, effects, or per-instance targeting.
+- Autonomous actors currently support only deterministic horizontal/vertical
+  patrol movement. Random and path-based movement remain future work.
 - Physics results can vary slightly between browser or engine versions.
 - Vite reports a production chunk-size warning because Phaser is bundled in the
   main chunk; the build still succeeds.

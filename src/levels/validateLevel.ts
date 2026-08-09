@@ -1,4 +1,5 @@
 import type {
+  ActorDefinition,
   BlockDefinition,
   ContactRule,
   ContactTag,
@@ -60,6 +61,75 @@ const isInventory = (value: unknown): value is InventoryDefinition =>
   Number.isInteger(value.ramp) &&
   value.ramp >= 0;
 
+function validateActors(value: unknown): ActorDefinition[] {
+  if (!Array.isArray(value)) {
+    throw new Error("Level actors must be an array.");
+  }
+  const actors = value.map((actor, index) => {
+    if (
+      !isRecord(actor) ||
+      !isRectangle(actor) ||
+      typeof actor.id !== "string" ||
+      actor.id.trim() === "" ||
+      actor.tag !== "bird" ||
+      !isRecord(actor.movement)
+    ) {
+      throw new Error(`Level actor ${index} must be a valid bird definition.`);
+    }
+    const { movement } = actor;
+    if (
+      movement.type !== "patrol" ||
+      (movement.axis !== "horizontal" && movement.axis !== "vertical") ||
+      !isFiniteNumber(movement.speed) ||
+      movement.speed <= 0 ||
+      !isFiniteNumber(movement.min) ||
+      !isFiniteNumber(movement.max) ||
+      movement.min >= movement.max ||
+      (movement.direction !== -1 && movement.direction !== 1)
+    ) {
+      throw new Error(`Level actor ${index} has an invalid patrol movement.`);
+    }
+    const patrolPosition = movement.axis === "horizontal" ? actor.x : actor.y;
+    const halfExtent =
+      movement.axis === "horizontal" ? actor.width / 2 : actor.height / 2;
+    const playfieldLimit = movement.axis === "horizontal" ? 960 : 540;
+    if (
+      patrolPosition < movement.min ||
+      patrolPosition > movement.max ||
+      movement.min < halfExtent ||
+      movement.max > playfieldLimit - halfExtent
+    ) {
+      throw new Error(
+        `Level actor ${index} patrol bounds must contain the actor inside the playfield.`,
+      );
+    }
+    const tag: ActorDefinition["tag"] = actor.tag;
+    const axis: ActorDefinition["movement"]["axis"] = movement.axis;
+    const direction: ActorDefinition["movement"]["direction"] =
+      movement.direction;
+    return {
+      id: actor.id,
+      tag,
+      x: actor.x,
+      y: actor.y,
+      width: actor.width,
+      height: actor.height,
+      movement: {
+        type: "patrol" as const,
+        axis,
+        speed: movement.speed,
+        min: movement.min,
+        max: movement.max,
+        direction,
+      },
+    };
+  });
+  if (new Set(actors.map((actor) => actor.id)).size !== actors.length) {
+    throw new Error("Level actor ids must be unique.");
+  }
+  return actors;
+}
+
 const isContactTag = (value: unknown): value is ContactTag =>
   typeof value === "string" && CONTACT_TAGS.includes(value as ContactTag);
 
@@ -114,6 +184,7 @@ export function validateLevel(value: unknown): LevelDefinition {
     title,
     inventory,
     contactRules,
+    actors,
     ball,
     ramps,
     blocks,
@@ -133,6 +204,7 @@ export function validateLevel(value: unknown): LevelDefinition {
     );
   }
   const validatedContactRules = validateContactRules(contactRules);
+  const validatedActors = validateActors(actors);
   if (!isBall(ball)) {
     throw new Error("Level ball must have finite x/y and a positive radius.");
   }
@@ -173,6 +245,7 @@ export function validateLevel(value: unknown): LevelDefinition {
     title,
     inventory,
     contactRules: validatedContactRules,
+    actors: validatedActors,
     ball,
     ramps,
     blocks,

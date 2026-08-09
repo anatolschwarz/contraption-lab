@@ -6,6 +6,32 @@
     {
       "contacts": ["ball", "block"],
       "action": { "type": "destroy", "target": "block" }
+    },
+    {
+      "contacts": ["bird", "block"],
+      "action": { "type": "destroy", "target": "block" }
+    },
+    {
+      "contacts": ["bird", "ramp"],
+      "action": { "type": "destroy", "target": "ramp" }
+    }
+  ],
+  "actors": [
+    {
+      "id": "patrol-bird",
+      "tag": "bird",
+      "x": 680,
+      "y": 150,
+      "width": 36,
+      "height": 24,
+      "movement": {
+        "type": "patrol",
+        "axis": "horizontal",
+        "speed": 40,
+        "min": 680,
+        "max": 920,
+        "direction": 1
+      }
     }
   ],
   "ball": { "x": 215, "y": 135, "radius": 24 },

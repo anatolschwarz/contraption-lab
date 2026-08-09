@@ -64,6 +64,30 @@ describe("validateLevel", () => {
     ).toThrow(/destroy one of its contact tags/i);
   });
 
+  it("requires valid actor patrol definitions", () => {
+    const actor = rawLevel.actors[0]!;
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        actors: [{ ...actor, movement: { ...actor.movement, speed: 0 } }],
+      }),
+    ).toThrow(/invalid patrol movement/i);
+    expect(() =>
+      validateLevel({ ...rawLevel, actors: [{ ...actor, tag: "unknown" }] }),
+    ).toThrow(/valid bird definition/i);
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        actors: [
+          {
+            ...actor,
+            movement: { ...actor.movement, min: 10, max: 20 },
+          },
+        ],
+      }),
+    ).toThrow(/patrol bounds/i);
+  });
+
   it("requires at least two ramps with unique ids", () => {
     expect(() =>
       validateLevel({ ...rawLevel, ramps: [rawLevel.ramps[0]] }),
