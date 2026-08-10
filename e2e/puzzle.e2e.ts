@@ -263,6 +263,14 @@ async function startApp(page: Page): Promise<App> {
   return app;
 }
 
+async function ensurePartsPaletteOpen(page: Page): Promise<void> {
+  const palette = page.locator("#parts-palette");
+  if (!(await palette.isVisible())) {
+    await page.locator("#parts-palette-toggle").click();
+  }
+  await expect(palette).toBeVisible();
+}
+
 async function waitForPrototypeScene(page: Page): Promise<void> {
   await expect
     .poll(() =>
@@ -576,7 +584,7 @@ test("solves the first puzzle and advances through Next Puzzle", async ({
   test.setTimeout(60_000);
   const app = await startApp(page);
   await expect(page.locator("#level-progress-label")).toHaveText(
-    "Level 1 of 3 — Basic",
+    "Level 1 of 5 — Basic",
   );
   await expect(page.locator("#puzzle-title-label")).toHaveText("Relay Ramps");
   await expect(app.timer).toHaveText("Time: 0:45");
@@ -589,7 +597,7 @@ test("solves the first puzzle and advances through Next Puzzle", async ({
 
   await page.getByRole("button", { name: "Next Puzzle: Relay Shift" }).click();
   await expect(page.locator("#level-progress-label")).toHaveText(
-    "Level 2 of 3 — Medium",
+    "Level 2 of 5 — Medium",
   );
   await expect(page.locator("#puzzle-title-label")).toHaveText("Relay Shift");
   await expect(app.timer).toBeHidden();
@@ -600,6 +608,7 @@ test("returns removed player parts to inventory and places them again", async ({
   page,
 }) => {
   const app = await startApp(page);
+  await ensurePartsPaletteOpen(page);
   await expect(page.locator("#tray-ramp-button")).toHaveText("Ramp (4)");
 
   await doubleClickCanvas(page, app.canvas, INITIAL_UPPER_RAMP);
@@ -622,6 +631,9 @@ test("hides and restores the Parts Palette across responsive layouts", async ({
   const palette = page.locator("#parts-palette");
   const paletteContent = page.locator("#parts-palette-content");
   const paletteTitle = page.locator(".parts-palette-title");
+  const ballPreview = page.locator(".part-preview--ball");
+  const blockPreview = page.locator(".part-preview--block");
+  const rampPreview = page.locator(".part-preview--ramp");
   const toggle = page.locator("#parts-palette-toggle");
 
   await expect(toggle).toHaveText("Parts");
@@ -631,6 +643,9 @@ test("hides and restores the Parts Palette across responsive layouts", async ({
   await toggle.click();
   await expect(toggle).toHaveText("Close");
   await expect(palette).toBeVisible();
+  await expect(ballPreview).toBeVisible();
+  await expect(blockPreview).toBeVisible();
+  await expect(rampPreview).toBeVisible();
   await toggle.click();
   await expect(toggle).toHaveText("Parts");
   await expect(palette).toBeHidden();
@@ -643,6 +658,9 @@ test("hides and restores the Parts Palette across responsive layouts", async ({
   await toggle.click();
   await expect(toggle).toHaveText("Close");
   await expect(palette).toBeVisible();
+  await expect(ballPreview).toBeVisible();
+  await expect(blockPreview).toBeVisible();
+  await expect(rampPreview).toBeVisible();
   await toggle.click();
   await expect(toggle).toHaveText("Parts");
   await expect(palette).toBeHidden();
@@ -707,6 +725,38 @@ test("times a puzzle through Run, Pause, Resume, Rerun, and Timeout", async ({
   expectNoConsoleErrors(app);
 });
 
+test("loads the first real Basic puzzle pair with their defined timers and inventory", async ({
+  page,
+}) => {
+  const app = await startApp(page);
+  await enableUnlockAll(page);
+
+  await selectPuzzle(page, "down-the-ramp-004");
+  await expect(page.locator("#level-progress-label")).toHaveText(
+    "Level 4 of 5 — Basic",
+  );
+  await expect(page.locator("#puzzle-title-label")).toHaveText("Down the Ramp");
+  await expect(app.timer).toHaveText("Time: 0:10");
+  await ensurePartsPaletteOpen(page);
+  await expect(page.locator("#tray-ball-button")).toHaveText("Ball (0)");
+  await expect(page.locator("#tray-block-button")).toHaveText("Block (0)");
+  await expect(page.locator("#tray-ramp-button")).toHaveText("Ramp (2)");
+
+  await selectPuzzle(page, "bridge-the-gap-005");
+  await expect(page.locator("#level-progress-label")).toHaveText(
+    "Level 5 of 5 — Basic",
+  );
+  await expect(page.locator("#puzzle-title-label")).toHaveText(
+    "Bridge the Gap",
+  );
+  await expect(app.timer).toHaveText("Time: 0:12");
+  await ensurePartsPaletteOpen(page);
+  await expect(page.locator("#tray-ball-button")).toHaveText("Ball (0)");
+  await expect(page.locator("#tray-block-button")).toHaveText("Block (0)");
+  await expect(page.locator("#tray-ramp-button")).toHaveText("Ramp (2)");
+  expectNoConsoleErrors(app);
+});
+
 test("enforces puzzle locks and isolates switched runtime state", async ({
   page,
 }) => {
@@ -717,6 +767,7 @@ test("enforces puzzle locks and isolates switched runtime state", async ({
   ).toBeDisabled();
   await page.locator("#puzzle-selector-button").click();
 
+  await ensurePartsPaletteOpen(page);
   await page.getByRole("button", { name: "Ramp (4)" }).click();
   await expect(page.locator("#tray-ramp-button")).toHaveText("Ramp (3)");
   await enableUnlockAll(page);
@@ -756,6 +807,12 @@ test("Unlock all exposes every built-in puzzle and preserves earned progress whe
   await expect(
     page.locator('[data-puzzle-id="timed-relay-003"]'),
   ).toBeEnabled();
+  await expect(
+    page.locator('[data-puzzle-id="down-the-ramp-004"]'),
+  ).toBeEnabled();
+  await expect(
+    page.locator('[data-puzzle-id="bridge-the-gap-005"]'),
+  ).toBeEnabled();
 
   await page.getByLabel("Unlock all puzzles").uncheck();
   await expect(
@@ -763,6 +820,9 @@ test("Unlock all exposes every built-in puzzle and preserves earned progress whe
   ).toHaveAttribute("data-puzzle-state", "available");
   await expect(
     page.locator('[data-puzzle-id="timed-relay-003"]'),
+  ).toBeDisabled();
+  await expect(
+    page.locator('[data-puzzle-id="down-the-ramp-004"]'),
   ).toBeDisabled();
   expectNoConsoleErrors(app);
 });
@@ -1017,6 +1077,7 @@ test("edits, removes, and replaces a player-owned preplaced Ball through Reset",
     trayBallCount: 1,
   });
 
+  await ensurePartsPaletteOpen(page);
   await page.getByRole("button", { name: "Ball (1)" }).click();
   await expect(page.locator("#tray-ball-button")).toHaveText("Ball (0)");
   const trayBall = await recordBallEditState(

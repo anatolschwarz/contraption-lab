@@ -252,10 +252,124 @@ h1 {
 }
 
 .parts-palette-items button {
+  display: flex;
+  align-items: center;
+  gap: 11px;
   width: 100%;
-  min-height: 38px;
-  padding: 0 14px;
+  min-height: 70px;
+  padding: 8px 10px;
+  border-color: #4b4034;
+  background: linear-gradient(145deg, #fbf7ee, #ded3bf);
+  color: #34302a;
+  text-align: left;
   text-transform: none;
+}
+
+.parts-palette-items button:hover:not(:disabled) {
+  border-color: #8c4a2f;
+  background: linear-gradient(145deg, #fffaf0, #e9c98d);
+}
+
+.parts-palette-items button:disabled {
+  color: #6f695f;
+  background: linear-gradient(145deg, #e8e2d8, #cac2b5);
+}
+
+.part-preview {
+  position: relative;
+  display: block;
+  width: 58px;
+  height: 46px;
+  flex: 0 0 58px;
+}
+
+.part-preview::before,
+.part-preview::after {
+  position: absolute;
+  content: "";
+}
+
+.part-preview--ball::before {
+  top: 5px;
+  left: 12px;
+  width: 34px;
+  height: 34px;
+  border: 3px solid #6b211d;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 32% 27%,
+    #ffd8cf 0 8%,
+    #f15c4d 10% 28%,
+    #d94135 50%,
+    #8d2421 100%
+  );
+  box-shadow: 3px 4px 0 rgb(61 30 25 / 22%);
+}
+
+.part-preview--ball::after {
+  top: 10px;
+  left: 21px;
+  width: 8px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 82%);
+  transform: rotate(-28deg);
+}
+
+.part-preview--ramp::before {
+  top: 17px;
+  left: 3px;
+  width: 52px;
+  height: 15px;
+  border: 3px solid #4a3020;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    165deg,
+    #f2ca78 0 3px,
+    #c9944e 3px 9px,
+    #9a5b2c 9px 11px
+  );
+  box-shadow: 3px 4px 0 rgb(78 42 20 / 35%);
+  transform: rotate(-14deg);
+}
+
+.part-preview--ramp::after {
+  top: 19px;
+  left: 9px;
+  width: 40px;
+  height: 2px;
+  background: rgb(255 239 181 / 76%);
+  transform: rotate(-14deg);
+}
+
+.part-preview--block::before {
+  top: 8px;
+  left: 8px;
+  width: 42px;
+  height: 30px;
+  border: 3px solid #56381f;
+  border-radius: 3px;
+  background: linear-gradient(
+    145deg,
+    #e6b967 0 12%,
+    #b97d45 13% 76%,
+    #75411f 77% 100%
+  );
+  box-shadow: 3px 4px 0 rgb(78 42 20 / 32%);
+}
+
+.part-preview--block::after {
+  top: 13px;
+  left: 14px;
+  width: 30px;
+  height: 3px;
+  background: rgb(255 226 151 / 72%);
+}
+
+.part-palette-label {
+  color: inherit;
+  font-size: 0.88rem;
+  font-weight: 800;
 }
 
 .edit-feedback {

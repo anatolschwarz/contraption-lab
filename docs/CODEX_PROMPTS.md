@@ -2789,3 +2789,305 @@ Report:
 - regression test added/updated
 - validation results
 ```
+
+Fix the Playwright E2E suite for the #22 Parts Palette behavior.
+
+Context:
+
+- #22 is committed/pushed and manually verified.
+- GitHub Pages deployment works.
+- Parts palette now starts CLOSED.
+- Top-right toggle:
+  - closed label: "Parts"
+  - open label: "Close"
+- Inventory controls remain:
+  - #tray-ball-button
+  - #tray-block-button
+  - #tray-ramp-button
+- Manual checks of the previously failing gameplay flows passed.
+- Do NOT change gameplay behavior to satisfy tests.
+
+Problem:
+Full Playwright run produced failures in scenarios that interact with inventory/progression after the palette began starting closed.
+
+Goal:
+Update E2E helpers/tests so they explicitly open the Parts palette before interacting with hidden inventory controls.
+
+Requirements:
+
+1. Inspect the failing tests and shared helpers first.
+2. Prefer one small reusable helper, e.g. ensurePartsPaletteOpen(page), rather than scattered ad-hoc clicks.
+3. The helper should:
+   - detect whether the palette is already open
+   - click #parts-palette-toggle only when needed
+   - verify the palette becomes visible
+   - avoid changing state unnecessarily
+4. Update only tests/helpers that require palette access.
+5. Preserve the dedicated #22 regression test for:
+   - Parts/Close labels
+   - full hidden state
+   - reopen behavior
+   - wide and narrow viewports
+6. Do not:
+   - change gameplay/state/inventory logic
+   - increase global Playwright timeout merely to hide failures
+   - modify unrelated tests
+   - weaken assertions
+7. Keep the known slow-machine timing issue separate unless a failure is reproducible after the palette fix.
+
+Validation:
+
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+- npx playwright test --list
+
+Then attempt:
+
+- npx playwright test --workers=1
+
+If the sandbox blocks the local server, report that clearly and do not change code because of EPERM.
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Do not commit or push.
+
+Report:
+
+- root cause
+- helper/tests changed
+- exact scenarios fixed
+- validation results
+- full Playwright result if runnable
+
+Double-check syntax, formatting, truncation, and unrelated changes before finishing.
+
+Implement milestone #23 — First Real Puzzle Pair.
+
+IMPORTANT:
+
+- Preserve the existing uncommitted E2E-cleanup changes. Do not undo or mix unrelated fixes.
+- Reference image:
+  docs/design/timed-puzzle-concepts.png
+- Treat that image as the visual/design target.
+- Do not commit or push.
+
+#23 contains exactly two new polished puzzles:
+
+1. Down the Ramp
+2. Bridge the Gap
+
+VISUAL TARGET
+
+Move the Phaser playfield and reusable object rendering toward the reference image:
+
+- light/off-white square-grid playfield
+- dark gray fixed platforms with strong outlines
+- warm wooden player ramps/planks with dark outlines
+- glossy red Ball with simple highlight
+- green bucket/cup-style Goal resembling the reference
+- clean, readable geometry
+- consistent visual language reusable by later puzzles
+
+Prefer Phaser-drawn shapes; do not add external art dependencies.
+
+Do not redesign the surrounding Play UI introduced in #21/#22.
+
+PUZZLE 1 — DOWN THE RAMP
+
+Reference: panel 1 in the image.
+
+- Title: Down the Ramp
+- Difficulty: Basic
+- Timer: 10 seconds
+- Ball starts on an elevated platform at upper-left.
+- Goal sits on a low platform at lower-right.
+- Player must place/rotate Ramp part(s) so the Ball can descend into the Goal.
+- Use the minimum sensible Ramp inventory needed for a clear intended solution.
+- No new mechanics.
+
+PUZZLE 2 — BRIDGE THE GAP
+
+Reference: panel 2 in the image.
+
+- Title: Bridge the Gap
+- Difficulty: Basic
+- Timer: 12 seconds
+- Ball starts on the left platform.
+- Goal sits on an elevated/right platform.
+- There is a visible gap between them.
+- Player uses existing placeable parts to create a bridge/path.
+- Spike-like shapes shown in the reference may be visual scenery only; do NOT introduce a new hazard/physics object type in this milestone.
+- Falling into the gap should naturally fail through existing gameplay/timeout behavior.
+- Choose the minimum sensible existing inventory needed for an intentional solution.
+
+ARCHITECTURE
+
+- Implement puzzles through the existing level JSON/data model.
+- Reuse existing Ball/Ramp/Block/Goal/fixed geometry.
+- Do not hard-code puzzle-specific behavior in the engine.
+- Do not introduce new physics mechanics.
+- Keep Reset/Rerun, inventory, progression, Parts Palette, timing, ownership and puzzle switching semantics unchanged.
+- Both puzzles must be genuinely solvable.
+
+CATALOG / PROGRESSION
+
+- Integrate these as the first real Basic puzzles in the normal selector/progression.
+- Do not remove existing prototype/test puzzles unless necessary; if replacement is needed, explain before doing it.
+- Preserve stable puzzle ids once chosen.
+
+DOCUMENTATION
+
+Update docs/ROADMAP.md:
+
+- add #23 — First Real Puzzle Pair
+- list Down the Ramp and Bridge the Gap
+- reference docs/design/timed-puzzle-concepts.png
+
+Also add to Backlog / To Discuss:
+
+- Settings: Ignore timer
+  - timed puzzles continue running after zero
+  - default Off
+  - separate future feature; DO NOT implement in #23
+
+Update PROJECT_STATE/README only where materially useful.
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+TESTING
+
+Add focused unit/E2E coverage where needed for:
+
+- both puzzles load
+- timers are 10s / 12s
+- inventory matches definitions
+- Reset/Rerun remain valid
+- progression/catalog integration
+
+Do not weaken existing tests or raise global timeouts.
+
+Run:
+
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+- npx playwright test --list
+
+Attempt full Playwright only if practical; sandbox EPERM is not a reason to alter code.
+
+Before finishing, double-check:
+
+- syntax
+- formatting
+- malformed level data
+- accidental truncation
+- solvability
+- unrelated changes
+
+Report:
+
+- exact puzzle geometry/inventory chosen
+- intended solution for each puzzle
+- rendering/style changes
+- files changed
+- test results
+- anything deferred
+
+Do not commit or push.
+
+Refine milestone #23 visuals only.
+
+Reference:
+docs/design/timed-puzzle-concepts.png
+
+Goal:
+Make the in-game objects look substantially closer in quality/style to the reference image, and make the Parts Palette visually show each part rather than only its name.
+
+1. In-game object rendering
+
+Improve reusable rendering for:
+
+- Ball
+- Goal
+- Ramp
+- Block
+- Fixed platforms
+
+Target style:
+
+- strong clean outlines
+- subtle highlights/shadows
+- dimensional rather than flat
+- red glossy Ball
+- green bucket/cup-style Goal
+- warm wooden Ramp/Block
+- dark industrial fixed geometry
+
+Keep rendering lightweight and Phaser-drawn.
+Do not change physics bodies, dimensions, collision, puzzle geometry, or gameplay.
+
+2. Parts Palette previews
+
+Each inventory button must visually show the actual part type:
+
+- Ball thumbnail
+- Ramp thumbnail
+- Block thumbnail
+
+Keep:
+
+- existing button ids
+- part name
+- inventory count
+- accessibility/text labels
+
+The visual preview should be the dominant element, with name/count secondary.
+
+Prefer reusable CSS/SVG/rendering primitives rather than external image assets.
+
+3. Consistency
+
+Palette previews should visually correspond closely to how the same object appears inside the game.
+
+Do not redesign the Parts Palette layout or behavior.
+
+4. Scope
+
+Do NOT change:
+
+- puzzle solutions
+- timers
+- progression
+- inventory semantics
+- physics
+- object sizes
+- placement logic
+- toolbar
+- #22 behavior
+
+Update tests only where markup changes require it.
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run:
+
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+- npx playwright test --list
+
+Do not commit or push.
+
+Report:
+
+- rendering improvements per object
+- Parts Palette preview implementation
+- files changed
+- validation results
+
+Double-check syntax, formatting, truncation, and unrelated changes.

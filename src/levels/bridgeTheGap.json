@@ -1,0 +1,41 @@
+{
+  "id": "bridge-the-gap-005",
+  "title": "Bridge the Gap",
+  "difficulty": "Basic",
+  "order": 5,
+  "timeLimitSeconds": 12,
+  "inventory": { "ball": 0, "block": 0, "ramp": 2 },
+  "contactRules": [],
+  "actors": [],
+  "balls": [
+    {
+      "id": "bridge-ball",
+      "x": 285,
+      "y": 210,
+      "radius": 20,
+      "ownership": "fixed"
+    }
+  ],
+  "ramps": [],
+  "blocks": [
+    {
+      "id": "left-platform",
+      "x": 145,
+      "y": 365,
+      "width": 250,
+      "height": 270,
+      "ownership": "fixed"
+    },
+    {
+      "id": "right-platform",
+      "x": 785,
+      "y": 455,
+      "width": 230,
+      "height": 150,
+      "ownership": "fixed"
+    }
+  ],
+  "floor": { "x": 480, "y": 530, "width": 960, "height": 20 },
+  "goal": { "x": 730, "y": 340, "width": 80, "height": 80 },
+  "gravity": { "x": 0, "y": 1 }
+}

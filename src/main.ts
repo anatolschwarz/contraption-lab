@@ -212,7 +212,7 @@ function createGame(): void {
     parent: "game-container",
     width: PLAYABLE_WIDTH,
     height: PLAYABLE_HEIGHT,
-    backgroundColor: "#c7cec6",
+    backgroundColor: "#f7f4ed",
     physics: {
       default: "matter",
       matter: {

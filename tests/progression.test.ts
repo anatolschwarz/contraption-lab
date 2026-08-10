@@ -31,13 +31,15 @@ class MemoryStorage implements StorageAdapter {
   }
 }
 
-const [basic, medium, hard] = builtInPuzzles;
+const [basic, medium, hard, downTheRamp, bridgeTheGap] = builtInPuzzles;
 
 describe("built-in puzzle progression", () => {
   it("uses catalog order for persistent level numbers", () => {
     expect(getBuiltInPuzzlePosition(basic!.id)).toBe(1);
     expect(getBuiltInPuzzlePosition(medium!.id)).toBe(2);
     expect(getBuiltInPuzzlePosition(hard!.id)).toBe(3);
+    expect(getBuiltInPuzzlePosition(downTheRamp!.id)).toBe(4);
+    expect(getBuiltInPuzzlePosition(bridgeTheGap!.id)).toBe(5);
   });
 
   it("initially unlocks only the first puzzle", () => {
@@ -48,6 +50,8 @@ describe("built-in puzzle progression", () => {
 
     expect(progress.map(({ availability }) => availability)).toEqual([
       "available",
+      "locked",
+      "locked",
       "locked",
       "locked",
     ]);
@@ -64,6 +68,8 @@ describe("built-in puzzle progression", () => {
     expect(getPuzzleProgress(builtInPuzzles, progression)).toMatchObject([
       { availability: "completed" },
       { availability: "available" },
+      { availability: "locked" },
+      { availability: "locked" },
       { availability: "locked" },
     ]);
   });
@@ -121,6 +127,8 @@ describe("built-in puzzle progression", () => {
       { availability: "completed" },
       { availability: "available" },
       { availability: "locked" },
+      { availability: "locked" },
+      { availability: "locked" },
     ]);
   });
 
@@ -176,7 +184,7 @@ describe("built-in puzzle progression", () => {
       basic!.id,
       builtInPuzzles,
     );
-    const afterAll = [basic, medium, hard].reduce(
+    const afterAll = builtInPuzzles.reduce(
       (progression, puzzle) =>
         completePuzzle(progression, puzzle!.id, builtInPuzzles),
       createInitialProgression(),
@@ -186,7 +194,7 @@ describe("built-in puzzle progression", () => {
       medium,
     );
     expect(
-      getNextUnlockedPuzzle(hard!.id, builtInPuzzles, afterAll),
+      getNextUnlockedPuzzle(bridgeTheGap!.id, builtInPuzzles, afterAll),
     ).toBeUndefined();
   });
 });

@@ -40,12 +40,21 @@ import {
 import { consumeSimulationSteps, SIMULATION_STEP_MS } from "./simulationClock";
 
 const GOAL_LABEL = "prototype-goal";
-const RAMP_STROKE_COLOR = 0x4c3526;
+const RAMP_FILL_COLOR = 0xc9944e;
+const RAMP_STROKE_COLOR = 0x4a3020;
 const SELECTED_RAMP_STROKE_COLOR = 0xffd166;
-const BLOCK_FILL_COLOR = 0x6f7d78;
-const BLOCK_STROKE_COLOR = 0x344e41;
-const FIXED_BLOCK_FILL_COLOR = 0x465053;
-const FIXED_BLOCK_STROKE_COLOR = 0x252b2d;
+const BLOCK_FILL_COLOR = 0xb97d45;
+const BLOCK_STROKE_COLOR = 0x56381f;
+const FIXED_BLOCK_FILL_COLOR = 0x56595b;
+const FIXED_BLOCK_STROKE_COLOR = 0x252729;
+const BALL_FILL_COLOR = 0xd94135;
+const BALL_STROKE_COLOR = 0x6b211d;
+const BALL_SHADOW_COLOR = 0x8d2421;
+const BALL_HIGHLIGHT_COLOR = 0xffd7cb;
+const WOOD_HIGHLIGHT_COLOR = 0xf2ca78;
+const WOOD_SHADOW_COLOR = 0x75411f;
+const FIXED_HIGHLIGHT_COLOR = 0x969b9d;
+const FIXED_SHADOW_COLOR = 0x2a2c2e;
 const ACTOR_FILL_COLOR = 0x5b7cfa;
 const ACTOR_STROKE_COLOR = 0x2d3a8c;
 const TRAY_BLOCK_DEFINITION: Omit<BlockDefinition, "id" | "x" | "y"> = {
@@ -78,6 +87,8 @@ interface EditableBall {
   definition: BallDefinition;
   editable: boolean;
   fromTray: boolean;
+  highlight: Phaser.GameObjects.Arc;
+  shadow: Phaser.GameObjects.Arc;
   shape: Phaser.GameObjects.Arc;
   selectionText: Phaser.GameObjects.Text;
 }
@@ -85,6 +96,8 @@ interface EditableRamp {
   definition: RampDefinition;
   editable: boolean;
   fromTray: boolean;
+  highlight: Phaser.GameObjects.Rectangle;
+  shadow: Phaser.GameObjects.Rectangle;
   shape: Phaser.GameObjects.Rectangle;
   selectionText: Phaser.GameObjects.Text;
 }
@@ -92,8 +105,9 @@ interface EditableRamp {
 interface EditableBlock {
   definition: BlockDefinition;
   editable: boolean;
-  fixedLabel?: Phaser.GameObjects.Text;
   fromTray: boolean;
+  highlight: Phaser.GameObjects.Rectangle;
+  shadow: Phaser.GameObjects.Rectangle;
   shape: Phaser.GameObjects.Rectangle;
   selectionText: Phaser.GameObjects.Text;
 }
@@ -294,6 +308,7 @@ export class PrototypeScene extends Phaser.Scene {
       this.updateActorVelocities();
       this.matter.world.step(SIMULATION_STEP_MS);
       this.updateActorLabels();
+      this.updateBallHighlights();
 
       if (!this.simulationRunning) return;
       if (this.level.timeLimitSeconds !== undefined) {
@@ -533,9 +548,28 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private createBall(definition: BallDefinition, fromTray = false): void {
+    const shadow = this.add
+      .circle(
+        definition.x + definition.radius * 0.14,
+        definition.y + definition.radius * 0.18,
+        definition.radius,
+        BALL_SHADOW_COLOR,
+        0.75,
+      )
+      .setDepth(1);
     const shape = this.add
-      .circle(definition.x, definition.y, definition.radius, 0xc68b45, 1)
-      .setStrokeStyle(4, 0x513a25);
+      .circle(definition.x, definition.y, definition.radius, BALL_FILL_COLOR, 1)
+      .setStrokeStyle(4, BALL_STROKE_COLOR)
+      .setDepth(2);
+    const highlight = this.add
+      .circle(
+        definition.x - definition.radius * 0.32,
+        definition.y - definition.radius * 0.34,
+        Math.max(3, definition.radius * 0.22),
+        BALL_HIGHLIGHT_COLOR,
+        0.9,
+      )
+      .setDepth(3);
     this.matter.add.gameObject(shape, {
       shape: { type: "circle", radius: definition.radius },
       restitution: 0.15,
@@ -548,7 +582,7 @@ export class PrototypeScene extends Phaser.Scene {
         definition.y - definition.radius - 18,
         "BALL SELECTED",
         {
-          color: "#513a25",
+          color: "#6b211d",
           fontFamily: "Arial, sans-serif",
           fontSize: "14px",
           fontStyle: "bold",
@@ -587,6 +621,8 @@ export class PrototypeScene extends Phaser.Scene {
       definition,
       editable: isEditablePart(definition, fromTray),
       fromTray,
+      highlight,
+      shadow,
       shape,
       selectionText,
     };
@@ -602,44 +638,96 @@ export class PrototypeScene extends Phaser.Scene {
     this.matter.world.setGravity(gravity.x, gravity.y);
 
     const floorShape = this.add
-      .rectangle(floor.x, floor.y, floor.width, floor.height, 0x465053)
-      .setStrokeStyle(3, 0x252b2d);
+      .rectangle(
+        floor.x,
+        floor.y,
+        floor.width,
+        floor.height,
+        FIXED_BLOCK_FILL_COLOR,
+      )
+      .setStrokeStyle(4, FIXED_BLOCK_STROKE_COLOR)
+      .setDepth(1);
+    this.add
+      .rectangle(
+        floor.x,
+        floor.y - floor.height * 0.28,
+        floor.width - 12,
+        Math.max(3, floor.height * 0.16),
+        FIXED_HIGHLIGHT_COLOR,
+        0.62,
+      )
+      .setDepth(2);
+    this.add
+      .rectangle(
+        floor.x,
+        floor.y + floor.height * 0.34,
+        floor.width - 10,
+        Math.max(3, floor.height * 0.14),
+        FIXED_SHADOW_COLOR,
+        0.72,
+      )
+      .setDepth(2);
     this.matter.add.gameObject(floorShape, { isStatic: true, label: "floor" });
     this.registerContactObject(floorShape, "floor", () => floorShape.destroy());
 
     const goalShape = this.add
-      .rectangle(goal.x, goal.y, goal.width, goal.height, 0x759c82, 0.28)
-      .setStrokeStyle(5, 0x315341);
+      .rectangle(goal.x, goal.y, goal.width, goal.height, 0x5dbb35, 0)
+      .setDepth(1);
     this.matter.add.gameObject(goalShape, {
       isStatic: true,
       isSensor: true,
       label: GOAL_LABEL,
     });
     this.registerContactObject(goalShape, "goal", () => goalShape.destroy());
+    this.drawGoalCup(goal);
     this.add
-      .text(goal.x, goal.y, "GOAL", {
-        color: "#294939",
+      .text(goal.x, goal.y + 8, "GOAL", {
+        color: "#1e4b24",
         fontFamily: "Arial, sans-serif",
         fontSize: "18px",
         fontStyle: "bold",
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(4);
 
     this.resetLevel();
     this.updateSelectionDisplay();
   }
 
   private createRamp(definition: RampDefinition, fromTray = false): void {
+    const shadow = this.add
+      .rectangle(
+        definition.x + 3,
+        definition.y + 4,
+        definition.width,
+        definition.height,
+        WOOD_SHADOW_COLOR,
+        0.4,
+      )
+      .setRotation(definition.rotation)
+      .setDepth(1);
     const shape = this.add
       .rectangle(
         definition.x,
         definition.y,
         definition.width,
         definition.height,
-        0x9d6b45,
+        RAMP_FILL_COLOR,
       )
       .setStrokeStyle(4, RAMP_STROKE_COLOR)
-      .setRotation(definition.rotation);
+      .setRotation(definition.rotation)
+      .setDepth(1);
+    const highlight = this.add
+      .rectangle(
+        definition.x,
+        definition.y - definition.height * 0.22,
+        definition.width - 16,
+        3,
+        WOOD_HIGHLIGHT_COLOR,
+        0.8,
+      )
+      .setRotation(definition.rotation)
+      .setDepth(2);
     this.matter.add.gameObject(shape, {
       isStatic: true,
       label: `ramp:${definition.id}`,
@@ -679,14 +767,18 @@ export class PrototypeScene extends Phaser.Scene {
       Phaser.Geom.Rectangle.Contains,
     );
 
-    this.ramps.set(definition.id, {
+    const ramp: EditableRamp = {
       definition,
       editable: isEditablePart(definition, fromTray),
       fromTray,
+      highlight,
+      shadow,
       shape,
       selectionText,
-    });
-    this.editableComponents.set(definition.id, this.ramps.get(definition.id)!);
+    };
+    this.updateRampSurface(ramp, definition, definition.rotation);
+    this.ramps.set(definition.id, ramp);
+    this.editableComponents.set(definition.id, ramp);
     this.registerContactObject(shape, "ramp", () =>
       this.destroyRampFromContact(definition.id),
     );
@@ -694,6 +786,20 @@ export class PrototypeScene extends Phaser.Scene {
 
   private createBlock(definition: BlockDefinition, fromTray = false): void {
     const editable = isEditablePart(definition, fromTray);
+    const highlightColor = editable
+      ? WOOD_HIGHLIGHT_COLOR
+      : FIXED_HIGHLIGHT_COLOR;
+    const shadowColor = editable ? WOOD_SHADOW_COLOR : FIXED_SHADOW_COLOR;
+    const shadow = this.add
+      .rectangle(
+        definition.x + 3,
+        definition.y + 4,
+        definition.width,
+        definition.height,
+        shadowColor,
+        0.42,
+      )
+      .setDepth(1);
     const shape = this.add
       .rectangle(
         definition.x,
@@ -705,7 +811,18 @@ export class PrototypeScene extends Phaser.Scene {
       .setStrokeStyle(
         4,
         editable ? BLOCK_STROKE_COLOR : FIXED_BLOCK_STROKE_COLOR,
-      );
+      )
+      .setDepth(1);
+    const highlight = this.add
+      .rectangle(
+        definition.x,
+        definition.y - definition.height * 0.32,
+        definition.width - 14,
+        Math.max(3, definition.height * 0.12),
+        highlightColor,
+        0.75,
+      )
+      .setDepth(2);
     this.matter.add.gameObject(shape, {
       isStatic: true,
       label: `block:${definition.id}`,
@@ -721,18 +838,6 @@ export class PrototypeScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(2)
       .setVisible(false);
-    const fixedLabel = editable
-      ? undefined
-      : this.add
-          .text(definition.x, definition.y, "FIXED", {
-            color: "#f7f3ea",
-            fontFamily: "Arial, sans-serif",
-            fontSize: "13px",
-            fontStyle: "bold",
-          })
-          .setOrigin(0.5)
-          .setDepth(2);
-
     shape.on(
       Phaser.Input.Events.POINTER_DOWN,
       (
@@ -756,15 +861,18 @@ export class PrototypeScene extends Phaser.Scene {
       Phaser.Geom.Rectangle.Contains,
     );
 
-    this.blocks.set(definition.id, {
+    const block: EditableBlock = {
       definition,
       editable,
-      fixedLabel,
       fromTray,
+      highlight,
+      shadow,
       shape,
       selectionText,
-    });
-    this.editableComponents.set(definition.id, this.blocks.get(definition.id)!);
+    };
+    this.updateBlockSurface(block, definition);
+    this.blocks.set(definition.id, block);
+    this.editableComponents.set(definition.id, block);
     this.registerContactObject(shape, "block", () =>
       this.destroyBlockFromContact(definition.id),
     );
@@ -839,6 +947,8 @@ export class PrototypeScene extends Phaser.Scene {
       if (!ramp || !ramp.editable) return;
       this.unregisterContactObject(ramp.shape);
       ramp.shape.destroy();
+      ramp.highlight.destroy();
+      ramp.shadow.destroy();
       ramp.selectionText.destroy();
       this.ramps.delete(componentId);
       this.editableComponents.delete(componentId);
@@ -853,8 +963,9 @@ export class PrototypeScene extends Phaser.Scene {
     if (!block || !block.editable) return;
     this.unregisterContactObject(block.shape);
     block.shape.destroy();
+    block.highlight.destroy();
+    block.shadow.destroy();
     block.selectionText.destroy();
-    block.fixedLabel?.destroy();
     this.blocks.delete(componentId);
     this.editableComponents.delete(componentId);
     this.onComponentRemove(
@@ -956,13 +1067,16 @@ export class PrototypeScene extends Phaser.Scene {
     for (const ramp of this.ramps.values()) {
       this.unregisterContactObject(ramp.shape);
       ramp.shape.destroy();
+      ramp.highlight.destroy();
+      ramp.shadow.destroy();
       ramp.selectionText.destroy();
     }
     for (const block of this.blocks.values()) {
       this.unregisterContactObject(block.shape);
       block.shape.destroy();
+      block.highlight.destroy();
+      block.shadow.destroy();
       block.selectionText.destroy();
-      block.fixedLabel?.destroy();
     }
     this.ramps.clear();
     this.blocks.clear();
@@ -1031,6 +1145,8 @@ export class PrototypeScene extends Phaser.Scene {
     if (!ball) return;
     this.unregisterContactObject(ball.shape);
     ball.shape.destroy();
+    ball.highlight.destroy();
+    ball.shadow.destroy();
     ball.selectionText.destroy();
     this.editableComponents.delete(componentId);
     this.balls.delete(componentId);
@@ -1047,6 +1163,8 @@ export class PrototypeScene extends Phaser.Scene {
     if (!ramp) return;
     this.unregisterContactObject(ramp.shape);
     ramp.shape.destroy();
+    ramp.highlight.destroy();
+    ramp.shadow.destroy();
     ramp.selectionText.destroy();
     this.ramps.delete(componentId);
     this.editableComponents.delete(componentId);
@@ -1057,8 +1175,9 @@ export class PrototypeScene extends Phaser.Scene {
     if (!block) return;
     this.unregisterContactObject(block.shape);
     block.shape.destroy();
+    block.highlight.destroy();
+    block.shadow.destroy();
     block.selectionText.destroy();
-    block.fixedLabel?.destroy();
     this.blocks.delete(componentId);
     this.editableComponents.delete(componentId);
   }
@@ -1105,6 +1224,7 @@ export class PrototypeScene extends Phaser.Scene {
       return;
     }
     ramp.shape.setPosition(position.x, position.y).setRotation(rotation);
+    this.updateRampSurface(ramp, position, rotation);
     ramp.selectionText.setPosition(position.x, position.y - 34);
     if (notify) {
       this.onEditFeedback("");
@@ -1132,6 +1252,7 @@ export class PrototypeScene extends Phaser.Scene {
       return;
     }
     block.shape.setPosition(position.x, position.y);
+    this.updateBlockSurface(block, position);
     block.selectionText.setPosition(position.x, position.y - 34);
     if (notify) {
       this.onEditFeedback("");
@@ -1162,6 +1283,7 @@ export class PrototypeScene extends Phaser.Scene {
       return;
     }
     ball.shape.setPosition(position.x, position.y);
+    this.updateBallHighlight(ball);
     ball.selectionText.setPosition(
       position.x,
       position.y - ball.definition.radius - 18,
@@ -1278,7 +1400,11 @@ export class PrototypeScene extends Phaser.Scene {
       );
     }
     for (const ball of this.balls.values()) {
-      this.updateComponentSelection(ball.definition.id, ball, 0x513a25);
+      this.updateComponentSelection(
+        ball.definition.id,
+        ball,
+        BALL_STROKE_COLOR,
+      );
     }
   }
 
@@ -1311,23 +1437,120 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private drawWorkshop(): void {
-    this.cameras.main.setBackgroundColor(0xc7cec6);
+    this.cameras.main.setBackgroundColor(0xf7f4ed);
     const graphics = this.add.graphics();
-    graphics.lineStyle(1, 0xabb5ad, 0.55);
+    graphics.lineStyle(1, 0xd8d8d2, 0.9);
     for (let x = 0; x <= PLAYABLE_WIDTH; x += 48) {
       graphics.lineBetween(x, 0, x, PLAYABLE_HEIGHT);
     }
     for (let y = 0; y <= PLAYABLE_HEIGHT; y += 48) {
       graphics.lineBetween(0, y, PLAYABLE_WIDTH, y);
     }
-    graphics.fillStyle(0x6f7d78, 0.45);
-    graphics.fillRect(40, 42, 880, 12);
-    this.add.text(52, 68, this.level.title.toUpperCase(), {
-      color: "#4b5753",
-      fontFamily: "Arial, sans-serif",
-      fontSize: "17px",
-      fontStyle: "bold",
-    });
+    this.add
+      .text(24, 22, this.level.title.toUpperCase(), {
+        color: "#34383a",
+        fontFamily: "Arial, sans-serif",
+        fontSize: "16px",
+        fontStyle: "bold",
+      })
+      .setDepth(5);
+  }
+
+  private updateBallHighlights(): void {
+    for (const ball of this.balls.values()) this.updateBallHighlight(ball);
+  }
+
+  private updateBallHighlight(ball: EditableBall): void {
+    ball.shadow.setPosition(
+      ball.shape.x + ball.definition.radius * 0.14,
+      ball.shape.y + ball.definition.radius * 0.18,
+    );
+    ball.highlight.setPosition(
+      ball.shape.x - ball.definition.radius * 0.32,
+      ball.shape.y - ball.definition.radius * 0.34,
+    );
+  }
+
+  private updateRampSurface(
+    ramp: EditableRamp,
+    position: { x: number; y: number },
+    rotation: number,
+  ): void {
+    const sine = Math.sin(rotation);
+    const cosine = Math.cos(rotation);
+    ramp.shadow
+      .setPosition(position.x - sine * 4, position.y + cosine * 4)
+      .setRotation(rotation);
+    ramp.highlight
+      .setPosition(
+        position.x + sine * (ramp.definition.height * 0.22),
+        position.y - cosine * (ramp.definition.height * 0.22),
+      )
+      .setRotation(rotation);
+  }
+
+  private updateBlockSurface(
+    block: EditableBlock,
+    position: { x: number; y: number },
+  ): void {
+    block.shadow.setPosition(position.x + 3, position.y + 4);
+    block.highlight.setPosition(
+      position.x,
+      position.y - block.definition.height * 0.32,
+    );
+  }
+
+  private drawGoalCup(goal: LevelDefinition["goal"]): void {
+    const graphics = this.add.graphics().setDepth(3);
+    const rimY = goal.y - goal.height / 2 + 10;
+    const bottomY = goal.y + goal.height / 2 - 6;
+    const topWidth = goal.width * 0.82;
+    const bottomWidth = goal.width * 0.56;
+    const drawCupBody = (offsetX: number, offsetY: number): void => {
+      graphics.beginPath();
+      graphics.moveTo(goal.x - topWidth / 2 + offsetX, rimY + offsetY);
+      graphics.lineTo(goal.x + topWidth / 2 + offsetX, rimY + offsetY);
+      graphics.lineTo(goal.x + bottomWidth / 2 + offsetX, bottomY + offsetY);
+      graphics.lineTo(goal.x - bottomWidth / 2 + offsetX, bottomY + offsetY);
+      graphics.closePath();
+    };
+
+    graphics.fillStyle(0x173d1b, 0.42);
+    drawCupBody(3, 5);
+    graphics.fillPath();
+    graphics.fillStyle(0x4fad31, 1);
+    drawCupBody(0, 0);
+    graphics.fillPath();
+    graphics.lineStyle(4, 0x1b4820, 1);
+    graphics.strokePath();
+    graphics.fillStyle(0x245f28, 1);
+    graphics.fillEllipse(goal.x, rimY, topWidth + 8, 16);
+    graphics.fillStyle(0x8de75a, 1);
+    graphics.fillRect(goal.x - topWidth / 2 - 4, rimY - 8, topWidth + 8, 9);
+    graphics.lineStyle(3, 0x1b4820, 1);
+    graphics.strokeRect(goal.x - topWidth / 2 - 4, rimY - 8, topWidth + 8, 12);
+    graphics.fillStyle(0xc8f29a, 0.72);
+    graphics.beginPath();
+    graphics.moveTo(goal.x - topWidth * 0.3, rimY + 10);
+    graphics.lineTo(goal.x - topWidth * 0.12, rimY + 12);
+    graphics.lineTo(goal.x - bottomWidth * 0.18, bottomY - 9);
+    graphics.lineTo(goal.x - bottomWidth * 0.36, bottomY - 10);
+    graphics.closePath();
+    graphics.fillPath();
+    graphics.fillStyle(0x2a6628, 1);
+    graphics.fillRect(
+      goal.x - bottomWidth * 0.32,
+      bottomY - 2,
+      bottomWidth * 0.64,
+      8,
+    );
+    graphics.lineStyle(3, 0x1b4820, 1);
+    graphics.strokeRect(
+      goal.x - bottomWidth * 0.32,
+      bottomY - 2,
+      bottomWidth * 0.64,
+      8,
+    );
   }
 
   private showSuccess(): void {

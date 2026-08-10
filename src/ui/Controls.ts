@@ -56,10 +56,16 @@ export class Controls {
     requireElement<HTMLParagraphElement>("edit-feedback");
   private readonly trayBlockButton =
     requireElement<HTMLButtonElement>("tray-block-button");
+  private readonly trayBlockLabel =
+    requireElement<HTMLSpanElement>("tray-block-label");
   private readonly trayBallButton =
     requireElement<HTMLButtonElement>("tray-ball-button");
+  private readonly trayBallLabel =
+    requireElement<HTMLSpanElement>("tray-ball-label");
   private readonly trayRampButton =
     requireElement<HTMLButtonElement>("tray-ramp-button");
+  private readonly trayRampLabel =
+    requireElement<HTMLSpanElement>("tray-ramp-label");
   private readonly partsPalette = requireElement<HTMLElement>("parts-palette");
   private readonly partsPaletteToggle = requireElement<HTMLButtonElement>(
     "parts-palette-toggle",
@@ -125,15 +131,27 @@ export class Controls {
     }
     this.buttons.simulation.textContent =
       state.mode === "running" ? "Pause" : "Run";
-    this.trayBlockButton.disabled =
-      state.mode !== "edit" || state.succeeded || state.trayBlockCount === 0;
-    this.trayBlockButton.textContent = `Block (${state.trayBlockCount})`;
-    this.trayBallButton.disabled =
-      state.mode !== "edit" || state.succeeded || state.trayBallCount === 0;
-    this.trayBallButton.textContent = `Ball (${state.trayBallCount})`;
-    this.trayRampButton.disabled =
-      state.mode !== "edit" || state.succeeded || state.trayRampCount === 0;
-    this.trayRampButton.textContent = `Ramp (${state.trayRampCount})`;
+    this.renderPaletteItem(
+      this.trayBlockButton,
+      this.trayBlockLabel,
+      "Block",
+      state.trayBlockCount,
+      state,
+    );
+    this.renderPaletteItem(
+      this.trayBallButton,
+      this.trayBallLabel,
+      "Ball",
+      state.trayBallCount,
+      state,
+    );
+    this.renderPaletteItem(
+      this.trayRampButton,
+      this.trayRampLabel,
+      "Ramp",
+      state.trayRampCount,
+      state,
+    );
     this.partsPaletteToggle.disabled = state.mode !== "edit" || state.succeeded;
     this.rerunButton.disabled = state.mode === "edit" || !state.runSnapshot;
     this.renderTimer(state);
@@ -171,6 +189,19 @@ export class Controls {
   setEditFeedback(message: string): void {
     this.editFeedback.textContent = message;
     this.editFeedback.hidden = message.length === 0;
+  }
+
+  private renderPaletteItem(
+    button: HTMLButtonElement,
+    label: HTMLSpanElement,
+    partName: string,
+    count: number,
+    state: Readonly<GameState>,
+  ): void {
+    const text = `${partName} (${count})`;
+    button.disabled = state.mode !== "edit" || state.succeeded || count === 0;
+    button.setAttribute("aria-label", text);
+    label.textContent = text;
   }
 
   private setPartsPaletteCollapsed(collapsed: boolean): void {

@@ -73,6 +73,17 @@ without a separate scoped milestone request.
   future UI work; the global supported-object library remains separate from
   per-puzzle quantities.
 
+## #23 — First Real Puzzle Pair
+
+- Completed: added **Down the Ramp** and **Bridge the Gap** as the first
+  polished Basic scenes in the ordered built-in catalog. They retain the legacy
+  prototype/test levels before them to preserve existing progression and test
+  flows.
+- Completed: both scenes are JSON-defined, timed (10 seconds / 12 seconds),
+  use two Ramp parts and no Ball/Block stock, and reuse the existing physics,
+  ownership, inventory, Reset, Rerun, and progression behavior.
+- Visual reference: [`docs/design/timed-puzzle-concepts.png`](design/timed-puzzle-concepts.png).
+
 ## Backlog / To Discuss
 
 - Music
@@ -91,3 +102,7 @@ without a separate scoped milestone request.
   - mobile rotation controls
   - small-screen usability
   - real phone/tablet testing
+- Settings: Ignore timer
+  - timed puzzles continue running after zero
+  - default Off
+  - separate future feature; do not implement as part of #23

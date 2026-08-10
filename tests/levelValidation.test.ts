@@ -182,10 +182,13 @@ describe("validateLevel", () => {
     ).toThrow(/patrol bounds/i);
   });
 
-  it("requires at least two ramps with unique ids", () => {
-    expect(() =>
-      validateLevel({ ...rawLevel, ramps: [rawLevel.ramps[0]] }),
-    ).toThrow(/at least two/i);
+  it("allows empty part arrays while retaining unique ids for defined parts", () => {
+    expect(validateLevel({ ...rawLevel, ramps: [], blocks: [] })).toMatchObject(
+      {
+        ramps: [],
+        blocks: [],
+      },
+    );
     expect(() =>
       validateLevel({
         ...rawLevel,
@@ -195,9 +198,6 @@ describe("validateLevel", () => {
   });
 
   it("requires uniquely identified blocks that do not reuse ramp ids", () => {
-    expect(() => validateLevel({ ...rawLevel, blocks: [] })).toThrow(
-      /at least one/i,
-    );
     expect(() =>
       validateLevel({
         ...rawLevel,

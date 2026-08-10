@@ -1,3 +1,5 @@
+import rawBridgeTheGapLevel from "./bridgeTheGap.json";
+import rawDownTheRampLevel from "./downTheRamp.json";
 import rawHardLevel from "./hard.json";
 import rawMediumLevel from "./medium.json";
 import rawBasicLevel from "./prototype.json";
@@ -8,6 +10,8 @@ const levels = [
   loadLevel(rawBasicLevel),
   loadLevel(rawMediumLevel),
   loadLevel(rawHardLevel),
+  loadLevel(rawDownTheRampLevel),
+  loadLevel(rawBridgeTheGapLevel),
 ].sort((first, second) => first.order - second.order);
 
 if (new Set(levels.map((level) => level.id)).size !== levels.length) {

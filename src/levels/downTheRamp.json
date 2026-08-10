@@ -1,0 +1,41 @@
+{
+  "id": "down-the-ramp-004",
+  "title": "Down the Ramp",
+  "difficulty": "Basic",
+  "order": 4,
+  "timeLimitSeconds": 10,
+  "inventory": { "ball": 0, "block": 0, "ramp": 2 },
+  "contactRules": [],
+  "actors": [],
+  "balls": [
+    {
+      "id": "down-ramp-ball",
+      "x": 290,
+      "y": 196,
+      "radius": 20,
+      "ownership": "fixed"
+    }
+  ],
+  "ramps": [],
+  "blocks": [
+    {
+      "id": "upper-platform",
+      "x": 145,
+      "y": 315,
+      "width": 250,
+      "height": 190,
+      "ownership": "fixed"
+    },
+    {
+      "id": "goal-platform",
+      "x": 745,
+      "y": 450,
+      "width": 250,
+      "height": 60,
+      "ownership": "fixed"
+    }
+  ],
+  "floor": { "x": 480, "y": 530, "width": 960, "height": 20 },
+  "goal": { "x": 700, "y": 375, "width": 80, "height": 80 },
+  "gravity": { "x": 0, "y": 1 }
+}

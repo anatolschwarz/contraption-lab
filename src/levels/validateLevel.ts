@@ -251,18 +251,14 @@ export function validateLevel(value: unknown): LevelDefinition {
       "Ball inventory must equal the number of initially unplaced player-owned Balls.",
     );
   }
-  if (!Array.isArray(ramps) || ramps.length < 2 || !ramps.every(isRamp)) {
-    throw new Error(
-      "Level ramps must contain at least two valid ramps with ids.",
-    );
+  if (!Array.isArray(ramps) || !ramps.every(isRamp)) {
+    throw new Error("Level ramps must be an array of valid ramps with ids.");
   }
   if (new Set(ramps.map((ramp) => ramp.id)).size !== ramps.length) {
     throw new Error("Level ramp ids must be unique.");
   }
-  if (!Array.isArray(blocks) || blocks.length < 1 || !blocks.every(isBlock)) {
-    throw new Error(
-      "Level blocks must contain at least one valid block with an id.",
-    );
+  if (!Array.isArray(blocks) || !blocks.every(isBlock)) {
+    throw new Error("Level blocks must be an array of valid blocks with ids.");
   }
   if (new Set(blocks.map((block) => block.id)).size !== blocks.length) {
     throw new Error("Level block ids must be unique.");

@@ -2,8 +2,9 @@
 
 Contraption Lab is an original browser-based 2D physics-puzzle prototype built
 with TypeScript, Vite, Phaser 3, and Phaser's bundled Matter integration. The
-current prototype has three lightweight built-in puzzles, starting with
-**Relay Ramps**: arrange player-owned parts so the ball reaches the goal.
+current prototype has five built-in puzzles. The original three lightweight
+prototype/test puzzles are followed by the first two polished Basic scenes:
+**Down the Ramp** and **Bridge the Gap**.
 
 The game uses generated shapes and text only. It has no external artwork,
 audio, backend, or copied game content. Built-in puzzle progression is stored
@@ -49,8 +50,9 @@ countdown starts with Run, freezes during Pause, and resumes with Run. Rerun
 restores the Run-start layout and the full time limit; Reset returns to Edit
 with that original limit. Goal success stops the countdown. If it reaches zero
 first, the UI shows `Failed — Time expired`; Rerun or Reset can start over.
-Untimed levels omit the field and otherwise behave as before. Relay Ramps is
-the timed demo and declares a 45-second limit in its JSON.
+Untimed levels omit the field and otherwise behave as before. Timed levels
+include the legacy 45-second Relay Ramps demo plus **Down the Ramp** (10 seconds)
+and **Bridge the Gap** (12 seconds).
 
 The dockable Parts Palette is available only in Edit. Its counts come from the
 current puzzle JSON; the current prototype starts with Ball (0), Block (2), and
@@ -139,6 +141,22 @@ Each puzzle JSON supplies its own Parts Palette inventory. The global object
 library and user-created puzzle storage remain future work; user-created
 puzzles will stay separate from built-ins and never overwrite bundled JSON.
 
+## First real puzzle pair
+
+The first polished Basic scenes are JSON-defined and use the same parts,
+physics, ownership, inventory, timer, Reset, and Rerun systems as the prototype:
+
+- **Down the Ramp** — a Ball drops from the upper-left platform. Use two wooden
+  Ramps as a descending path into the lower-right Goal before 10 seconds expire.
+- **Bridge the Gap** — a Ball leaves the left platform over an open gap. Use two
+  wooden Ramps to make a descending bridge to the raised right Goal within 12
+  seconds. The open gap has no new hazard object; a missed path naturally runs
+  out the existing timer.
+
+The Phaser playfield uses an off-white square grid, dark outlined fixed
+platforms, warm outlined wooden player parts, glossy red Balls, and green cup
+Goals. These are generated Phaser shapes, not external art assets.
+
 ## Build and validation
 
 ```bash
@@ -166,9 +184,10 @@ Pushing to `main` runs the GitHub Pages workflow, which builds the static Vite
 site and deploys `dist/`. The published site is available at
 [`https://anatolschwarz.github.io/contraption-lab/`](https://anatolschwarz.github.io/contraption-lab/).
 
-The browser suite has thirteen scenarios, including fixed and player-owned
+The browser suite has fifteen scenarios, including fixed and player-owned
 Ball coexistence, Ball placement/removal, runtime transform preservation
-through Pause/Success/Timeout, and two-Ball Rerun/Reset restoration.
+through Pause/Success/Timeout, two-Ball Rerun/Reset restoration, the Parts
+Palette close/reopen behavior, and the first real puzzle pair's catalog data.
 
 ## Planned roadmap
 
@@ -196,8 +215,8 @@ For the detailed current state, known solution, and roadmap, see
 
 ## Current limitations
 
-- Three lightweight built-in puzzles exercise the progression UI; broader
-  puzzle content is intentionally deferred.
+- The catalog has three lightweight legacy prototype/test puzzles followed by
+  two polished Basic scenes; broader puzzle content is intentionally deferred.
 - Puzzle Editor, user-created puzzle storage, and the global object library are
   not implemented yet.
 - Tray spawn locations are a small predefined set of valid candidates, not a

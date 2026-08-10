@@ -2,8 +2,10 @@
 
 ## Status
 
-Contraption Lab is a browser-only physics-puzzle prototype with three
-lightweight built-in puzzles in a global sequence: Basic, Medium, and Hard.
+Contraption Lab is a browser-only physics-puzzle prototype with five built-in
+puzzles in one global sequence. The first three are lightweight legacy
+prototype/test levels (Basic, Medium, and Hard); they are followed by two
+polished Basic scenes, **Down the Ramp** and **Bridge the Gap**.
 The initial level, **Relay Ramps**, is playable in a fixed 960×540 simulation
 area. It has a fixed Ball, a preplaced player-owned Ball, goal, floor, two
 preplaced player ramps, one fixed guide block, and level-defined tray inventory
@@ -98,6 +100,12 @@ same 25° rotation (five 5° Q/E steps).
   per-puzzle Ball, Block, and Ramp palette beside the canvas on wide viewports
   (and below it at narrower widths). Its UI-only collapse control preserves the
   existing inventory buttons, counts, and Edit-only availability.
+- **#23 — First Real Puzzle Pair:** added the data-defined Basic puzzles
+  **Down the Ramp** (10 seconds) and **Bridge the Gap** (12 seconds) after the
+  legacy catalog levels. Each starts with two Ramp parts, zero Ball/Block stock,
+  fixed platform geometry, a fixed dynamic Ball, and a Goal. The shared Phaser
+  rendering now uses an off-white grid, dark fixed platforms, wooden player
+  parts, glossy red Balls, and green cup-style Goals.
 
 ## Current behavior
 
@@ -203,8 +211,8 @@ deterministic browser path.
 
 ## Known limitations and issues
 
-- Only three lightweight built-in puzzles exist; broader puzzle content is
-  intentionally deferred.
+- The catalog contains three lightweight legacy prototype/test levels and two
+  polished Basic scenes; broader puzzle content is intentionally deferred.
 - Puzzle Editor, user-created puzzle storage, and the global object library are
   not implemented. User-created puzzles are not part of built-in progression.
 - The tray uses predefined valid spawn candidates instead of a placement preview
