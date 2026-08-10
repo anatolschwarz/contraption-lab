@@ -2452,3 +2452,340 @@ Report:
 * files changed
 * validation results
 ```
+
+---
+
+## #22 — Dockable/collapsible Parts Palette
+
+**VERBATIM**
+
+```text
+Start milestone #22: replace the current Parts tray with a dockable/collapsible Parts Palette.
+
+Goal:
+Create a real parts palette beside the Play canvas while preserving all existing inventory and placement behavior.
+
+Requirements:
+
+Layout
+
+* Replace the current small Parts tray UI with a Parts Palette positioned beside the gameplay canvas.
+* The palette must not cover the canvas.
+* Keep the existing canvas size/aspect ratio unchanged.
+* Open state shows the current puzzle's available player-part inventory.
+* Add a clear collapse/expand control.
+* Collapsed state should reduce visual clutter while keeping an obvious way to reopen it.
+* Keep #21 compact toolbar unchanged.
+
+Inventory semantics
+
+* Palette contents remain entirely per-puzzle.
+* Continue using the existing puzzle-defined inventory/state.
+* Do not create global shared inventory.
+* Global supported part types remain separate from per-puzzle quantities.
+* Current supported inventory types remain Ball, Ramp, and Block.
+* Preserve existing counts and updates:
+
+  * placing consumes inventory
+  * removing player-owned parts returns inventory
+  * Reset restores puzzle defaults
+  * puzzle switching updates palette contents immediately
+* Fixed objects must not become inventory items.
+
+Interaction
+
+* Preserve existing click-to-place behavior.
+* Preserve selection, drag, rotation, removal, bounds, and overlap semantics.
+* Palette must be disabled/unusable during Run/Pause exactly as the existing tray is.
+* Do not introduce drag-from-palette placement unless it already exists.
+* Keep existing ids/test hooks where practical; avoid unnecessary E2E changes.
+
+Architecture
+
+* Do not hardcode puzzle-specific inventory in the palette.
+* Palette should render from the existing inventory/state model.
+* Structure the UI so future categories, icons, scrolling, and additional part types can be added without redesigning gameplay state.
+* Do not implement those future features now.
+
+Scope
+Do NOT:
+
+* add new part types
+* change puzzle JSON semantics
+* change inventory rules
+* change gameplay physics/state
+* change #21 toolbar
+* start Puzzle Editor work
+* redesign puzzle selector/settings
+* perform unrelated refactors
+
+Tests
+
+* Add/update focused UI/state tests only where needed.
+* Preserve all existing unit tests.
+* Existing E2E scenarios must still compile/discover.
+
+Documentation
+
+* Update README.md, docs/PROJECT_STATE.md, and docs/ROADMAP.md as needed to mark #22 complete.
+* Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run:
+
+* npm run typecheck
+* npm run lint
+* npm test
+* npm run format:check
+* npm run build
+* npx playwright test --list
+
+Do not commit or push.
+
+Report:
+
+* palette layout and collapse behavior
+* whether any existing ids/test hooks changed
+* inventory/state integration
+* files changed
+* validation results
+* anything deliberately deferred
+```
+
+---
+
+## GitHub Pages deployment
+
+**VERBATIM**
+
+```text
+Add GitHub Pages deployment for Contraption Lab.
+
+Context:
+
+* Repository: `anatolschwarz/contraption-lab`
+* GitHub Pages publishing source is already configured to use GitHub Actions.
+* This is a Vite/Phaser static browser application.
+* Expected Pages path: `/contraption-lab/`
+* Do not change gameplay or UI behavior.
+* Preserve all current uncommitted #22 work.
+
+Before changing files:
+
+* Inspect the existing Vite configuration, `.nvmrc`, package scripts, `.github/`, and current build output.
+* Reuse existing configuration where possible; do not create duplicate Vite configs or deployment workflows.
+
+Implement:
+
+1. Vite Pages base path
+
+* Ensure production builds use:
+  `/contraption-lab/`
+* Local `npm run dev` must continue working normally at the existing local URL/root.
+* Make the smallest configuration change needed.
+
+2. GitHub Pages workflow
+   Create/update `.github/workflows/deploy-pages.yml`.
+
+Requirements:
+
+* Trigger automatically on pushes to `main`.
+* Also allow manual `workflow_dispatch`.
+* Checkout repository.
+* Use the repository's Node version from `.nvmrc`.
+* Use npm dependency caching where appropriate.
+* Run `npm ci`.
+* Run `npm run build`.
+* Deploy the generated `dist/` directory using the official GitHub Pages Actions workflow:
+
+  * configure-pages
+  * upload-pages-artifact
+  * deploy-pages
+* Give the workflow only the permissions required for Pages deployment.
+* Use the `github-pages` environment.
+* Do not introduce third-party deployment services or packages.
+
+3. Preserve development workflow
+
+* `npm run dev` must continue working locally.
+* Existing tests/build scripts must remain unchanged unless modification is genuinely required for Pages deployment.
+* Do not commit generated `dist/`.
+* Do not add secrets or credentials.
+
+4. Documentation
+
+* Add a concise GitHub Pages deployment section to README.md including the expected published URL:
+  `https://anatolschwarz.github.io/contraption-lab/`
+* Append THIS FULL PROMPT verbatim to `docs/CODEX_PROMPTS.md`.
+* Do not alter ROADMAP milestone numbering for this deployment task.
+
+Validation:
+Run:
+
+* npm run typecheck
+* npm run lint
+* npm test
+* npm run format:check
+* npm run build
+
+Also inspect the built `dist/index.html` / asset references and confirm they resolve under `/contraption-lab/`, not `/`.
+
+Verify the workflow YAML for syntax/configuration mistakes.
+
+Do not run the GitHub Actions deployment locally.
+Do not commit or push.
+
+Report:
+
+* files changed
+* Vite base-path approach used
+* workflow structure
+* expected published URL
+* validation results
+* any manual GitHub-side step still required
+
+Before finishing, double-check all changed files for syntax errors, formatting errors, accidental truncation, malformed YAML, and unintended unrelated changes.
+```
+
+---
+
+## #22 Parts Palette toggle refinement
+
+**VERBATIM**
+
+```text
+Refine milestone #22 Parts Palette UI.
+
+Change only the palette toggle placement.
+
+Requirements:
+
+* Move `#parts-palette-toggle` from beside the canvas into the existing top row containing Puzzle and Settings.
+* Place it on the far right of that row.
+* Keep the Parts Palette itself exactly as implemented:
+
+  * beside canvas on wide screens
+  * below canvas on narrow screens
+  * never overlay/shrink canvas
+* Preserve toggle behavior, disabled state outside Edit, IDs/test hooks, inventory logic, gameplay, toolbar, and responsive behavior.
+* Do not redesign other controls.
+
+Also update `docs/ROADMAP.md` Backlog / To Discuss at the end with:
+
+* Mobile / touch support
+
+  * touch selection/dragging
+  * mobile rotation controls
+  * small-screen usability
+  * real phone/tablet testing
+
+Update relevant docs if needed.
+Append THIS FULL PROMPT verbatim to `docs/CODEX_PROMPTS.md`.
+
+Run:
+
+* npm run typecheck
+* npm run lint
+* npm test
+* npm run format:check
+* npm run build
+* npx playwright test --list
+
+Do not commit or push.
+
+Double-check syntax, formatting, truncation, and unrelated changes. Report files changed and validation results.
+```
+
+---
+
+## #22 Parts Palette responsive close refinement
+
+**VERBATIM**
+
+```text
+Refine #22 Parts Palette UI based on manual testing.
+
+Fix only these UI issues.
+
+1. Toggle labels
+- Keep the top-right control id:
+  #parts-palette-toggle
+- When the palette is closed, the button label must be:
+  Parts
+- When the palette is open, the button label must be:
+  Close
+- Do not use:
+  Parts: Open
+  Parts: Close
+  Collapse
+  Palette
+
+2. Closed palette on narrow/mobile layouts
+- Currently, when the viewport becomes narrow, a redundant "Parts" palette/header line can appear even while the palette is closed.
+- When the palette is closed, the ENTIRE palette UI must be hidden at every viewport width:
+  - container
+  - header/title
+  - inventory content
+  - any reserved layout space
+- Responsive CSS must not override the hidden/closed state.
+
+3. Open behavior
+- On wide screens:
+  - open palette remains beside the canvas
+- On narrow screens:
+  - open palette appears below the canvas
+- It must never overlap or shrink the gameplay canvas.
+- Closing it must remove the palette and its layout space completely.
+
+4. Preserve behavior
+Do not change:
+- inventory logic
+- per-puzzle counts
+- placement/removal behavior
+- gameplay
+- physics
+- toolbar
+- puzzle selector/settings
+- ids/test hooks
+- disabled behavior outside Edit mode
+
+5. Regression coverage
+- Add/update a focused UI/E2E test for this exact behavior:
+  - closed state label = "Parts"
+  - open state label = "Close"
+  - closed palette is completely hidden on both wide and narrow viewports
+  - reopening restores it correctly
+- Keep existing test hooks/ids.
+
+6. Do not address unrelated Playwright timing
+- Do not modify global/test timeouts or gameplay code because of the earlier #10 30-second timeout.
+- Treat that as unrelated unless this change causes a reproducible failure.
+
+Update relevant docs only if needed.
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run:
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+- npx playwright test --list
+
+Do not commit or push.
+
+Double-check:
+- responsive CSS precedence
+- hidden-state rules
+- syntax
+- formatting
+- accidental truncation
+- unrelated changes
+
+Report:
+- root cause of the redundant mobile "Parts" line
+- files changed
+- exact label behavior
+- regression test added/updated
+- validation results
+```

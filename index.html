@@ -26,11 +26,19 @@
         <p id="puzzle-title-label">Relay Ramps</p>
         <span id="timed-indicator" class="timed-indicator">Timed</span>
       </section>
-      <section class="play-tools" aria-label="Puzzle and settings">
+      <section class="play-tools" aria-label="Puzzle, palette, and settings">
         <button id="puzzle-selector-button" type="button">
           Puzzle: Relay Ramps
         </button>
         <button id="settings-button" type="button">Settings</button>
+        <button
+          id="parts-palette-toggle"
+          type="button"
+          aria-controls="parts-palette-content"
+          aria-expanded="false"
+        >
+          Parts
+        </button>
       </section>
       <section
         id="puzzle-selector-panel"
@@ -51,16 +59,29 @@
           Unlock all puzzles
         </label>
       </section>
-      <section
-        id="game-container"
-        aria-label="Physics puzzle play area"
-      ></section>
-      <aside class="parts-tray" aria-label="Parts tray">
-        <span>Parts</span>
-        <button id="tray-ball-button" type="button">Ball</button>
-        <button id="tray-block-button" type="button">Block</button>
-        <button id="tray-ramp-button" type="button">Ramp</button>
-      </aside>
+      <section id="play-area" class="play-area play-area--palette-collapsed">
+        <section
+          id="game-container"
+          aria-label="Physics puzzle play area"
+        ></section>
+        <aside
+          id="parts-palette"
+          class="parts-palette"
+          aria-label="Parts palette"
+          hidden
+        >
+          <div class="parts-palette-header">
+            <span class="parts-palette-title">Parts</span>
+          </div>
+          <div id="parts-palette-content" class="parts-palette-content">
+            <div class="parts-palette-items" aria-label="Available parts">
+              <button id="tray-ball-button" type="button">Ball</button>
+              <button id="tray-block-button" type="button">Block</button>
+              <button id="tray-ramp-button" type="button">Ramp</button>
+            </div>
+          </div>
+        </aside>
+      </section>
       <p id="edit-feedback" class="edit-feedback" aria-live="polite" hidden></p>
       <nav class="controls simulation-toolbar" aria-label="Simulation controls">
         <button id="edit-button" type="button">Edit</button>

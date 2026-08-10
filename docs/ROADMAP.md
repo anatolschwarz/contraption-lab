@@ -64,12 +64,14 @@ without a separate scoped milestone request.
 
 ## #22 — Dockable/collapsible Parts Palette
 
-- Replace the current small Parts tray.
-- Open the palette beside the Play canvas so the puzzle remains visible.
-- Keep contents and counts per-puzzle.
-- The global object library defines supported types; individual puzzles define
-  allowed types and quantities.
-- Design so categories, icons, and scrolling can be added later.
+- Completed: replaced the small Parts tray with a collapsible Parts Palette.
+  It docks beside the unchanged 16:9 canvas on wide viewports and remains below
+  it at narrower widths without covering or shrinking the play area.
+- Completed: Ball, Block, and Ramp buttons retain their existing ids and
+  per-puzzle state-driven counts, placement actions, and Edit-only availability.
+- Deferred: categories, icons, scrolling, and additional part types remain
+  future UI work; the global supported-object library remains separate from
+  per-puzzle quantities.
 
 ## Backlog / To Discuss
 
@@ -84,3 +86,8 @@ without a separate scoped milestone request.
   - unicorn/fantasy
   - other original themed packs
   - avoid copyrighted/branded characters/assets
+- Mobile / touch support
+  - touch selection/dragging
+  - mobile rotation controls
+  - small-screen usability
+  - real phone/tablet testing

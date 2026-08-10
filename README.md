@@ -52,11 +52,12 @@ first, the UI shows `Failed — Time expired`; Rerun or Reset can start over.
 Untimed levels omit the field and otherwise behave as before. Relay Ramps is
 the timed demo and declares a 45-second limit in its JSON.
 
-The Parts tray is also available only in Edit. Its counts come from the level
-JSON; the current prototype starts with Ball (0), Block (2), and Ramp (4).
-Choosing an available tray part places a valid new part and selects it. Placing
-consumes one item; removing any player-owned part returns one item of that
-type. A Ball uses the same fixed/player-owned ownership model: fixed Balls are
+The dockable Parts Palette is available only in Edit. Its counts come from the
+current puzzle JSON; the current prototype starts with Ball (0), Block (2), and
+Ramp (4). It can collapse to a small reopen control without changing its
+contents. Choosing an available palette part places a valid new part and
+selects it. Placing consumes one item; removing any player-owned part returns
+one item of that type. A Ball uses the same fixed/player-owned ownership model: fixed Balls are
 not editable, while player-owned Balls can be moved, removed, and returned to
 the Ball inventory. Levels may define multiple Balls by unique JSON id. Ball
 stock represents exactly the player-owned Balls initially omitted from the
@@ -117,8 +118,8 @@ path.
 ## Puzzle selection and progression
 
 **Play** is the default/root screen; there is no separate Home screen. It
-contains the gameplay canvas, active puzzle's parts tray, compact simulation
-toolbar,
+contains the gameplay canvas, active puzzle's dockable Parts Palette, compact
+simulation toolbar,
 timer/status, a puzzle selector, and Settings.
 
 The compact selector opens a grouped panel for **Basic**, **Medium**, and
@@ -134,7 +135,7 @@ path. Completion and the Settings **Unlock all puzzles** flag persist in
 keeping earned completion. Success offers **Next Puzzle** when another unlocked
 puzzle exists; the final puzzle displays a disabled completion action.
 
-Each puzzle JSON supplies its own parts tray inventory. The global object
+Each puzzle JSON supplies its own Parts Palette inventory. The global object
 library and user-created puzzle storage remain future work; user-created
 puzzles will stay separate from built-ins and never overwrite bundled JSON.
 
@@ -157,7 +158,13 @@ npm run test:e2e
 It requires Playwright Chromium and a usable local Vite server.
 The production build succeeds with the known Vite bundle-size warning for the
 Phaser main chunk.
-Milestones #19, #20, and #21 are complete.
+Milestones #19, #20, #21, and #22 are complete.
+
+## GitHub Pages deployment
+
+Pushing to `main` runs the GitHub Pages workflow, which builds the static Vite
+site and deploys `dist/`. The published site is available at
+[`https://anatolschwarz.github.io/contraption-lab/`](https://anatolschwarz.github.io/contraption-lab/).
 
 The browser suite has thirteen scenarios, including fixed and player-owned
 Ball coexistence, Ball placement/removal, runtime transform preservation
@@ -165,8 +172,7 @@ through Pause/Success/Timeout, and two-Ball Rerun/Reset restoration.
 
 ## Planned roadmap
 
-The next numbered milestone is #22 Dockable/collapsible Parts Palette. Later work
-remains TBD in the roadmap backlog. See
+Later work remains TBD in the roadmap backlog. See
 [`docs/ROADMAP.md`](docs/ROADMAP.md) for scoped definitions.
 
 ## Architecture
@@ -178,7 +184,7 @@ remains TBD in the roadmap backlog. See
 - `src/game/` — Phaser scene, generated visuals, Matter bodies, placement
   validation, autonomous patrols, contact-rule execution, double-click gesture logic, and
   scene-layout snapshots.
-- `src/ui/` — plain DOM toolbar, controls, and tray rendering.
+- `src/ui/` — plain DOM toolbar, controls, and Parts Palette rendering.
 - `src/main.ts` — composition of the level, state, controls, and Phaser game.
 - `tests/` — browser-independent unit tests.
 - `e2e/` — Playwright coverage for Play, progression, inventory, timed,

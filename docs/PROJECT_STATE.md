@@ -22,12 +22,12 @@ same 25° rotation (five 5° Q/E steps).
 ## Play and progression
 
 - **Play screen:** the default/root screen; it contains the gameplay canvas,
-  per-puzzle parts tray, compact simulation toolbar, timer/status, puzzle
+  per-puzzle dockable Parts Palette, compact simulation toolbar, timer/status, puzzle
   selector, and Settings.
   There is no separate Home screen.
 - **Polish feedback:** the persistent level/title/difficulty summary stays
   visible in every mode. Selector state is visually and textually distinct, the
-  tray and controls wrap cleanly, and invalid placement or fixed-part edit
+  Parts Palette and controls wrap cleanly, and invalid placement or fixed-part edit
   attempts show a concise live message without changing the board.
 - **Puzzle selector:** a compact Play-screen selector opens a grouped panel for
   Basic, Medium, and Hard. It shows locked, available, and completed states
@@ -39,7 +39,8 @@ same 25° rotation (five 5° Q/E steps).
   Unlock all puzzles. Disabling it keeps earned completion and restores normal
   selection rules.
 - **Inventory:** each puzzle JSON defines its available parts and counts, which
-  supply the Play-screen tray. A global object library is planned for #22.
+  supply the Play-screen Parts Palette. A global object library remains future
+  work and is separate from puzzle quantities.
 - **User-created puzzles:** future work; they will be stored separately from
   bundled puzzles and never overwrite bundled JSON.
 - **Future screen:** Puzzle Editor. Settings currently contains Unlock all
@@ -93,16 +94,20 @@ same 25° rotation (five 5° Q/E steps).
   wrapping horizontal Run/Pause, Edit, Rerun, Reset, and conditional Next Puzzle
   toolbar. Existing controls, ids, and enabled/visible state behavior remain
   unchanged; the gameplay canvas dimensions are unchanged.
+- **#22 — Dockable/collapsible Parts Palette:** replaced the small tray with a
+  per-puzzle Ball, Block, and Ramp palette beside the canvas on wide viewports
+  (and below it at narrower widths). Its UI-only collapse control preserves the
+  existing inventory buttons, counts, and Edit-only availability.
 
 ## Current behavior
 
 ### Modes
 
 - **Edit:** physics is paused. Player-owned ramps, blocks, and Balls can be
-  selected and moved; ramps also rotate with Q/E. The tray is enabled when
+  selected and moved; ramps also rotate with Q/E. The Parts Palette is enabled when
   stock exists.
 - **Run / Pause:** Run starts or resumes Matter physics; Pause freezes it.
-  Editing and tray controls are disabled. Pause, Success, and Timeout preserve
+  Editing and Parts Palette controls are disabled. Pause, Success, and Timeout preserve
   the live Ball physics transform rather than restoring its Edit layout.
 - **Success:** goal contact pauses the simulation and locks Edit/Run. Rerun and
   Reset remain available.
@@ -193,8 +198,8 @@ deterministic browser path.
 - Puzzle Editor and Settings are separate screens when implemented.
 - Progress persists locally. Sequential unlocking is the default; Settings can
   enable Unlock all without deleting earned progress.
-- The next numbered milestone is #22 Dockable/collapsible Parts Palette. The Palette
-  remains per-puzzle for both contents and quantities.
+- The Parts Palette remains per-puzzle for both contents and quantities; later
+  Play-screen work remains separately scoped.
 
 ## Known limitations and issues
 

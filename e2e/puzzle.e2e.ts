@@ -614,6 +614,41 @@ test("returns removed player parts to inventory and places them again", async ({
   expectNoConsoleErrors(app);
 });
 
+test("hides and restores the Parts Palette across responsive layouts", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1400, height: 900 });
+  const app = await startApp(page);
+  const palette = page.locator("#parts-palette");
+  const paletteContent = page.locator("#parts-palette-content");
+  const paletteTitle = page.locator(".parts-palette-title");
+  const toggle = page.locator("#parts-palette-toggle");
+
+  await expect(toggle).toHaveText("Parts");
+  await expect(palette).toBeHidden();
+  await expect(paletteTitle).toBeHidden();
+  await expect(paletteContent).toBeHidden();
+  await toggle.click();
+  await expect(toggle).toHaveText("Close");
+  await expect(palette).toBeVisible();
+  await toggle.click();
+  await expect(toggle).toHaveText("Parts");
+  await expect(palette).toBeHidden();
+
+  await page.setViewportSize({ width: 600, height: 900 });
+  await expect(toggle).toHaveText("Parts");
+  await expect(palette).toBeHidden();
+  await expect(paletteTitle).toBeHidden();
+  await expect(paletteContent).toBeHidden();
+  await toggle.click();
+  await expect(toggle).toHaveText("Close");
+  await expect(palette).toBeVisible();
+  await toggle.click();
+  await expect(toggle).toHaveText("Parts");
+  await expect(palette).toBeHidden();
+  expectNoConsoleErrors(app);
+});
+
 test("Rerun restores its run-start layout and Reset restores JSON defaults", async ({
   page,
 }) => {

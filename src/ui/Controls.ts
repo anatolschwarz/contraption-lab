@@ -60,6 +60,11 @@ export class Controls {
     requireElement<HTMLButtonElement>("tray-ball-button");
   private readonly trayRampButton =
     requireElement<HTMLButtonElement>("tray-ramp-button");
+  private readonly partsPalette = requireElement<HTMLElement>("parts-palette");
+  private readonly partsPaletteToggle = requireElement<HTMLButtonElement>(
+    "parts-palette-toggle",
+  );
+  private readonly playArea = requireElement<HTMLElement>("play-area");
   private readonly rerunButton =
     requireElement<HTMLButtonElement>("rerun-button");
   private readonly unlockAllCheckbox = requireElement<HTMLInputElement>(
@@ -98,6 +103,9 @@ export class Controls {
     this.trayRampButton.addEventListener("click", () =>
       onAction({ type: "spawn-tray-ramp", componentId: "" }),
     );
+    this.partsPaletteToggle.addEventListener("click", () => {
+      this.setPartsPaletteCollapsed(!this.partsPalette.hidden);
+    });
     this.puzzleSelectorButton.addEventListener("click", () => {
       this.puzzleSelectorPanel.hidden = !this.puzzleSelectorPanel.hidden;
     });
@@ -126,6 +134,7 @@ export class Controls {
     this.trayRampButton.disabled =
       state.mode !== "edit" || state.succeeded || state.trayRampCount === 0;
     this.trayRampButton.textContent = `Ramp (${state.trayRampCount})`;
+    this.partsPaletteToggle.disabled = state.mode !== "edit" || state.succeeded;
     this.rerunButton.disabled = state.mode === "edit" || !state.runSnapshot;
     this.renderTimer(state);
     const label = state.succeeded
@@ -162,6 +171,13 @@ export class Controls {
   setEditFeedback(message: string): void {
     this.editFeedback.textContent = message;
     this.editFeedback.hidden = message.length === 0;
+  }
+
+  private setPartsPaletteCollapsed(collapsed: boolean): void {
+    this.playArea.classList.toggle("play-area--palette-collapsed", collapsed);
+    this.partsPalette.hidden = collapsed;
+    this.partsPaletteToggle.setAttribute("aria-expanded", String(!collapsed));
+    this.partsPaletteToggle.textContent = collapsed ? "Parts" : "Close";
   }
 
   private renderPuzzleSelector(view: Readonly<PlayScreenView>): void {
