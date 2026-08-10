@@ -22,7 +22,8 @@ same 25° rotation (five 5° Q/E steps).
 ## Play and progression
 
 - **Play screen:** the default/root screen; it contains the gameplay canvas,
-  per-puzzle parts tray, controls, timer/status, puzzle selector, and Settings.
+  per-puzzle parts tray, compact simulation toolbar, timer/status, puzzle
+  selector, and Settings.
   There is no separate Home screen.
 - **Polish feedback:** the persistent level/title/difficulty summary stays
   visible in every mode. Selector state is visually and textually distinct, the
@@ -88,6 +89,10 @@ same 25° rotation (five 5° Q/E steps).
   independent runtime/run-start transforms, and every Ball carries the `ball`
   contact tag. Ball inventory equals the number of initially unplaced
   player-owned Balls.
+- **#21 — Compact Play toolbar:** replaced the large control grid with a compact,
+  wrapping horizontal Run/Pause, Edit, Rerun, Reset, and conditional Next Puzzle
+  toolbar. Existing controls, ids, and enabled/visible state behavior remain
+  unchanged; the gameplay canvas dimensions are unchanged.
 
 ## Current behavior
 
@@ -188,8 +193,7 @@ deterministic browser path.
 - Puzzle Editor and Settings are separate screens when implemented.
 - Progress persists locally. Sequential unlocking is the default; Settings can
   enable Unlock all without deleting earned progress.
-- The next numbered milestones are #21 Compact Play toolbar and #22
-  Dockable/collapsible Parts Palette. The Palette
+- The next numbered milestone is #22 Dockable/collapsible Parts Palette. The Palette
   remains per-puzzle for both contents and quantities.
 
 ## Known limitations and issues

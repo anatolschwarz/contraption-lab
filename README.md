@@ -117,7 +117,8 @@ path.
 ## Puzzle selection and progression
 
 **Play** is the default/root screen; there is no separate Home screen. It
-contains the gameplay canvas, active puzzle's parts tray, controls,
+contains the gameplay canvas, active puzzle's parts tray, compact simulation
+toolbar,
 timer/status, a puzzle selector, and Settings.
 
 The compact selector opens a grouped panel for **Basic**, **Medium**, and
@@ -156,7 +157,7 @@ npm run test:e2e
 It requires Playwright Chromium and a usable local Vite server.
 The production build succeeds with the known Vite bundle-size warning for the
 Phaser main chunk.
-Milestones #19 and #20 are complete.
+Milestones #19, #20, and #21 are complete.
 
 The browser suite has thirteen scenarios, including fixed and player-owned
 Ball coexistence, Ball placement/removal, runtime transform preservation
@@ -164,8 +165,7 @@ through Pause/Success/Timeout, and two-Ball Rerun/Reset restoration.
 
 ## Planned roadmap
 
-The next numbered milestones are: #21 Compact Play toolbar and #22
-Dockable/collapsible Parts Palette. Later work
+The next numbered milestone is #22 Dockable/collapsible Parts Palette. Later work
 remains TBD in the roadmap backlog. See
 [`docs/ROADMAP.md`](docs/ROADMAP.md) for scoped definitions.
 
@@ -178,7 +178,7 @@ remains TBD in the roadmap backlog. See
 - `src/game/` — Phaser scene, generated visuals, Matter bodies, placement
   validation, autonomous patrols, contact-rule execution, double-click gesture logic, and
   scene-layout snapshots.
-- `src/ui/` — plain DOM controls and tray rendering.
+- `src/ui/` — plain DOM toolbar, controls, and tray rendering.
 - `src/main.ts` — composition of the level, state, controls, and Phaser game.
 - `tests/` — browser-independent unit tests.
 - `e2e/` — Playwright coverage for Play, progression, inventory, timed,

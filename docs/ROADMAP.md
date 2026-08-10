@@ -56,9 +56,11 @@ without a separate scoped milestone request.
 
 ## #21 — Compact Play toolbar
 
-- Replace oversized Play controls with a compact toolbar.
-- Preserve Run/Pause, Rerun, Reset, and Next Puzzle behavior.
-- Keep the gameplay canvas as the primary visual focus.
+- Completed: replaced the oversized control grid with a compact horizontal,
+  wrapping toolbar. Run/Pause, Edit, Rerun, Reset, and conditional Next Puzzle
+  retain their existing ids, enabled/disabled, and visible states.
+- Completed: toolbar sizing and spacing leave the gameplay canvas unchanged and
+  preserve practical wrapping at narrower supported viewports.
 
 ## #22 — Dockable/collapsible Parts Palette
 

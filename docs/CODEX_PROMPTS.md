@@ -2391,3 +2391,64 @@ Report:
 * E2E result
 * anything deliberately deferred
 ```
+
+---
+
+## #21 — Compact Play toolbar
+
+**VERBATIM**
+
+```text
+Start milestone #21: compact Play toolbar.
+
+Goal:
+Replace the current oversized Play controls with a compact toolbar so the gameplay canvas remains the primary visual focus.
+
+Requirements:
+
+* Preserve existing behavior exactly:
+
+  * Run / Pause toggle
+  * Rerun
+  * Reset
+  * Next Puzzle
+* Do not change gameplay/state semantics.
+* Preserve existing enabled/disabled/visible states for each control.
+* Keep controls clearly readable and clickable.
+* Use a compact horizontal toolbar.
+* Avoid reducing the gameplay canvas.
+* Do not redesign puzzle selector, level information, timer, Settings, or Parts tray.
+* Preserve responsive behavior reasonably at current supported viewport sizes.
+* Keep existing element ids/test hooks where practical so E2E tests do not need unnecessary changes.
+* Preserve current two-Ball behavior from the post-#20 work.
+* Do not start #22 Parts Palette work.
+
+Tests:
+
+* Update focused UI/unit tests only where necessary.
+* Existing tests must continue to compile/discover.
+
+Documentation:
+
+* Update README.md / PROJECT_STATE.md / ROADMAP.md only where #21 completion requires it.
+* Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run:
+
+* npm run typecheck
+* npm run lint
+* npm test
+* npm run format:check
+* npm run build
+* npx playwright test --list
+
+Do not commit or push.
+
+Report:
+
+* toolbar layout implemented
+* controls changed visually
+* any ids/test hooks changed
+* files changed
+* validation results
+```

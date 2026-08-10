@@ -235,11 +235,32 @@ h1 {
   font-weight: 800;
 }
 
-.controls {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 10px;
-  margin-top: 14px;
+.simulation-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 6px;
+  border: 2px solid #71827c;
+  border-radius: 8px;
+  background: rgb(245 240 230 / 72%);
+}
+
+.simulation-toolbar button {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 4px;
+  font-size: 0.88rem;
+}
+
+.simulation-toolbar #simulation-button {
+  border-color: #315341;
+  background: #315341;
+}
+
+.simulation-toolbar #next-puzzle-button:not([hidden]) {
+  margin-left: auto;
 }
 
 button {
@@ -281,7 +302,18 @@ button:disabled {
     flex-direction: column;
   }
 
-  .controls {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  .simulation-toolbar {
+    gap: 5px;
+    padding: 5px;
+  }
+
+  .simulation-toolbar button {
+    min-height: 36px;
+    padding: 0 10px;
+  }
+
+  .simulation-toolbar #next-puzzle-button:not([hidden]) {
+    width: 100%;
+    margin-left: 0;
   }
 }
