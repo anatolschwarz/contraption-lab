@@ -21,7 +21,15 @@ export interface RampDefinition extends LevelPartDefinition {
 
 export type BlockDefinition = LevelPartDefinition;
 
+export interface BallDefinition extends Point {
+  id: string;
+  initiallyPlaced?: boolean;
+  radius: number;
+  ownership: PartOwnership;
+}
+
 export interface InventoryDefinition {
+  ball: number;
   block: number;
   ramp: number;
 }
@@ -69,13 +77,13 @@ export interface ActorDefinition extends RectangleDefinition {
 }
 
 export function isPlayerPart(
-  definition: Readonly<LevelPartDefinition>,
+  definition: Readonly<Pick<LevelPartDefinition, "ownership">>,
 ): boolean {
   return definition.ownership === "player";
 }
 
 export function isEditablePart(
-  definition: Readonly<LevelPartDefinition>,
+  definition: Readonly<Pick<LevelPartDefinition, "ownership">>,
   fromTray: boolean,
 ): boolean {
   return fromTray || isPlayerPart(definition);
@@ -90,7 +98,7 @@ export interface LevelDefinition {
   inventory: InventoryDefinition;
   contactRules: ContactRule[];
   actors: ActorDefinition[];
-  ball: Point & { radius: number };
+  balls: BallDefinition[];
   ramps: RampDefinition[];
   blocks: BlockDefinition[];
   floor: RectangleDefinition;

@@ -7,6 +7,7 @@ import {
   TRAY_RAMP_ID_PREFIX,
   transitionGameState,
   updateBlockTransform,
+  updateBallTransform,
   updateRampTransform,
 } from "../src/state/gameState";
 
@@ -19,18 +20,61 @@ const lowerRampTransform = {
   rotation: 0.35,
 };
 const blockTransform = { position: { x: 830, y: 180 } };
-const initialInventory = { block: 1, ramp: 0 };
+const initialInventory = { ball: 0, block: 1, ramp: 0 };
 const initialGameState = createInitialGameState(initialInventory);
 
 describe("game-state transitions", () => {
+  it("tracks a player ball through placement, removal, rerun, and reset", () => {
+    const balls = {
+      "fixed-ball": { position: { x: 215, y: 135 } },
+      "player-ball": { position: { x: 100, y: 120 } },
+    };
+    const initial = createInitialGameState(
+      { ball: 0, block: 0, ramp: 0 },
+      undefined,
+      balls,
+    );
+    const removed = transitionGameState(initial, {
+      type: "remove-component",
+      componentId: "player-ball",
+      returnsTrayPart: "ball",
+    });
+    expect(removed.ballTransforms).toEqual({
+      "fixed-ball": balls["fixed-ball"],
+    });
+    expect(removed.trayBallCount).toBe(1);
+    const placed = transitionGameState(removed, {
+      type: "spawn-tray-ball",
+      componentId: "player-ball",
+      transform: { position: { x: 120, y: 135 } },
+    });
+    expect(placed.trayBallCount).toBe(0);
+    expect(placed.ballTransforms).toEqual({
+      "fixed-ball": balls["fixed-ball"],
+      "player-ball": { position: { x: 120, y: 135 } },
+    });
+    const moved = updateBallTransform(placed, "player-ball", {
+      position: { x: 140, y: 155 },
+    });
+    const running = transitionGameState(moved, "toggle-simulation");
+    expect(transitionGameState(running, "rerun").ballTransforms).toEqual(
+      moved.ballTransforms,
+    );
+    expect(transitionGameState(moved, "reset").ballTransforms).toEqual(balls);
+    expect(transitionGameState(moved, "reset").trayBallCount).toBe(0);
+  });
+
   it("starts in Edit with only valid actions enabled", () => {
     expect(initialGameState).toEqual({
       initialInventory,
+      initialBallTransforms: {},
       mode: "edit",
       succeeded: false,
       rampTransforms: {},
       blockTransforms: {},
+      ballTransforms: {},
       selectedComponentId: null,
+      trayBallCount: 0,
       trayBlockCount: 1,
       trayRampCount: 0,
     });
@@ -291,6 +335,8 @@ describe("game-state transitions", () => {
         [trayRampId]: { position: { x: 420, y: 330 }, rotation: 0.2 },
       },
       blockTransforms: {},
+      ballTransforms: {},
+      trayBallCount: 0,
       trayBlockCount: 1,
       trayRampCount: 0,
     });
@@ -373,16 +419,21 @@ describe("game-state transitions", () => {
     const success = transitionGameState(running, "success");
     expect(success).toEqual({
       initialInventory,
+      initialBallTransforms: {},
       mode: "paused",
       succeeded: true,
       rampTransforms: {},
       blockTransforms: {},
+      ballTransforms: {},
       selectedComponentId: null,
+      trayBallCount: 0,
       trayBlockCount: 1,
       trayRampCount: 0,
       runSnapshot: {
         rampTransforms: {},
         blockTransforms: {},
+        ballTransforms: {},
+        trayBallCount: 0,
         trayBlockCount: 1,
         trayRampCount: 0,
       },
@@ -468,6 +519,7 @@ describe("reset behavior", () => {
   it("returns an identical fresh initial state every time", () => {
     const changed = {
       initialInventory,
+      initialBallTransforms: {},
       mode: "paused" as const,
       succeeded: true,
       rampTransforms: {
@@ -475,7 +527,9 @@ describe("reset behavior", () => {
         "lower-ramp": lowerRampTransform,
       },
       blockTransforms: { [TRAY_BLOCK_ID]: blockTransform },
+      ballTransforms: {},
       selectedComponentId: TRAY_BLOCK_ID,
+      trayBallCount: 0,
       trayBlockCount: 0,
       trayRampCount: 0,
     };

@@ -4,7 +4,7 @@
   "difficulty": "Basic",
   "order": 1,
   "timeLimitSeconds": 45,
-  "inventory": { "block": 2, "ramp": 4 },
+  "inventory": { "ball": 0, "block": 2, "ramp": 4 },
   "contactRules": [
     {
       "contacts": ["ball", "block"],
@@ -37,7 +37,22 @@
       }
     }
   ],
-  "ball": { "x": 215, "y": 135, "radius": 24 },
+  "balls": [
+    {
+      "id": "prototype-ball",
+      "x": 215,
+      "y": 135,
+      "radius": 24,
+      "ownership": "fixed"
+    },
+    {
+      "id": "player-ball",
+      "x": 100,
+      "y": 120,
+      "radius": 24,
+      "ownership": "player"
+    }
+  ],
   "ramps": [
     {
       "id": "upper-ramp",

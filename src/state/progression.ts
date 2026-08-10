@@ -154,6 +154,11 @@ export function createPuzzleRuntime(
     gameState: createInitialGameState(
       puzzle.inventory,
       puzzle.timeLimitSeconds,
+      Object.fromEntries(
+        puzzle.balls
+          .filter((ball) => ball.initiallyPlaced !== false)
+          .map((ball) => [ball.id, { position: { x: ball.x, y: ball.y } }]),
+      ),
     ),
   };
 }

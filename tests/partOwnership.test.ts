@@ -3,6 +3,7 @@ import {
   isEditablePart,
   isPlayerPart,
   type BlockDefinition,
+  type BallDefinition,
 } from "../src/levels/levelTypes";
 
 const fixedBlock: BlockDefinition = {
@@ -20,6 +21,14 @@ const preplacedPlayerBlock: BlockDefinition = {
   ownership: "player",
 };
 
+const fixedBall: BallDefinition = {
+  id: "fixed-ball",
+  x: 120,
+  y: 120,
+  radius: 20,
+  ownership: "fixed",
+};
+
 describe("level-part ownership", () => {
   it("keeps fixed level objects non-editable", () => {
     expect(isPlayerPart(fixedBlock)).toBe(false);
@@ -30,5 +39,13 @@ describe("level-part ownership", () => {
     expect(isPlayerPart(preplacedPlayerBlock)).toBe(true);
     expect(isEditablePart(preplacedPlayerBlock, false)).toBe(true);
     expect(isEditablePart(fixedBlock, true)).toBe(true);
+  });
+
+  it("keeps fixed Balls non-editable while player-owned Balls are editable", () => {
+    expect(isPlayerPart(fixedBall)).toBe(false);
+    expect(isEditablePart(fixedBall, false)).toBe(false);
+    expect(isEditablePart({ ...fixedBall, ownership: "player" }, false)).toBe(
+      true,
+    );
   });
 });

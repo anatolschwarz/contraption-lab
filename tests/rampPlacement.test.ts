@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  clampCirclePosition,
+  isCirclePlacementValid,
   clampRampPosition,
   isRectanglePlacementValid,
   RAMP_ROTATION_STEP,
@@ -109,6 +111,40 @@ describe("isRectanglePlacementValid", () => {
         { x: 800, y: 140, width: 100, height: 80, rotation: 0 },
         ball,
         [otherRamp],
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("Ball placement", () => {
+  const obstacle = { x: 320, y: 260, width: 180, height: 24, rotation: 0 };
+
+  it("clamps a Ball within the playfield and rejects overlap with parts", () => {
+    expect(clampCirclePosition({ x: -1, y: 600 }, 20)).toEqual({
+      x: 20,
+      y: 520,
+    });
+    expect(
+      isCirclePlacementValid({ x: 320, y: 260, radius: 20 }, [obstacle]),
+    ).toBe(false);
+    expect(
+      isCirclePlacementValid({ x: 120, y: 120, radius: 20 }, [obstacle]),
+    ).toBe(true);
+  });
+
+  it("rejects overlap with another Ball", () => {
+    expect(
+      isCirclePlacementValid(
+        { x: 120, y: 120, radius: 24 },
+        [obstacle],
+        [{ x: 160, y: 120, radius: 24 }],
+      ),
+    ).toBe(false);
+    expect(
+      isCirclePlacementValid(
+        { x: 120, y: 120, radius: 24 },
+        [obstacle],
+        [{ x: 168, y: 120, radius: 24 }],
       ),
     ).toBe(true);
   });

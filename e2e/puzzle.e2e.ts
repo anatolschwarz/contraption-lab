@@ -18,6 +18,7 @@ interface ActualRampTransform {
 
 interface BoardState {
   actors: Array<{ id: string; x: number; y: number }>;
+  ball?: { id: string; x: number; y: number };
   blocks: string[];
   ramps: ActualRampTransform[];
 }
@@ -29,6 +30,42 @@ interface InteractionState {
   pendingClickCompletedAt: number | null;
   selectedComponentId: string | null;
   upperRampPresent: boolean;
+}
+
+interface BallEditState {
+  ball?: {
+    fromTray: boolean;
+    id: string;
+    ownership: "fixed" | "player";
+    x: number;
+    y: number;
+  };
+  selectedComponentId: string | null;
+  trayBallCount: number;
+}
+
+interface BallRemovalState extends BallEditState {
+  ball?: BallEditState["ball"] & {
+    bodyBounds?: { maxX: number; maxY: number; minX: number; minY: number };
+    radius: number;
+  };
+  interaction: {
+    activeDragComponentId: string | null;
+    dragMoved: boolean;
+    pendingClickComponentId: string | null;
+    pointerIsDown: boolean;
+    pointerWorldX: number;
+    pointerWorldY: number;
+  };
+  removalHandlerCalls: Array<{ componentId: string; componentType: string }>;
+}
+
+interface BallRemovalTrace {
+  afterFirstClick: BallRemovalState;
+  afterSecondClick: BallRemovalState;
+  beforeClicks: BallRemovalState;
+  pointerClient: { x: number; y: number };
+  pointerGame: { x: number; y: number };
 }
 
 interface App {
@@ -105,6 +142,91 @@ async function doubleClickCanvas(
     });
 }
 
+async function removeBall(
+  page: Page,
+  canvas: Locator,
+  point: { x: number; y: number },
+  ballId = "prototype-ball",
+): Promise<BallRemovalTrace> {
+  const pointerClient = await gamePoint(canvas, point);
+  await page.evaluate(() => {
+    const scene =
+      window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+        removeComponent: (componentType: string, componentId: string) => void;
+      };
+    if (!scene) throw new Error("Prototype scene test hook is unavailable.");
+    const traceWindow = window as typeof window & {
+      __ballRemovalTrace?: {
+        calls: Array<{ componentId: string; componentType: string }>;
+        originalRemoveComponent: (
+          componentType: string,
+          componentId: string,
+        ) => void;
+      };
+    };
+    const originalRemoveComponent = scene.removeComponent;
+    traceWindow.__ballRemovalTrace = {
+      calls: [],
+      originalRemoveComponent,
+    };
+    scene.removeComponent = (componentType, componentId) => {
+      traceWindow.__ballRemovalTrace?.calls.push({
+        componentId,
+        componentType,
+      });
+      originalRemoveComponent.call(scene, componentType, componentId);
+    };
+  });
+  const beforeClicks = await recordBallRemovalState(
+    page,
+    "before-remove-ball",
+    ballId,
+  );
+  await page.mouse.move(pointerClient.x, pointerClient.y);
+  await page.mouse.down();
+  await page.mouse.up();
+  const afterFirstClick = await recordBallRemovalState(
+    page,
+    "after-first-remove-click",
+    ballId,
+  );
+  await page.waitForTimeout(DOUBLE_CLICK_DELAY_MS);
+  await page.mouse.down();
+  await page.mouse.up();
+  const afterSecondClick = await recordBallRemovalState(
+    page,
+    "after-second-remove-click",
+    ballId,
+  );
+  await page.evaluate(() => {
+    const scene =
+      window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+        removeComponent: (componentType: string, componentId: string) => void;
+      };
+    const traceWindow = window as typeof window & {
+      __ballRemovalTrace?: {
+        originalRemoveComponent: (
+          componentType: string,
+          componentId: string,
+        ) => void;
+      };
+    };
+    if (!scene || !traceWindow.__ballRemovalTrace) {
+      throw new Error("Ball removal trace is unavailable.");
+    }
+    scene.removeComponent =
+      traceWindow.__ballRemovalTrace.originalRemoveComponent;
+    delete traceWindow.__ballRemovalTrace;
+  });
+  return {
+    afterFirstClick,
+    afterSecondClick,
+    beforeClicks,
+    pointerClient,
+    pointerGame: { x: point.x, y: point.y },
+  };
+}
+
 async function rotateSelectedRamp(page: Page, steps: number): Promise<void> {
   for (let step = 0; step < steps; step += 1) {
     await page.keyboard.press("E");
@@ -173,11 +295,165 @@ async function readInteractionState(page: Page): Promise<InteractionState> {
   });
 }
 
+async function recordBallEditState(
+  page: Page,
+  operation: string,
+  ballId = "prototype-ball",
+): Promise<BallEditState> {
+  const state = await page.evaluate(
+    ({ ballId }) => {
+      const scene =
+        window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+          balls: Map<
+            string,
+            {
+              definition: { id: string; ownership: "fixed" | "player" };
+              fromTray: boolean;
+              shape: { x: number; y: number };
+            }
+          >;
+          selectedComponentId: string | null;
+        };
+      const trayText = document.querySelector("#tray-ball-button")?.textContent;
+      const trayBallCount = Number(/\((\d+)\)/.exec(trayText ?? "")?.[1]);
+      if (!scene || !Number.isInteger(trayBallCount)) {
+        throw new Error("Ball edit state is unavailable.");
+      }
+      const ball = scene.balls.get(ballId);
+      return {
+        ...(ball === undefined
+          ? {}
+          : {
+              ball: {
+                fromTray: ball.fromTray,
+                id: ball.definition.id,
+                ownership: ball.definition.ownership,
+                x: ball.shape.x,
+                y: ball.shape.y,
+              },
+            }),
+        selectedComponentId: scene.selectedComponentId,
+        trayBallCount,
+      };
+    },
+    { ballId },
+  );
+  await test.info().attach(`ball-edit-${operation}`, {
+    body: JSON.stringify({ operation, ...state }, null, 2),
+    contentType: "application/json",
+  });
+  return state;
+}
+
+async function recordBallRemovalState(
+  page: Page,
+  operation: string,
+  ballId = "prototype-ball",
+): Promise<BallRemovalState> {
+  const state = await page.evaluate(
+    ({ ballId }) => {
+      const scene =
+        window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+          balls: Map<
+            string,
+            {
+              definition: {
+                id: string;
+                ownership: "fixed" | "player";
+                radius: number;
+              };
+              fromTray: boolean;
+              shape: {
+                body?: {
+                  bounds?: {
+                    max: { x: number; y: number };
+                    min: { x: number; y: number };
+                  };
+                };
+                x: number;
+                y: number;
+              };
+            }
+          >;
+          drag?: { componentId: string };
+          dragMoved: boolean;
+          input: {
+            activePointer: {
+              isDown: boolean;
+              worldX: number;
+              worldY: number;
+            };
+          };
+          lastComponentClick?: { componentId: string };
+          selectedComponentId: string | null;
+        };
+      const traceWindow = window as typeof window & {
+        __ballRemovalTrace?: {
+          calls: Array<{ componentId: string; componentType: string }>;
+        };
+      };
+      const trayText = document.querySelector("#tray-ball-button")?.textContent;
+      const trayBallCount = Number(/\((\d+)\)/.exec(trayText ?? "")?.[1]);
+      if (!scene || !Number.isInteger(trayBallCount)) {
+        throw new Error("Ball removal state is unavailable.");
+      }
+      const ball = scene.balls.get(ballId);
+      const bounds = ball?.shape.body?.bounds;
+      return {
+        ...(ball === undefined
+          ? {}
+          : {
+              ball: {
+                ...(bounds === undefined
+                  ? {}
+                  : {
+                      bodyBounds: {
+                        maxX: bounds.max.x,
+                        maxY: bounds.max.y,
+                        minX: bounds.min.x,
+                        minY: bounds.min.y,
+                      },
+                    }),
+                fromTray: ball.fromTray,
+                id: ball.definition.id,
+                ownership: ball.definition.ownership,
+                radius: ball.definition.radius,
+                x: ball.shape.x,
+                y: ball.shape.y,
+              },
+            }),
+        interaction: {
+          activeDragComponentId: scene.drag?.componentId ?? null,
+          dragMoved: scene.dragMoved,
+          pendingClickComponentId:
+            scene.lastComponentClick?.componentId ?? null,
+          pointerIsDown: scene.input.activePointer.isDown,
+          pointerWorldX: scene.input.activePointer.worldX,
+          pointerWorldY: scene.input.activePointer.worldY,
+        },
+        removalHandlerCalls: [...(traceWindow.__ballRemovalTrace?.calls ?? [])],
+        selectedComponentId: scene.selectedComponentId,
+        trayBallCount,
+      };
+    },
+    { ballId },
+  );
+  await test.info().attach(`ball-removal-${operation}`, {
+    body: JSON.stringify({ operation, ...state }, null, 2),
+    contentType: "application/json",
+  });
+  return state;
+}
+
 async function readBoard(page: Page): Promise<BoardState> {
   return page.evaluate(() => {
     const scene =
       window.__contraptionLabTest?.getPrototypeScene() as unknown as {
         actors: Map<string, { shape: { x: number; y: number } }>;
+        balls: Map<
+          string,
+          { definition: { id: string }; shape: { x: number; y: number } }
+        >;
         blocks: Map<string, unknown>;
         ramps: Map<
           string,
@@ -185,12 +461,22 @@ async function readBoard(page: Page): Promise<BoardState> {
         >;
       };
     if (!scene) throw new Error("Prototype scene test hook is unavailable.");
+    const ball = scene.balls.get("prototype-ball");
     return {
       actors: [...scene.actors.entries()].map(([id, actor]) => ({
         id,
         x: actor.shape.x,
         y: actor.shape.y,
       })),
+      ...(ball === undefined
+        ? {}
+        : {
+            ball: {
+              id: ball.definition.id,
+              x: ball.shape.x,
+              y: ball.shape.y,
+            },
+          }),
       blocks: [...scene.blocks.keys()],
       ramps: [...scene.ramps.entries()].map(([id, ramp]) => ({
         id,
@@ -238,6 +524,26 @@ function expectRampPosition(
 ): void {
   expect(Math.abs(ramp.x - expected.x)).toBeLessThanOrEqual(POSITION_TOLERANCE);
   expect(Math.abs(ramp.y - expected.y)).toBeLessThanOrEqual(POSITION_TOLERANCE);
+}
+
+function expectBallPosition(
+  ball: BoardState["ball"],
+  expected: { x: number; y: number },
+): void {
+  if (!ball) throw new Error("Missing Ball.");
+  expect(Math.abs(ball.x - expected.x)).toBeLessThanOrEqual(POSITION_TOLERANCE);
+  expect(Math.abs(ball.y - expected.y)).toBeLessThanOrEqual(POSITION_TOLERANCE);
+}
+
+function expectBallNotAtPosition(
+  ball: BoardState["ball"],
+  unexpected: { x: number; y: number },
+): void {
+  if (!ball) throw new Error("Missing Ball.");
+  expect(
+    Math.abs(ball.x - unexpected.x) > POSITION_TOLERANCE ||
+      Math.abs(ball.y - unexpected.y) > POSITION_TOLERANCE,
+  ).toBe(true);
 }
 
 function expectSolutionTransforms(board: BoardState): void {
@@ -469,11 +775,23 @@ test("keeps Bird patrol deterministic and executes configured Bird contacts", as
   expectNoConsoleErrors(app);
 });
 
-test("rejects fixed-part edits while player-owned parts remain editable", async ({
-  page,
-}) => {
+test("keeps fixed Balls non-editable", async ({ page }) => {
   const app = await startApp(page);
   const fixedStart = (await readBoard(page)).blocks;
+  await clickCanvas(page, app.canvas, { x: 215, y: 135 });
+  await expect(page.locator("#edit-feedback")).toHaveText(
+    "Fixed parts cannot be moved or removed.",
+  );
+  await expect
+    .poll(() => readInteractionState(page))
+    .toMatchObject({
+      selectedComponentId: null,
+    });
+  await moveRamp(page, app.canvas, { x: 215, y: 135 }, { x: 320, y: 135 });
+  await expect(page.locator("#edit-feedback")).toHaveText(
+    "Fixed parts cannot be moved or removed.",
+  );
+  expect((await readBoard(page)).ball).toMatchObject({ x: 215, y: 135 });
   await moveRamp(page, app.canvas, { x: 850, y: 150 }, { x: 760, y: 150 });
   await expect(page.locator("#edit-feedback")).toHaveText(
     "Fixed parts cannot be moved or removed.",
@@ -481,6 +799,476 @@ test("rejects fixed-part edits while player-owned parts remain editable", async 
   await clickCanvas(page, app.canvas, { x: 850, y: 150 });
   await clickCanvas(page, app.canvas, { x: 850, y: 150 });
   expect((await readBoard(page)).blocks).toEqual(fixedStart);
+
+  expect((await readBoard(page)).ball).toMatchObject({ x: 215, y: 135 });
+  expectNoConsoleErrors(app);
+});
+
+test("edits, removes, and replaces a player-owned preplaced Ball through Reset", async ({
+  page,
+}) => {
+  const app = await startApp(page);
+  const resetPlayerBall = await recordBallEditState(
+    page,
+    "initial-player-owned-ball",
+    "player-ball",
+  );
+  expect(resetPlayerBall).toMatchObject({
+    ball: {
+      fromTray: false,
+      id: "player-ball",
+      ownership: "player",
+      x: 100,
+      y: 120,
+    },
+    selectedComponentId: null,
+    trayBallCount: 0,
+  });
+
+  await clickCanvas(page, app.canvas, { x: 100, y: 120 });
+  await expect
+    .poll(() => readInteractionState(page))
+    .toMatchObject({ selectedComponentId: "player-ball" });
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const scene =
+          window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+            balls: Map<string, { selectionText: { visible: boolean } }>;
+          };
+        return scene?.balls.get("player-ball")?.selectionText.visible;
+      }),
+    )
+    .toBe(true);
+
+  await moveRamp(page, app.canvas, { x: 100, y: 120 }, { x: 100, y: 220 });
+  const draggedBall = await recordBallEditState(
+    page,
+    "dragged-preplaced-ball",
+    "player-ball",
+  );
+  expect(draggedBall).toMatchObject({
+    ball: {
+      fromTray: false,
+      id: "player-ball",
+      ownership: "player",
+    },
+    selectedComponentId: "player-ball",
+    trayBallCount: 0,
+  });
+  expectBallPosition(draggedBall.ball, { x: 100, y: 220 });
+
+  if (!draggedBall.ball) throw new Error("Dragged Ball is unavailable.");
+  await moveRamp(page, app.canvas, draggedBall.ball, { x: 850, y: 150 });
+  await expect(page.locator("#edit-feedback")).toHaveText(
+    "Placement rejected: keep parts in bounds and clear of other parts.",
+  );
+  const overlapRejectedBall = await recordBallEditState(
+    page,
+    "dragged-toward-fixed-block",
+    "player-ball",
+  );
+  expect(overlapRejectedBall).toMatchObject({
+    ball: {
+      fromTray: false,
+      id: "player-ball",
+      ownership: "player",
+    },
+    selectedComponentId: "player-ball",
+    trayBallCount: 0,
+  });
+  if (!overlapRejectedBall.ball) throw new Error("Ball is unavailable.");
+  expect(overlapRejectedBall.ball.x).toBeGreaterThan(draggedBall.ball.x);
+  expect(overlapRejectedBall.ball.x).toBeLessThanOrEqual(776);
+
+  await moveRamp(page, app.canvas, overlapRejectedBall.ball, {
+    x: 215,
+    y: 135,
+  });
+  const ballOverlapRejected = await recordBallEditState(
+    page,
+    "dragged-toward-fixed-ball",
+    "player-ball",
+  );
+  if (!ballOverlapRejected.ball) throw new Error("Ball is unavailable.");
+  expect(
+    Math.hypot(
+      ballOverlapRejected.ball.x - 215,
+      ballOverlapRejected.ball.y - 135,
+    ),
+  ).toBeGreaterThanOrEqual(48);
+
+  await moveRamp(page, app.canvas, ballOverlapRejected.ball, {
+    x: 300,
+    y: 250,
+  });
+  const reroutedBall = await recordBallEditState(
+    page,
+    "rerouted-around-fixed-ball",
+    "player-ball",
+  );
+  if (!reroutedBall.ball) throw new Error("Ball is unavailable.");
+  await moveRamp(page, app.canvas, reroutedBall.ball, { x: 1, y: 30 });
+  const boundsClampedBall = await recordBallEditState(
+    page,
+    "dragged-to-bound",
+    "player-ball",
+  );
+  expect(boundsClampedBall).toMatchObject({
+    ball: {
+      fromTray: false,
+      id: "player-ball",
+      ownership: "player",
+    },
+    selectedComponentId: "player-ball",
+    trayBallCount: 0,
+  });
+  expectBallPosition(boundsClampedBall.ball, { x: 24, y: 30 });
+
+  if (!boundsClampedBall.ball)
+    throw new Error("Bounds-clamped Ball is unavailable.");
+  const boundaryRemoval = await removeBall(
+    page,
+    app.canvas,
+    boundsClampedBall.ball,
+    "player-ball",
+  );
+  expect(boundaryRemoval.pointerGame).toEqual({
+    x: boundsClampedBall.ball.x,
+    y: boundsClampedBall.ball.y,
+  });
+  expect(boundaryRemoval.beforeClicks).toMatchObject({
+    ball: {
+      fromTray: false,
+      id: "player-ball",
+      ownership: "player",
+      radius: 24,
+    },
+    selectedComponentId: "player-ball",
+    trayBallCount: 0,
+  });
+  expect(boundaryRemoval.afterFirstClick).toMatchObject({
+    ball: { id: "player-ball" },
+    interaction: {
+      activeDragComponentId: null,
+      pendingClickComponentId: "player-ball",
+      pointerIsDown: false,
+    },
+    removalHandlerCalls: [],
+    selectedComponentId: "player-ball",
+    trayBallCount: 0,
+  });
+  expect(boundaryRemoval.afterSecondClick).toMatchObject({
+    interaction: {
+      activeDragComponentId: null,
+      pendingClickComponentId: null,
+      pointerIsDown: false,
+    },
+    removalHandlerCalls: [
+      { componentId: "player-ball", componentType: "ball" },
+    ],
+    selectedComponentId: null,
+    trayBallCount: 1,
+  });
+  expect(boundaryRemoval.afterSecondClick.ball).toBeUndefined();
+  await expect(page.locator("#tray-ball-button")).toHaveText("Ball (1)");
+  const removedBall = await recordBallEditState(
+    page,
+    "removed-ball",
+    "player-ball",
+  );
+  expect(removedBall).toEqual({
+    selectedComponentId: null,
+    trayBallCount: 1,
+  });
+
+  await page.getByRole("button", { name: "Ball (1)" }).click();
+  await expect(page.locator("#tray-ball-button")).toHaveText("Ball (0)");
+  const trayBall = await recordBallEditState(
+    page,
+    "placed-ball-from-tray",
+    "player-ball",
+  );
+  expect(trayBall).toMatchObject({
+    ball: {
+      fromTray: true,
+      id: "player-ball",
+      ownership: "player",
+      x: 120,
+      y: 135,
+    },
+    selectedComponentId: "player-ball",
+    trayBallCount: 0,
+  });
+  if (!trayBall.ball) throw new Error("Tray Ball is unavailable.");
+  const trayRemoval = await removeBall(
+    page,
+    app.canvas,
+    trayBall.ball,
+    "player-ball",
+  );
+  expect(trayRemoval.afterSecondClick).toMatchObject({
+    removalHandlerCalls: [
+      { componentId: "player-ball", componentType: "ball" },
+    ],
+    trayBallCount: 1,
+  });
+  expect(trayRemoval.afterSecondClick.ball).toBeUndefined();
+  await expect(page.locator("#tray-ball-button")).toHaveText("Ball (1)");
+  const removedTrayBall = await recordBallEditState(
+    page,
+    "removed-tray-ball",
+    "player-ball",
+  );
+  expect(removedTrayBall).toEqual({
+    selectedComponentId: null,
+    trayBallCount: 1,
+  });
+
+  await page.getByRole("button", { name: "Reset" }).click();
+  const resetBall = await recordBallEditState(
+    page,
+    "reset-restored-json-ball",
+    "player-ball",
+  );
+  expect(resetBall).toMatchObject({
+    ball: {
+      fromTray: false,
+      id: "player-ball",
+      ownership: "player",
+      x: 100,
+      y: 120,
+    },
+    selectedComponentId: null,
+    trayBallCount: 0,
+  });
+  expectNoConsoleErrors(app);
+});
+
+test("keeps the live Ball transform through Pause, Success, and Timeout", async ({
+  page,
+}) => {
+  const app = await startApp(page);
+  await app.simulation.click();
+  await page.evaluate(() => {
+    const scene =
+      window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+        balls: Map<
+          string,
+          { shape: { setPosition: (x: number, y: number) => void } }
+        >;
+      };
+    scene?.balls.get("prototype-ball")?.shape.setPosition(400, 120);
+  });
+  const pauseTransition = await page.evaluate(() => {
+    const scene =
+      window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+        balls: Map<string, { shape: { x: number; y: number } }>;
+      };
+    const button =
+      document.querySelector<HTMLButtonElement>("#simulation-button");
+    const ball = scene?.balls.get("prototype-ball");
+    if (!ball || !button)
+      throw new Error("Ball or simulation button is unavailable.");
+    const before = { x: ball.shape.x, y: ball.shape.y };
+    button.click();
+    return { after: { x: ball.shape.x, y: ball.shape.y }, before };
+  });
+  await expect(app.mode).toHaveText("Mode: Paused");
+  expectBallPosition(
+    { id: "prototype-ball", ...pauseTransition.after },
+    pauseTransition.before,
+  );
+  expectBallNotAtPosition(
+    { id: "prototype-ball", ...pauseTransition.after },
+    { x: 215, y: 135 },
+  );
+  await advanceSimulation(page, 1_000);
+  expectBallPosition((await readBoard(page)).ball, pauseTransition.before);
+
+  await app.simulation.click();
+  const successTransition = await page.evaluate(() => {
+    const scene =
+      window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+        balls: Map<
+          string,
+          {
+            shape: {
+              body?: unknown;
+              setPosition: (x: number, y: number) => void;
+              x: number;
+              y: number;
+            };
+          }
+        >;
+        contactObjects: Map<unknown, { tag: string }>;
+        handleContact: (first: unknown, second: unknown) => void;
+      };
+    const ball = scene?.balls.get("player-ball");
+    ball?.shape.setPosition(410, 130);
+    if (!ball) throw new Error("Player Ball is unavailable.");
+    const before = { x: ball.shape.x, y: ball.shape.y };
+    const goalBody = [...scene.contactObjects.entries()].find(
+      ([, object]) => object.tag === "goal",
+    )?.[0];
+    if (!ball.shape.body || !goalBody)
+      throw new Error("Ball or goal contact object is unavailable.");
+    scene.handleContact(ball.shape.body, goalBody);
+    return { after: { x: ball.shape.x, y: ball.shape.y }, before };
+  });
+  await expect(app.mode).toHaveText("Mode: Success");
+  expectBallPosition(
+    { id: "player-ball", ...successTransition.after },
+    successTransition.before,
+  );
+  expectBallNotAtPosition(
+    { id: "player-ball", ...successTransition.after },
+    { x: 100, y: 120 },
+  );
+
+  await enableUnlockAll(page);
+  await selectPuzzle(page, "timed-relay-003");
+  await app.simulation.click();
+  const timeoutTransition = await page.evaluate(() => {
+    const scene =
+      window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+        balls: Map<
+          string,
+          {
+            shape: {
+              setPosition: (x: number, y: number) => void;
+              x: number;
+              y: number;
+            };
+          }
+        >;
+        onTimerTick: (deltaMs: number) => void;
+      };
+    const ball = scene?.balls.get("prototype-ball");
+    ball?.shape.setPosition(420, 140);
+    if (!ball) throw new Error("Ball is unavailable.");
+    const before = { x: ball.shape.x, y: ball.shape.y };
+    scene.onTimerTick(31_000);
+    return { after: { x: ball.shape.x, y: ball.shape.y }, before };
+  });
+  await expect(app.mode).toHaveText("Mode: Failed — Time expired");
+  expectBallPosition(
+    { id: "prototype-ball", ...timeoutTransition.after },
+    timeoutTransition.before,
+  );
+  expectBallNotAtPosition(
+    { id: "prototype-ball", ...timeoutTransition.after },
+    { x: 215, y: 135 },
+  );
+  expectNoConsoleErrors(app);
+});
+
+test("Rerun restores fresh Run-start Ball physics and Reset restores JSON", async ({
+  page,
+}) => {
+  const app = await startApp(page);
+  await app.simulation.click();
+  await page.evaluate(() => {
+    const scene =
+      window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+        balls: Map<
+          string,
+          {
+            shape: {
+              setPosition: (x: number, y: number) => void;
+              setVelocity: (x: number, y: number) => void;
+            };
+          }
+        >;
+      };
+    scene?.balls.get("prototype-ball")?.shape.setPosition(400, 120);
+    scene?.balls.get("prototype-ball")?.shape.setVelocity(8, 6);
+    scene?.balls.get("player-ball")?.shape.setPosition(320, 200);
+    scene?.balls.get("player-ball")?.shape.setVelocity(-5, 4);
+  });
+  const rerunTransition = await page.evaluate(() => {
+    const scene =
+      window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+        runSnapshot?: {
+          balls: Array<{ definition: { id: string; x: number; y: number } }>;
+        };
+        balls: Map<
+          string,
+          {
+            shape: {
+              x: number;
+              y: number;
+              body?: { velocity: { x: number; y: number } };
+            };
+          }
+        >;
+      };
+    const button = document.querySelector<HTMLButtonElement>("#rerun-button");
+    if (!scene?.runSnapshot || scene.balls.size !== 2 || !button)
+      throw new Error("Run snapshot, Balls, or Rerun button is unavailable.");
+    const runStart = Object.fromEntries(
+      scene.runSnapshot.balls.map((ball) => [
+        ball.definition.id,
+        ball.definition,
+      ]),
+    );
+    button.click();
+    const restored = Object.fromEntries(
+      [...scene.balls.entries()].map(([id, ball]) => {
+        const velocity = ball.shape.body?.velocity;
+        if (!velocity) throw new Error("Restored Ball body is unavailable.");
+        return [
+          id,
+          {
+            velocity: { x: velocity.x, y: velocity.y },
+            x: ball.shape.x,
+            y: ball.shape.y,
+          },
+        ];
+      }),
+    );
+    return {
+      restored,
+      runStart,
+    };
+  });
+  expect(rerunTransition.runStart).toMatchObject({
+    "player-ball": { x: 100, y: 120 },
+    "prototype-ball": { x: 215, y: 135 },
+  });
+  for (const id of ["prototype-ball", "player-ball"]) {
+    const restored = rerunTransition.restored[id];
+    const runStart = rerunTransition.runStart[id];
+    if (!restored || !runStart) throw new Error(`Missing restored ${id}.`);
+    expectBallPosition({ id, ...restored }, runStart);
+    expect(restored.velocity).toEqual({ x: 0, y: 0 });
+  }
+  await expect(app.mode).toHaveText("Mode: Running");
+
+  await page.getByRole("button", { name: "Reset" }).click();
+  await expect(app.mode).toHaveText("Mode: Edit");
+  expect((await readBoard(page)).ball).toMatchObject({
+    id: "prototype-ball",
+    x: 215,
+    y: 135,
+  });
+  expect(
+    await recordBallEditState(page, "reset-player-ball", "player-ball"),
+  ).toMatchObject({
+    ball: {
+      fromTray: false,
+      id: "player-ball",
+      ownership: "player",
+      x: 100,
+      y: 120,
+    },
+    trayBallCount: 0,
+  });
+  expectNoConsoleErrors(app);
+});
+
+test("rejects overlapping player-part edits", async ({ page }) => {
+  const app = await startApp(page);
 
   await moveRamp(page, app.canvas, INITIAL_UPPER_RAMP, INITIAL_LOWER_RAMP, 1);
   await expect(page.locator("#edit-feedback")).toHaveText(
@@ -496,5 +1284,6 @@ test("rejects fixed-part edits while player-owned parts remain editable", async 
     x: 430,
     y: 240,
   });
+
   expectNoConsoleErrors(app);
 });

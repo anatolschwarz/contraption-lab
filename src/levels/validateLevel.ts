@@ -1,5 +1,6 @@
 import type {
   ActorDefinition,
+  BallDefinition,
   BlockDefinition,
   ContactRule,
   ContactTag,
@@ -32,9 +33,14 @@ function isRectangle(value: unknown): value is RectangleDefinition {
   );
 }
 
-const isBall = (value: unknown): value is LevelDefinition["ball"] =>
+const isBall = (value: unknown): value is BallDefinition =>
   isRecord(value) &&
   isPoint(value) &&
+  typeof value.id === "string" &&
+  value.id.trim() !== "" &&
+  (value.initiallyPlaced === undefined ||
+    typeof value.initiallyPlaced === "boolean") &&
+  (value.ownership === "fixed" || value.ownership === "player") &&
   isFiniteNumber(value.radius) &&
   value.radius > 0;
 
@@ -55,6 +61,9 @@ const isBlock = (value: unknown): value is BlockDefinition =>
 
 const isInventory = (value: unknown): value is InventoryDefinition =>
   isRecord(value) &&
+  isFiniteNumber(value.ball) &&
+  Number.isInteger(value.ball) &&
+  value.ball >= 0 &&
   isFiniteNumber(value.block) &&
   Number.isInteger(value.block) &&
   value.block >= 0 &&
@@ -192,7 +201,7 @@ export function validateLevel(value: unknown): LevelDefinition {
     inventory,
     contactRules,
     actors,
-    ball,
+    balls,
     ramps,
     blocks,
     floor,
@@ -216,13 +225,31 @@ export function validateLevel(value: unknown): LevelDefinition {
   }
   if (!isInventory(inventory)) {
     throw new Error(
-      "Level inventory must define non-negative integer block and ramp counts.",
+      "Level inventory must define non-negative integer ball, block, and ramp counts.",
     );
   }
   const validatedContactRules = validateContactRules(contactRules);
   const validatedActors = validateActors(actors);
-  if (!isBall(ball)) {
-    throw new Error("Level ball must have finite x/y and a positive radius.");
+  if (!Array.isArray(balls) || balls.length < 1 || !balls.every(isBall)) {
+    throw new Error(
+      "Level balls must contain valid definitions with ids, ownership, finite x/y, and positive radii.",
+    );
+  }
+  if (new Set(balls.map((ball) => ball.id)).size !== balls.length) {
+    throw new Error("Level Ball ids must be unique.");
+  }
+  for (const ball of balls) {
+    if (ball.ownership === "fixed" && ball.initiallyPlaced === false) {
+      throw new Error("A fixed Ball must be initially placed.");
+    }
+  }
+  const unplacedPlayerBalls = balls.filter(
+    (ball) => ball.ownership === "player" && ball.initiallyPlaced === false,
+  );
+  if (inventory.ball !== unplacedPlayerBalls.length) {
+    throw new Error(
+      "Ball inventory must equal the number of initially unplaced player-owned Balls.",
+    );
   }
   if (!Array.isArray(ramps) || ramps.length < 2 || !ramps.every(isRamp)) {
     throw new Error(
@@ -241,10 +268,14 @@ export function validateLevel(value: unknown): LevelDefinition {
     throw new Error("Level block ids must be unique.");
   }
   if (
-    new Set([...ramps, ...blocks].map((component) => component.id)).size !==
-    ramps.length + blocks.length
+    new Set([
+      ...balls.map((ball) => ball.id),
+      ...ramps.map((ramp) => ramp.id),
+      ...blocks.map((block) => block.id),
+    ]).size !==
+    ramps.length + blocks.length + balls.length
   ) {
-    throw new Error("Level editable component ids must be unique.");
+    throw new Error("Level component ids must be unique.");
   }
   if (!isRectangle(floor)) {
     throw new Error("Level floor must be a valid rectangle.");
@@ -265,7 +296,7 @@ export function validateLevel(value: unknown): LevelDefinition {
     inventory,
     contactRules: validatedContactRules,
     actors: validatedActors,
-    ball,
+    balls,
     ramps,
     blocks,
     floor,

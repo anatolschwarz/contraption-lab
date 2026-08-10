@@ -5,8 +5,9 @@
 Contraption Lab is a browser-only physics-puzzle prototype with three
 lightweight built-in puzzles in a global sequence: Basic, Medium, and Hard.
 The initial level, **Relay Ramps**, is playable in a fixed 960×540 simulation
-area. It has a ball, goal, floor, two preplaced player ramps, one fixed guide
-block, and level-defined tray inventory (currently Block 2 and Ramp 4).
+area. It has a fixed Ball, a preplaced player-owned Ball, goal, floor, two
+preplaced player ramps, one fixed guide block, and level-defined tray inventory
+(currently Ball 0, Block 2, and Ramp 4).
 
 The untouched layout fails. The known working solution is:
 
@@ -78,15 +79,26 @@ same 25° rotation (five 5° Q/E steps).
   controls, added visible rejected-edit feedback, and expanded browser coverage
   to nine scenarios across solve/Next Puzzle, inventory, Rerun/Reset, timed
   controls/timeout, progression, Settings, actor/contact, and ownership flows.
+- **#20 — Ball as a normal component/part:** Balls are JSON-defined with ids,
+  ownership, optional initial placement, and per-puzzle inventory count. Fixed
+  Balls are non-editable; player-owned Balls support Edit selection,
+  movement/removal, tray placement, Reset, and Run-start Rerun snapshots while
+  remaining dynamic Matter bodies during simulation. The prototype supports
+  the minimal multi-Ball case: fixed and player-owned Balls coexist, retain
+  independent runtime/run-start transforms, and every Ball carries the `ball`
+  contact tag. Ball inventory equals the number of initially unplaced
+  player-owned Balls.
 
 ## Current behavior
 
 ### Modes
 
-- **Edit:** physics is paused. Player-owned ramps and blocks can be selected
-  and moved; ramps also rotate with Q/E. The tray is enabled when stock exists.
+- **Edit:** physics is paused. Player-owned ramps, blocks, and Balls can be
+  selected and moved; ramps also rotate with Q/E. The tray is enabled when
+  stock exists.
 - **Run / Pause:** Run starts or resumes Matter physics; Pause freezes it.
-  Editing and tray controls are disabled.
+  Editing and tray controls are disabled. Pause, Success, and Timeout preserve
+  the live Ball physics transform rather than restoring its Edit layout.
 - **Success:** goal contact pauses the simulation and locks Edit/Run. Rerun and
   Reset remain available.
 - **Timed puzzles:** an optional positive `timeLimitSeconds` starts counting
@@ -105,12 +117,16 @@ same 25° rotation (five 5° Q/E steps).
 
 ### Part ownership, placement, and inventory
 
-- Fixed level parts are static during Edit and Run and are never selectable,
-  movable, rotatable, removable, or inventoried.
+- Fixed level parts are static during Edit and are never selectable, movable,
+  rotatable, removable, or inventoried. Fixed Balls remain dynamic Matter bodies
+  during Run.
 - Player parts can be preplaced in level JSON or tray-spawned. Removing either
   kind returns one matching inventory item.
-- A new ramp/block must remain within the playfield and cannot penetrate the
-  ball, another ramp, or another block. Goal overlap is allowed deliberately.
+- Balls follow the same ownership/inventory rules. Ball ids are unique;
+  inventory counts unplaced player-owned Balls only. Tray replacement restores
+  the matching absent JSON Ball id and geometry.
+- An editable Ball, ramp, or block must remain within the playfield and cannot
+  penetrate another Ball, ramp, or block. Goal overlap is allowed deliberately.
 - Single clicks select. A double-click is two completed clicks on the same
   editable part within 350 ms, each below the 8 px movement threshold. Drags,
   slow clicks, and clicks across different parts do not remove a part.
@@ -159,7 +175,8 @@ npm run build
 `npm run test:e2e -- --workers=1` is available separately and covers the
 two-ramp solution/Next Puzzle flow, inventory removal/replacement, Rerun and
 Reset, timed Run/Pause/Resume/Rerun/Timeout, progression persistence, Unlock
-all, Bird patrol/contact rules, and fixed-versus-editable parts. Run
+all, Bird patrol/contact rules, fixed/player-owned Ball behavior, and live Ball
+transform preservation. Run
 `npx playwright test --repeat-each=5 --workers=1` externally to stress the
 deterministic browser path.
 
@@ -171,8 +188,8 @@ deterministic browser path.
 - Puzzle Editor and Settings are separate screens when implemented.
 - Progress persists locally. Sequential unlocking is the default; Settings can
   enable Unlock all without deleting earned progress.
-- The next numbered milestones are #20 Ball as a normal component/part, #21
-  Compact Play toolbar, and #22 Dockable/collapsible Parts Palette. The Palette
+- The next numbered milestones are #21 Compact Play toolbar and #22
+  Dockable/collapsible Parts Palette. The Palette
   remains per-puzzle for both contents and quantities.
 
 ## Known limitations and issues

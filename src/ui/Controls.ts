@@ -56,6 +56,8 @@ export class Controls {
     requireElement<HTMLParagraphElement>("edit-feedback");
   private readonly trayBlockButton =
     requireElement<HTMLButtonElement>("tray-block-button");
+  private readonly trayBallButton =
+    requireElement<HTMLButtonElement>("tray-ball-button");
   private readonly trayRampButton =
     requireElement<HTMLButtonElement>("tray-ramp-button");
   private readonly rerunButton =
@@ -86,6 +88,13 @@ export class Controls {
     this.trayBlockButton.addEventListener("click", () =>
       onAction({ type: "spawn-tray-block", componentId: "" }),
     );
+    this.trayBallButton.addEventListener("click", () =>
+      onAction({
+        type: "spawn-tray-ball",
+        componentId: "",
+        transform: { position: { x: 0, y: 0 } },
+      }),
+    );
     this.trayRampButton.addEventListener("click", () =>
       onAction({ type: "spawn-tray-ramp", componentId: "" }),
     );
@@ -111,6 +120,9 @@ export class Controls {
     this.trayBlockButton.disabled =
       state.mode !== "edit" || state.succeeded || state.trayBlockCount === 0;
     this.trayBlockButton.textContent = `Block (${state.trayBlockCount})`;
+    this.trayBallButton.disabled =
+      state.mode !== "edit" || state.succeeded || state.trayBallCount === 0;
+    this.trayBallButton.textContent = `Ball (${state.trayBallCount})`;
     this.trayRampButton.disabled =
       state.mode !== "edit" || state.succeeded || state.trayRampCount === 0;
     this.trayRampButton.textContent = `Ramp (${state.trayRampCount})`;

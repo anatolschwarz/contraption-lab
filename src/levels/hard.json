@@ -4,7 +4,7 @@
   "difficulty": "Hard",
   "order": 3,
   "timeLimitSeconds": 30,
-  "inventory": { "block": 0, "ramp": 2 },
+  "inventory": { "ball": 0, "block": 0, "ramp": 2 },
   "contactRules": [
     {
       "contacts": ["ball", "block"],
@@ -12,7 +12,15 @@
     }
   ],
   "actors": [],
-  "ball": { "x": 215, "y": 135, "radius": 24 },
+  "balls": [
+    {
+      "id": "prototype-ball",
+      "x": 215,
+      "y": 135,
+      "radius": 24,
+      "ownership": "fixed"
+    }
+  ],
   "ramps": [
     {
       "id": "upper-ramp",

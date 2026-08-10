@@ -63,6 +63,38 @@ Run typecheck, lint, tests, format check, build.
 Do not commit or push.
 ```
 
+---
+
+## #20 follow-up — Player-owned Ball selection
+
+**VERBATIM**
+
+```text
+Continue milestone #20.
+
+Bug:
+The player-owned Ball is not selectable in Edit mode.
+
+Fix selection first.
+
+Requirements:
+- Clicking a player-owned Ball in Edit mode selects it.
+- Show the normal selected-part visual feedback.
+- Clicking empty space deselects it.
+- Fixed Ball must remain non-selectable.
+- Run/Pause must disable Ball selection.
+- Integrate Ball into the same generic editable-component pointer/selection flow used by Ramp/Block.
+- Do not add Ball-specific parallel interaction logic unless unavoidable.
+- Preserve existing Ball physics, inventory, Reset/Rerun and contact behavior.
+
+After selection works, ensure existing generic dragging works for Ball too.
+
+Add focused tests.
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+Run typecheck, lint, tests, format check, build.
+Do not commit or push.
+```
+
 ### Step 7 — First playable technical prototype
 
 **RECONSTRUCTED**
@@ -1871,4 +1903,491 @@ Report:
 - roadmap entries added/modified
 - backlog section restored/preserved
 - any stale or contradictory documentation removed
+```
+
+---
+
+## #20 — Ball as a normal component/part
+
+**VERBATIM**
+
+```text
+Start milestone #20: integrate Ball into the general component/ownership/inventory model.
+
+Goal:
+Ball should use the same level-driven part architecture as Ramp and Block wherever practical, instead of being a special hardcoded gameplay object.
+
+Requirements:
+
+Level data / ownership
+- Ball remains defined by puzzle JSON.
+- Support Ball ownership semantics:
+  - fixed
+  - preplaced/player-owned
+  - inventory/tray-available
+- Fixed Ball:
+  - cannot be selected, moved, removed, or returned to inventory.
+- Player-owned Ball:
+  - selectable and draggable in Edit mode.
+  - removable using the existing removal interaction.
+  - removal returns +1 Ball to inventory.
+  - placing Ball from inventory consumes -1.
+- Reset restores JSON-defined Ball placement and original inventory.
+- Rerun restores the Ball state captured at Run start.
+
+Physics
+- Preserve existing Ball Matter physics behavior during Run.
+- Ball remains dynamic during simulation.
+- Do not change gravity, collision behavior, goal detection, or known puzzle solutions.
+- Edit-mode placement must obey existing bounds/overlap validation.
+
+Architecture
+- Reduce Ball-specific state/UI code where it can cleanly use the generic part model.
+- Do NOT force a risky large refactor merely for abstraction.
+- Existing contact-rule tag `ball` must continue working.
+- Preserve timer, progression, autonomous actors, puzzle switching, fixed-step simulation, and deterministic behavior.
+
+Scope
+- Current puzzles may continue to use one Ball.
+- Architect cleanly enough that multiple Balls are not unnecessarily prevented, but do NOT implement multi-ball gameplay unless it falls out naturally and safely.
+- Do not implement #21 toolbar or #22 Parts Palette changes yet.
+
+Tests
+Add focused tests for:
+- fixed Ball behavior
+- player-owned preplaced Ball
+- Ball removal -> inventory increment
+- Ball placement -> inventory decrement
+- Reset
+- Rerun
+- overlap/bounds rejection
+- existing goal/contact behavior
+
+Update:
+- README.md
+- docs/PROJECT_STATE.md
+- docs/ROADMAP.md
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run:
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+
+Do not commit or push.
+
+Report:
+- Ball-specific assumptions removed/retained
+- data-model changes
+- inventory behavior
+- files changed
+- validation results
+```
+
+---
+
+## #20 follow-up — Player-owned Ball Edit interaction
+
+**VERBATIM**
+
+```text
+Continue milestone #20.
+
+Bug:
+A player-owned Ball cannot currently be selected or dragged in Edit mode.
+
+Required behavior:
+- Player-owned/preplaced Ball:
+  - single click selects it
+  - drag moves it in Edit mode
+  - placement obeys playfield bounds and overlap validation
+  - selected Ball has the same clear selection feedback as other editable parts
+- Fixed Ball remains non-editable.
+- Run/Pause disables Ball editing.
+- Ball remains dynamic during Run.
+- Removal/inventory/Reset/Rerun behavior from #20 must remain intact.
+- Do not change puzzle physics or known solutions.
+
+Diagnose why Ball is not participating in the existing editable-component pointer flow.
+Prefer integrating it into the generic interaction path rather than adding a separate Ball-only handler.
+
+Add focused tests.
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run typecheck, lint, tests, format check, build.
+Do not commit or push.
+```
+
+---
+
+## #20 repair — governing Sol review
+
+**VERBATIM**
+
+```text
+Continue milestone #20 using docs/reviews/MILESTONE_20_SOL_REVIEW.md as the governing review.
+
+Implement the focused repair plan. Do not redesign gameplay.
+
+1. Fix Ball runtime-state regression
+- Pause, Success, and Timeout must NOT snap the dynamic Ball back to its Edit-layout transform.
+- Stop unconditional Ball transform synchronization during unrelated applyState() calls.
+- Rerun must restore Run-start Ball position with fresh physics state.
+- Reset must restore JSON Ball state.
+
+2. Fix player-owned Ball verification
+- Remove the E2E setup that calls scene.resetLevel() directly and leaves recreated components input-disabled.
+- Test player-owned Ball through the real application flow.
+- Player-owned Ball must:
+  - select
+  - drag
+  - show selection feedback
+  - obey bounds/overlap rules
+  - be removable
+  - return to Ball inventory
+  - be placeable again from inventory
+- Fixed Ball remains non-editable and shows fixed-part feedback.
+
+3. Clean up obvious Ball ownership inconsistencies
+- Reuse isEditablePart() for Ball.
+- Distinguish missing component registry entry from genuinely fixed ownership.
+- Do not report a missing/stale registry entry as “Fixed part”.
+
+4. Make the existing one-Ball inventory model internally coherent
+- Tray must not advertise Ball inventory that cannot actually be placed.
+- Validate incoherent Ball ownership/placement/inventory combinations.
+- Derive tray Ball geometry from level/component data rather than hardcoded radius where feasible.
+- Do NOT implement multi-ball gameplay.
+
+5. Keep scope bounded
+Do NOT:
+- change built-in Ball ownership merely to make tests pass
+- make fixed-owned Ball physically static during Run
+- change gravity/collision/goal/contact behavior
+- redesign known puzzles
+- perform a large generic editor/component refactor
+- implement #21/#22
+
+Tests:
+- fixed Ball
+- player-owned preplaced Ball selection/drag/removal/inventory
+- tray Ball placement/removal
+- Pause no-snap
+- Success no-snap
+- Timeout no-snap
+- Rerun
+- Reset
+- validation of invalid Ball configurations
+
+Update README, PROJECT_STATE, ROADMAP as needed.
+Mark #20 complete only if production behavior and tests support it.
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run:
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+
+Do not commit or push.
+
+Report:
+- each review finding addressed
+- anything deliberately deferred
+- files changed
+- validation results
+```
+
+---
+
+## #20 follow-up — E2E semantics
+
+**VERBATIM**
+
+```text
+Continue milestone #20.
+
+External E2E result:
+13 tests: 10 passed, 3 failed.
+
+Do NOT change gameplay until these failures are checked against intended semantics.
+
+Failure 1 — player Ball drag:
+Expected x=320, actual x=320.730994.
+This appears to be normal canvas/browser coordinate scaling.
+Use a small position tolerance (about ±1 px), consistent with existing ramp E2E handling.
+Do not weaken ownership/inventory assertions.
+
+Failure 2 — Pause live-position test:
+The test expects Ball {x:400,y:120} after Pause, but actual y=139.236.
+This is likely the CORRECT production behavior because gravity moved the Ball before Pause.
+
+Rewrite this test so it:
+- captures the actual live Ball position immediately before Pause
+- pauses
+- verifies the Ball remains at that captured live position while paused
+- verifies it does NOT snap back to the Edit/run-start transform
+
+Do not assert the original pre-Run position after Pause.
+
+Apply the same semantic principle to Success and Timeout:
+- capture/verify the live physical position
+- ensure the state transition does not overwrite it with stale Edit transform.
+
+Failure 3 — Rerun:
+Rerun restores the Run-start layout AND immediately resumes simulation.
+The test currently expects exact Run-start position and zero velocity after Rerun, but physics may already have advanced one or more fixed 60 Hz steps before Playwright reads it.
+
+Fix the test deterministically:
+- verify the Rerun restoration itself against the captured run-start Ball snapshot using an appropriate read-only test hook/state observation
+- separately verify that the newly recreated Ball begins with fresh physics state
+- do not require an arbitrary later browser read to still have zero velocity
+- preserve the intended behavior that Rerun immediately runs
+
+Do not:
+- change fixed-step simulation
+- change Rerun semantics
+- change Ball physics
+- add sleeps/retries
+- loosen assertions unrelated to browser-coordinate tolerance
+
+If investigation shows any real gameplay bug, report it before changing production behavior.
+
+Add/update focused tests as necessary.
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run:
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+
+Do not commit or push.
+
+Report root cause and fix separately for all 3 failures.
+```
+
+---
+
+## #20 follow-up — Ball edit-state trace
+
+**VERBATIM**
+
+```text
+Continue milestone #20.
+
+Focused Ball E2E result:
+- Pause/Success/Timeout: PASS
+- Rerun/Reset physics: PASS
+- player-owned Ball edit/remove/replace: FAIL
+
+Failure:
+expectBallPosition() expected one position but actual Ball X differs by ~442 px.
+
+This is not browser sub-pixel scaling.
+
+Diagnose exactly which step at/around e2e/puzzle.e2e.ts:580 has the wrong semantic expectation.
+
+Instrument the test after each operation and report:
+- Ball id
+- ownership
+- fromTray
+- x/y
+- Ball inventory count
+- selected component
+- operation just performed
+
+Specifically distinguish:
+1. dragged preplaced Ball
+2. removed Ball
+3. Ball placed again from inventory
+4. Reset-restored JSON Ball
+
+Determine whether:
+- tray placement intentionally uses a spawn position different from the removed Ball position, or
+- production state/restoration is wrong.
+
+Do not change gameplay unless a real bug is proven.
+Do not increase POSITION_TOLERANCE.
+Do not weaken inventory/ownership assertions.
+
+Fix the test if its expected position is semantically wrong.
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+Run normal validation.
+Do not commit or push.
+
+Report exact root cause and the expected Ball position/state at each step.
+```
+
+---
+
+## #20 follow-up — boundary Ball removal
+
+**VERBATIM**
+
+```text
+Continue milestone #20.
+
+Focused E2E still fails:
+
+After moving the player-owned Ball to about (24,30), removeBall() is called.
+Expected tray: Ball (1)
+Actual tray: Ball (0)
+
+Do NOT change the expectation or gameplay yet.
+
+Diagnose the removal path precisely.
+
+Instrument/report immediately before and after removeBall():
+- Ball x/y
+- Ball radius/body bounds
+- selectedComponentId
+- component id/kind/ownership/fromTray
+- pointer coordinates used by removeBall()
+- pointerdown/up/double-click handling
+- whether removal handler executes
+- Ball inventory before/after
+- whether the Ball still exists afterward
+
+Determine whether:
+A. the E2E helper misses the Ball after the bounds-clamped drag, or
+B. player-owned Ball removal has a real production bug.
+
+Pay special attention to the Ball being near the top-left boundary at approximately (24,30).
+
+If test targeting is wrong, fix only the helper/test.
+If production removal is wrong, make the smallest coherent production fix.
+
+Do not loosen inventory assertions.
+Do not add arbitrary sleeps/retries.
+Do not change Ball physics or ownership semantics.
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+Run normal validation.
+Do not commit or push.
+
+Report exact root cause before/with the fix.
+```
+
+---
+
+## Post-#20 — minimal multi-Ball prototype
+
+**VERBATIM**
+
+```text
+Continue after milestone #20.
+
+Goal:
+Add a second Ball to the prototype puzzle while keeping the existing Ball fixed/non-editable.
+
+This intentionally introduces minimal multi-Ball support. Do not implement unrelated #21/#22 work.
+
+Required prototype behavior:
+
+* Keep the existing Ball exactly as-is:
+
+  * ownership: fixed
+  * non-selectable/non-draggable/non-removable in Edit
+  * still dynamic under Matter physics during Run
+* Add a second JSON-defined Ball with a unique id.
+* The second Ball is:
+
+  * preplaced
+  * player-owned/editable
+  * selectable by single click
+  * draggable in Edit mode
+  * shown with normal selection feedback
+  * removable by the existing double-click interaction
+  * returned to Ball inventory when removed
+  * placeable again from Ball inventory
+* Initial Ball inventory = 0.
+* Remove editable Ball -> Ball inventory = 1.
+* Place it again -> Ball inventory = 0.
+* Reset restores both JSON-defined Balls and Ball inventory = 0.
+* Rerun restores both Balls to their Run-start states with fresh physics state.
+
+Architecture:
+
+* Remove the current one-Ball assumption cleanly enough to support these two Balls.
+* Balls must be identified by their JSON ids; no hardcoded prototype-Ball identity.
+* Do not create a second parallel Ball interaction system.
+* Reuse the generic component/ownership/editability path from #20.
+* Generalize state/registry/scene handling only as much as required for multiple Ball instances.
+* Keep `ball` contact tagging working for every Ball.
+* Preserve existing gravity, collision, goal, timer, progression, actor/contact, puzzle-switching, and fixed 60 Hz simulation behavior.
+* Do not perform a broad generic component/state refactor.
+
+Placement validation:
+
+* Each editable Ball must obey playfield bounds.
+* It must not overlap another Ball, Ramp, or Block when edited/placed, consistent with current placement rules.
+* Fixed Ball must participate as an obstacle during Edit validation.
+
+Puzzle behavior:
+
+* Place the new editable Ball where it does not unintentionally change the existing known puzzle solution.
+* Do not redesign the puzzle.
+* Existing fixed Ball behavior and existing E2E scenarios must remain valid.
+* If current success/goal logic assumes a single Ball, generalize it minimally so Ball identity does not break goal detection; preserve current gameplay semantics.
+
+Validation/schema:
+
+* Replace the current one-Ball validation rules with coherent multi-Ball validation.
+* Validate unique Ball ids.
+* Inventory should represent unplaced player-owned Balls, not fixed Balls.
+* Do not allow impossible inventory/placement combinations.
+
+Tests:
+Add focused tests for:
+
+* fixed + player-owned Ball coexistence
+* independent Ball ids/state
+* editable Ball selection and drag
+* Ball-vs-Ball overlap rejection
+* editable Ball removal -> inventory +1
+* replacement -> inventory -1
+* Reset restores both Balls
+* Rerun restores both Run-start Ball states
+* fixed Ball remains non-editable
+* existing goal/contact behavior works with multiple Ball instances
+
+E2E:
+Add one focused browser scenario covering the two-Ball prototype flow without weakening the existing 13 scenarios.
+
+Update:
+
+* README.md
+* docs/PROJECT_STATE.md
+* docs/ROADMAP.md only if needed to record that minimal multi-Ball support now exists
+* append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md
+
+Run:
+
+* npm run typecheck
+* npm run lint
+* npm test
+* npm run format:check
+* npm run build
+* npm run test:e2e -- --workers=1 where the environment permits
+
+Do not commit or push.
+
+Report:
+
+* previous one-Ball assumptions found
+* exact data/state changes
+* second Ball JSON definition
+* inventory semantics
+* files changed
+* unit/build results
+* E2E result
+* anything deliberately deferred
 ```

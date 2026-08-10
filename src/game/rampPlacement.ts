@@ -38,13 +38,38 @@ export function rotateRampByStep(rotation: number, direction: -1 | 1): number {
 
 export function isRectanglePlacementValid(
   ramp: Readonly<RectanglePlacement>,
-  ball: Readonly<CircleGeometry>,
+  ball: Readonly<CircleGeometry> | undefined,
   otherRectangles: ReadonlyArray<Readonly<RectanglePlacement>>,
 ): boolean {
   return (
-    !rampPenetratesCircle(ramp, ball) &&
+    (ball === undefined || !rampPenetratesCircle(ramp, ball)) &&
     !otherRectangles.some((otherRectangle) =>
       rectanglesPenetrate(ramp, otherRectangle),
+    )
+  );
+}
+
+export function clampCirclePosition(
+  position: Readonly<Point>,
+  radius: number,
+): Point {
+  return {
+    x: Math.min(Math.max(position.x, radius), PLAYABLE_WIDTH - radius),
+    y: Math.min(Math.max(position.y, radius), PLAYABLE_HEIGHT - radius),
+  };
+}
+
+export function isCirclePlacementValid(
+  circle: Readonly<CircleGeometry>,
+  rectangles: ReadonlyArray<Readonly<RectanglePlacement>>,
+  otherCircles: ReadonlyArray<Readonly<CircleGeometry>> = [],
+): boolean {
+  return (
+    !rectangles.some((rectangle) => rampPenetratesCircle(rectangle, circle)) &&
+    !otherCircles.some(
+      (otherCircle) =>
+        (circle.x - otherCircle.x) ** 2 + (circle.y - otherCircle.y) ** 2 <
+        (circle.radius + otherCircle.radius) ** 2,
     )
   );
 }

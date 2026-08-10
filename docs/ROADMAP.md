@@ -46,11 +46,13 @@ without a separate scoped milestone request.
 
 ## #20 — Ball as a normal component/part
 
-- Integrate Ball into the general component/ownership model.
-- Let puzzle definitions determine whether Ball is fixed, preplaced/player-owned, or
-  available through inventory.
-- Reduce unnecessary Ball-specific assumptions.
-- Preserve existing ball physics and puzzle behavior.
+- Completed: Ball uses a minimal level-driven multi-Ball ownership/inventory
+  model: unique JSON ids, fixed and player-owned coexistence, and stock equal
+  to omitted player-owned Balls.
+- Completed: player-owned Ball selection, placement, removal, Reset, and Rerun
+  share the existing interaction rules while fixed Balls retain fixed-part
+  feedback. Pause, Success, and Timeout retain the live dynamic Matter
+  transform; no gameplay physics or built-in puzzle layout changed.
 
 ## #21 — Compact Play toolbar
 

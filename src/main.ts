@@ -25,6 +25,7 @@ import {
   transitionGameState,
   type GameAction,
   type GameState,
+  updateBallTransform,
   updateBlockTransform,
   updateRampTransform,
 } from "./state/gameState";
@@ -109,6 +110,11 @@ function handleAction(action: GameAction): void {
     if (!componentId) return;
     action = { ...action, componentId };
   }
+  if (typeof action === "object" && action.type === "spawn-tray-ball") {
+    const ball = scene?.spawnTrayBall(state.trayBallCount);
+    if (!ball) return;
+    action = { ...action, componentId: ball.id, transform: ball.transform };
+  }
   if (typeof action === "object" && action.type === "advance-time") {
     const previousMode = state.mode;
     replaceGameState(transitionGameState(state, action));
@@ -186,6 +192,10 @@ function createGame(): void {
     },
     (blockId, transform) => {
       replaceGameState(updateBlockTransform(state, blockId, transform));
+      applyState();
+    },
+    (ballId, transform) => {
+      replaceGameState(updateBallTransform(state, ballId, transform));
       applyState();
     },
     (componentId, returnsTrayPart) =>

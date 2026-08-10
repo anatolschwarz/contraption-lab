@@ -29,16 +29,17 @@ Open the local address printed by Vite.
 The prototype starts in **Edit** mode with Matter physics paused. The untouched
 level does not solve itself.
 
-- **Edit** — select a player-owned ramp or block with one click. Drag it to
-  move it; press Q/E to rotate a selected ramp in 5° steps. Blocks do not
-  rotate. Double-click the same editable part to remove it. A completed
+- **Edit** — select a player-owned ramp, block, or Ball with one click. Drag it
+  to move it; press Q/E to rotate a selected ramp in 5° steps. Blocks and
+  Balls do not rotate. Double-click the same editable part to remove it. A completed
   double-click allows small pointer jitter, but dragging, slow clicks, and
   clicks on different parts do not remove anything.
 - **Run** — captures the current edit layout and inventory, then starts the
   simulation.
-- **Pause** — freezes a running simulation. Run resumes it.
+- **Pause** — freezes a running simulation at its live physics state. Run
+  resumes it.
 - **Rerun** — while Running, Paused, or Success, restores the layout and tray
-  inventory captured when that run started, resets the ball and success state,
+  inventory captured when that run started, resets every Ball and success state,
   and immediately runs again.
 - **Reset** — restores the original JSON level layout and JSON-defined initial
   inventory. It is different from Rerun.
@@ -52,15 +53,22 @@ Untimed levels omit the field and otherwise behave as before. Relay Ramps is
 the timed demo and declares a 45-second limit in its JSON.
 
 The Parts tray is also available only in Edit. Its counts come from the level
-JSON; the current prototype starts with Block (2) and Ramp (4). Choosing an
-available tray part places a valid new part and selects it. Placing consumes
-one item; removing any player-owned part returns one item of that type.
+JSON; the current prototype starts with Ball (0), Block (2), and Ramp (4).
+Choosing an available tray part places a valid new part and selects it. Placing
+consumes one item; removing any player-owned part returns one item of that
+type. A Ball uses the same fixed/player-owned ownership model: fixed Balls are
+not editable, while player-owned Balls can be moved, removed, and returned to
+the Ball inventory. Levels may define multiple Balls by unique JSON id. Ball
+stock represents exactly the player-owned Balls initially omitted from the
+board; fixed Balls are never stock. The prototype puzzle has one fixed Ball
+and one preplaced player-owned Ball, so its initial Ball stock is zero.
 
 Level parts have explicit ownership:
 
-- **Fixed** parts are defined in JSON, remain static, and cannot be selected,
-  moved, rotated, or removed. The `FIXED` guide block is visible in the
-  prototype level.
+- **Fixed** parts are defined in JSON and cannot be selected, moved, rotated,
+  or removed. Fixed ramps and blocks remain static; fixed Balls remain dynamic
+  Matter bodies during Run. The `FIXED` guide block is visible in the prototype
+  level.
 - **Player-owned** parts may be preplaced in JSON or spawned from the tray.
   They are editable according to their component capabilities.
 
@@ -72,14 +80,15 @@ gravity-free dynamic Matter bodies, so they physically collide with solid parts
 while still producing contact-rule events. Actors are not editable by the
 player.
 
-Matter advances through a scene-owned 60 Hz fixed-step accumulator. Patrol
-velocity, contacts, and timed countdowns advance on those same steps, keeping
+Matter advances through a scene-owned 60 Hz fixed-step accumulator. Ball
+physics, patrol velocity, contacts, and timed countdowns advance on those same
+steps, keeping
 the simulation independent of browser render-frame partitioning.
 
-During Edit, an editable ramp or block must stay inside the 960×540 playfield
-and may not penetrate the ball or any other ramp/block. A transform that would
-violate those rules is rejected and the last valid transform remains in use.
-Goal overlap is intentionally allowed.
+During Edit, an editable part must stay inside the 960×540 playfield and may
+not penetrate another Ball, ramp, or block. A transform that would violate
+those rules is rejected and the last valid transform remains in use. Goal
+overlap is intentionally allowed.
 
 ## Contact rules
 
@@ -147,17 +156,16 @@ npm run test:e2e
 It requires Playwright Chromium and a usable local Vite server.
 The production build succeeds with the known Vite bundle-size warning for the
 Phaser main chunk.
-Milestone #19 is complete.
+Milestones #19 and #20 are complete.
 
-The current browser suite has nine scenarios: solve/Next Puzzle, inventory
-removal and replacement, Rerun versus Reset, timed puzzle controls and timeout,
-locked-puzzle switching isolation, persisted progression, Unlock all,
-deterministic Bird/contact rules, and fixed-versus-editable parts.
+The browser suite has thirteen scenarios, including fixed and player-owned
+Ball coexistence, Ball placement/removal, runtime transform preservation
+through Pause/Success/Timeout, and two-Ball Rerun/Reset restoration.
 
 ## Planned roadmap
 
-The next numbered milestones are: #20 Ball as a normal component/part, #21
-Compact Play toolbar, and #22 Dockable/collapsible Parts Palette. Later work
+The next numbered milestones are: #21 Compact Play toolbar and #22
+Dockable/collapsible Parts Palette. Later work
 remains TBD in the roadmap backlog. See
 [`docs/ROADMAP.md`](docs/ROADMAP.md) for scoped definitions.
 

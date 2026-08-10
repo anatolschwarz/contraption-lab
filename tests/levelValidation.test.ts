@@ -8,8 +8,77 @@ describe("validateLevel", () => {
   });
 
   it("rejects malformed level data with a useful message", () => {
-    const invalid = { ...rawLevel, ball: { x: 10, y: 10, radius: -1 } };
-    expect(() => validateLevel(invalid)).toThrow(/ball.*positive radius/i);
+    const invalid = {
+      ...rawLevel,
+      balls: [{ ...rawLevel.balls[0], radius: -1 }, rawLevel.balls[1]],
+    };
+    expect(() => validateLevel(invalid)).toThrow(/balls.*positive radi/i);
+  });
+
+  it("accepts unplaced player-owned Ball inventory", () => {
+    const playerOwned = validateLevel({
+      ...rawLevel,
+      inventory: { ...rawLevel.inventory, ball: 1 },
+      balls: [
+        rawLevel.balls[0],
+        { ...rawLevel.balls[1], initiallyPlaced: false },
+      ],
+    });
+    expect(playerOwned.balls[1]).toMatchObject({
+      ownership: "player",
+      initiallyPlaced: false,
+    });
+    expect(playerOwned.inventory.ball).toBe(1);
+  });
+
+  it("rejects incoherent Ball ownership, placement, and inventory", () => {
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        balls: [
+          { ...rawLevel.balls[0], initiallyPlaced: false },
+          rawLevel.balls[1],
+        ],
+        inventory: { ...rawLevel.inventory, ball: 1 },
+      }),
+    ).toThrow(/fixed Ball.*initially placed/i);
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        inventory: { ...rawLevel.inventory, ball: 1 },
+      }),
+    ).toThrow(/Ball inventory.*initially unplaced/i);
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        balls: [
+          rawLevel.balls[0],
+          { ...rawLevel.balls[1], initiallyPlaced: false },
+        ],
+      }),
+    ).toThrow(/Ball inventory.*initially unplaced/i);
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        inventory: { ...rawLevel.inventory, ball: 2 },
+        balls: [
+          rawLevel.balls[0],
+          { ...rawLevel.balls[1], initiallyPlaced: false },
+        ],
+      }),
+    ).toThrow(/Ball inventory.*initially unplaced/i);
+  });
+
+  it("requires unique Ball ids", () => {
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        balls: [
+          rawLevel.balls[0],
+          { ...rawLevel.balls[1], id: "prototype-ball" },
+        ],
+      }),
+    ).toThrow(/Ball ids.*unique/i);
   });
 
   it("accepts an omitted time limit and rejects invalid limits clearly", () => {
@@ -140,10 +209,19 @@ describe("validateLevel", () => {
         ...rawLevel,
         blocks: [{ ...rawLevel.blocks[0], id: "upper-ramp" }],
       }),
-    ).toThrow(/editable component ids.*unique/i);
+    ).toThrow(/component ids.*unique/i);
   });
 
   it("requires explicit fixed or player ownership for every part", () => {
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        balls: [
+          { ...rawLevel.balls[0], ownership: "unknown" },
+          rawLevel.balls[1],
+        ],
+      }),
+    ).toThrow(/ball/i);
     expect(() =>
       validateLevel({
         ...rawLevel,
