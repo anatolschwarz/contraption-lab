@@ -4,7 +4,7 @@
   "difficulty": "Hard",
   "order": 3,
   "timeLimitSeconds": 30,
-  "inventory": { "ball": 0, "block": 0, "ramp": 2 },
+  "inventory": { "ball": 0, "bird": 0, "block": 0, "ramp": 2 },
   "contactRules": [
     {
       "contacts": ["ball", "block"],

@@ -37,7 +37,7 @@ describe("the first real puzzle pair", () => {
       difficulty: "Basic",
       order: 4,
       timeLimitSeconds: 10,
-      inventory: { ball: 0, block: 0, ramp: 2 },
+      inventory: { ball: 0, bird: 0, block: 0, ramp: 2 },
       ramps: [],
     });
     expect(downTheRamp.balls).toEqual([
@@ -61,7 +61,7 @@ describe("the first real puzzle pair", () => {
       difficulty: "Basic",
       order: 5,
       timeLimitSeconds: 12,
-      inventory: { ball: 0, block: 0, ramp: 2 },
+      inventory: { ball: 0, bird: 0, block: 0, ramp: 2 },
       ramps: [],
     });
     expect(bridgeTheGap.balls).toEqual([

@@ -62,7 +62,7 @@ describe("the bundled relay-ramp puzzle", () => {
   });
 
   it("defines the initial tray inventory", () => {
-    expect(level.inventory).toEqual({ ball: 0, block: 2, ramp: 4 });
+    expect(level.inventory).toEqual({ ball: 0, bird: 0, block: 2, ramp: 4 });
   });
 
   it("declares the block-destruction contact demo", () => {
@@ -72,11 +72,12 @@ describe("the bundled relay-ramp puzzle", () => {
     });
   });
 
-  it("defines a fixed bird actor with a horizontal patrol", () => {
+  it("defines fixed and player-owned Birds with slower horizontal patrols", () => {
     expect(level.actors).toEqual([
       {
         id: "patrol-bird",
         tag: "bird",
+        ownership: "fixed",
         x: 680,
         y: 150,
         width: 36,
@@ -84,9 +85,26 @@ describe("the bundled relay-ramp puzzle", () => {
         movement: {
           type: "patrol",
           axis: "horizontal",
-          speed: 40,
+          speed: 20,
           min: 680,
           max: 920,
+          direction: 1,
+        },
+      },
+      {
+        id: "player-bird",
+        tag: "bird",
+        ownership: "player",
+        x: 140,
+        y: 300,
+        width: 36,
+        height: 24,
+        movement: {
+          type: "patrol",
+          axis: "horizontal",
+          speed: 20,
+          min: 90,
+          max: 300,
           direction: 1,
         },
       },

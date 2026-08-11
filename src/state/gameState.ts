@@ -24,6 +24,7 @@ export interface RunSnapshot {
   blockTransforms: Record<string, BlockTransform>;
   ballTransforms: Record<string, BallTransform>;
   trayBallCount: number;
+  trayBirdCount: number;
   trayBlockCount: number;
   trayRampCount: number;
 }
@@ -44,6 +45,11 @@ export interface SpawnTrayBallAction {
   transform: BallTransform;
 }
 
+export interface SpawnTrayBirdAction {
+  type: "spawn-tray-bird";
+  componentId: string;
+}
+
 export interface SpawnTrayRampAction {
   type: "spawn-tray-ramp";
   componentId: string;
@@ -52,7 +58,7 @@ export interface SpawnTrayRampAction {
 export interface RemoveComponentAction {
   type: "remove-component";
   componentId: string;
-  returnsTrayPart: "ball" | "block" | "ramp" | null;
+  returnsTrayPart: "ball" | "bird" | "block" | "ramp" | null;
 }
 
 export interface AdvanceTimeAction {
@@ -70,6 +76,7 @@ export type GameAction =
   | SelectComponentAction
   | SpawnTrayBlockAction
   | SpawnTrayBallAction
+  | SpawnTrayBirdAction
   | SpawnTrayRampAction
   | RemoveComponentAction
   | AdvanceTimeAction;
@@ -86,6 +93,7 @@ export interface GameState {
   ballTransforms: Record<string, BallTransform>;
   selectedComponentId: string | null;
   trayBallCount: number;
+  trayBirdCount: number;
   trayBlockCount: number;
   trayRampCount: number;
   runSnapshot?: RunSnapshot;
@@ -93,12 +101,16 @@ export interface GameState {
 
 export function createInitialGameState(
   inventory: Readonly<
-    Omit<InventoryDefinition, "ball"> & Partial<InventoryDefinition>
+    Omit<InventoryDefinition, "ball" | "bird"> & Partial<InventoryDefinition>
   >,
   timeLimitSeconds?: number,
   ballTransforms: Readonly<Record<string, BallTransform>> = {},
 ): GameState {
-  const normalizedInventory: InventoryDefinition = { ball: 0, ...inventory };
+  const normalizedInventory: InventoryDefinition = {
+    ball: 0,
+    bird: 0,
+    ...inventory,
+  };
   const normalizedBallTransforms = Object.fromEntries(
     Object.entries(ballTransforms).map(([id, transform]) => [
       id,
@@ -121,6 +133,7 @@ export function createInitialGameState(
     ballTransforms: { ...normalizedBallTransforms },
     selectedComponentId: null,
     trayBallCount: normalizedInventory.ball,
+    trayBirdCount: normalizedInventory.bird,
     trayBlockCount: normalizedInventory.block,
     trayRampCount: normalizedInventory.ramp,
   };
@@ -160,6 +173,7 @@ function createRunSnapshot(state: Readonly<GameState>): RunSnapshot {
     blockTransforms: { ...state.blockTransforms },
     ballTransforms: { ...state.ballTransforms },
     trayBallCount: state.trayBallCount,
+    trayBirdCount: state.trayBirdCount,
     trayBlockCount: state.trayBlockCount,
     trayRampCount: state.trayRampCount,
   };
@@ -174,6 +188,7 @@ function cloneRunSnapshot(
       blockTransforms: { ...snapshot.blockTransforms },
       ballTransforms: { ...snapshot.ballTransforms },
       trayBallCount: snapshot.trayBallCount,
+      trayBirdCount: snapshot.trayBirdCount,
       trayBlockCount: snapshot.trayBlockCount,
       trayRampCount: snapshot.trayRampCount,
     }
@@ -203,6 +218,7 @@ export function transitionGameState(
       ballTransforms: { ...state.runSnapshot.ballTransforms },
       selectedComponentId: null,
       trayBallCount: state.runSnapshot.trayBallCount,
+      trayBirdCount: state.runSnapshot.trayBirdCount,
       trayBlockCount: state.runSnapshot.trayBlockCount,
       trayRampCount: state.runSnapshot.trayRampCount,
       runSnapshot: cloneRunSnapshot(state.runSnapshot),
@@ -240,6 +256,7 @@ export function transitionGameState(
       ballTransforms: { ...state.ballTransforms },
       selectedComponentId: null,
       trayBallCount: state.trayBallCount,
+      trayBirdCount: state.trayBirdCount,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
       runSnapshot: cloneRunSnapshot(state.runSnapshot),
@@ -286,6 +303,15 @@ export function transitionGameState(
           },
           selectedComponentId: action.componentId,
           trayBallCount: state.trayBallCount - 1,
+        }
+      : { ...state };
+  }
+  if (typeof action === "object" && action.type === "spawn-tray-bird") {
+    return state.mode === "edit" && state.trayBirdCount > 0
+      ? {
+          ...state,
+          selectedComponentId: action.componentId,
+          trayBirdCount: state.trayBirdCount - 1,
         }
       : { ...state };
   }
@@ -337,6 +363,10 @@ export function transitionGameState(
         action.returnsTrayPart === "ball"
           ? state.trayBallCount + 1
           : state.trayBallCount,
+      trayBirdCount:
+        action.returnsTrayPart === "bird"
+          ? state.trayBirdCount + 1
+          : state.trayBirdCount,
       trayBlockCount:
         action.returnsTrayPart === "block"
           ? state.trayBlockCount + 1
@@ -362,6 +392,7 @@ export function transitionGameState(
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
       trayBallCount: state.trayBallCount,
+      trayBirdCount: state.trayBirdCount,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
       runSnapshot: createRunSnapshot(state),
@@ -379,6 +410,7 @@ export function transitionGameState(
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
       trayBallCount: state.trayBallCount,
+      trayBirdCount: state.trayBirdCount,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
       runSnapshot: cloneRunSnapshot(state.runSnapshot),
@@ -396,6 +428,7 @@ export function transitionGameState(
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
       trayBallCount: state.trayBallCount,
+      trayBirdCount: state.trayBirdCount,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
       runSnapshot: cloneRunSnapshot(state.runSnapshot),
@@ -413,6 +446,7 @@ export function transitionGameState(
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
       trayBallCount: state.trayBallCount,
+      trayBirdCount: state.trayBirdCount,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
       runSnapshot: cloneRunSnapshot(state.runSnapshot),

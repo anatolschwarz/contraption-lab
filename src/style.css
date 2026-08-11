@@ -338,6 +338,31 @@ h1 {
   transform: rotate(-28deg);
 }
 
+.part-preview--bird::before {
+  top: 12px;
+  left: 9px;
+  width: 38px;
+  height: 25px;
+  border: 3px solid #3b3d66;
+  border-radius: 52% 48% 46% 54%;
+  background:
+    radial-gradient(circle at 75% 25%, #fff9dc 0 7%, transparent 8%),
+    radial-gradient(circle at 73% 24%, #26304d 0 3%, transparent 4%),
+    linear-gradient(145deg, #b9c7ff 0 35%, #6573c9 36% 70%, #394174 71%);
+  box-shadow: 3px 4px 0 rgb(40 45 83 / 25%);
+}
+
+.part-preview--bird::after {
+  top: 18px;
+  right: 2px;
+  width: 14px;
+  height: 10px;
+  border: 2px solid #8c4a2f;
+  border-left: 0;
+  background: #f2c65c;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
 .part-preview--ramp::before {
   top: 17px;
   left: 3px;

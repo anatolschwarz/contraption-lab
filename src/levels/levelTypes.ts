@@ -30,6 +30,7 @@ export interface BallDefinition extends Point {
 
 export interface InventoryDefinition {
   ball: number;
+  bird: number;
   block: number;
   ramp: number;
 }
@@ -72,6 +73,8 @@ export interface PatrolMovementDefinition {
 
 export interface ActorDefinition extends RectangleDefinition {
   id: string;
+  initiallyPlaced?: boolean;
+  ownership: PartOwnership;
   tag: ActorTag;
   movement: PatrolMovementDefinition;
 }

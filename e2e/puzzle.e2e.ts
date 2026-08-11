@@ -882,7 +882,7 @@ test("keeps Bird patrol deterministic and executes configured Bird contacts", as
     const secondRun = patrolPositionAfterOneSecond();
     scene.resetLevel();
     scene.setSimulationRunning(true);
-    scene.update(0, 3_500);
+    scene.update(0, 6_000);
     const birdDestroyedGuideBlock = !scene.blocks.has("guide-block");
     scene.setSimulationRunning(false);
     return { birdDestroyedGuideBlock, firstRun, secondRun };
@@ -898,6 +898,97 @@ test("keeps Bird patrol deterministic and executes configured Bird contacts", as
   expect((await readBoard(page)).ramps.map(({ id }) => id)).not.toContain(
     "upper-ramp",
   );
+  expectNoConsoleErrors(app);
+});
+
+test("keeps fixed Birds non-editable and restores player Birds through Rerun and Reset", async ({
+  page,
+}) => {
+  const app = await startApp(page);
+  await ensurePartsPaletteOpen(page);
+  const birdButton = page.locator("#tray-bird-button");
+  await expect(birdButton).toHaveText("Bird (0)");
+  await expect(page.locator(".part-preview--bird")).toBeVisible();
+
+  await clickCanvas(page, app.canvas, { x: 680, y: 150 });
+  await expect(page.locator("#edit-feedback")).toHaveText(
+    "Fixed parts cannot be moved or removed.",
+  );
+  await expect
+    .poll(() => readInteractionState(page))
+    .toMatchObject({ selectedComponentId: null });
+
+  await clickCanvas(page, app.canvas, { x: 140, y: 300 });
+  await expect
+    .poll(() => readInteractionState(page))
+    .toMatchObject({ selectedComponentId: "player-bird" });
+  await moveRamp(page, app.canvas, { x: 140, y: 300 }, { x: 200, y: 320 });
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const scene =
+          window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+            actors: Map<string, { shape: { x: number; y: number } }>;
+          };
+        return scene?.actors.get("player-bird")?.shape;
+      }),
+    )
+    .toMatchObject({ x: 200, y: 320 });
+
+  await app.simulation.click();
+  await advanceSimulation(page, 1_000);
+  await page.getByRole("button", { name: "Rerun" }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const scene =
+          window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+            actors: Map<string, { shape: { x: number; y: number } }>;
+          };
+        return scene?.actors.get("player-bird")?.shape;
+      }),
+    )
+    .toMatchObject({ x: 200, y: 320 });
+
+  await page.getByRole("button", { name: "Reset" }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const scene =
+          window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+            actors: Map<string, { shape: { x: number; y: number } }>;
+          };
+        return scene?.actors.get("player-bird")?.shape;
+      }),
+    )
+    .toMatchObject({ x: 140, y: 300 });
+
+  await doubleClickCanvas(page, app.canvas, { x: 140, y: 300 });
+  await expect(birdButton).toHaveText("Bird (1)");
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const scene =
+          window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+            actors: Map<string, unknown>;
+          };
+        return scene?.actors.has("player-bird");
+      }),
+    )
+    .toBe(false);
+  await birdButton.click();
+  await expect(birdButton).toHaveText("Bird (0)");
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const scene =
+          window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+            actors: Map<string, unknown>;
+          };
+        return scene?.actors.has("player-bird");
+      }),
+    )
+    .toBe(true);
   expectNoConsoleErrors(app);
 });
 

@@ -60,6 +60,10 @@ export class Controls {
     requireElement<HTMLButtonElement>("tray-ball-button");
   private readonly trayBallLabel =
     requireElement<HTMLSpanElement>("tray-ball-label");
+  private readonly trayBirdButton =
+    requireElement<HTMLButtonElement>("tray-bird-button");
+  private readonly trayBirdLabel =
+    requireElement<HTMLSpanElement>("tray-bird-label");
   private readonly trayRampButton =
     requireElement<HTMLButtonElement>("tray-ramp-button");
   private readonly trayRampLabel =
@@ -104,6 +108,9 @@ export class Controls {
         transform: { position: { x: 0, y: 0 } },
       }),
     );
+    this.trayBirdButton.addEventListener("click", () =>
+      onAction({ type: "spawn-tray-bird", componentId: "" }),
+    );
     this.trayRampButton.addEventListener("click", () =>
       onAction({ type: "spawn-tray-ramp", componentId: "" }),
     );
@@ -141,6 +148,13 @@ export class Controls {
       this.trayBallLabel,
       "Ball",
       state.trayBallCount,
+      state,
+    );
+    this.renderPaletteItem(
+      this.trayBirdButton,
+      this.trayBirdLabel,
+      "Bird",
+      state.trayBirdCount,
       state,
     );
     this.renderPaletteItem(

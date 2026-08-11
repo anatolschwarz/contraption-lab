@@ -3192,3 +3192,129 @@ Report:
 - how puzzle-name click opens the selector
 - files changed
 - validation results
+
+Continue milestone #23 with Bird as a normal editable Part.
+
+Also improve Bird presentation:
+- use an actual Bird image/visual, not just a plain placeholder look
+- preferably animated
+- make Bird flight noticeably slower than it is now
+
+Do NOT commit or push.
+
+GOAL
+
+Turn Bird into a normal player-editable part while preserving support for fixed Birds.
+
+REQUIREMENTS
+
+1. Bird as a normal Part
+- Add Bird to the normal per-puzzle inventory system.
+- Bird must appear in the Parts palette with:
+  - visual preview
+  - name
+  - count
+- Keep existing parts behavior unchanged for Ball / Ramp / Block.
+
+2. Bird ownership/edit behavior
+Support both:
+- fixed Birds
+- player-owned Birds
+
+For player-owned Birds:
+- selectable in Edit
+- draggable in Edit
+- removable in Edit
+- removing returns Bird to inventory
+- placeable again from Parts inventory
+- Reset restores JSON defaults
+- Rerun restores Run-start Bird state
+
+For fixed Birds:
+- remain non-editable
+- keep fixed-part behavior/feedback
+
+3. Bird runtime behavior
+- A placed Bird becomes autonomous during Run, just like existing Bird actor behavior.
+- Preserve deterministic movement / contact behavior / Pause / Resume / Timeout / Success / Rerun / Reset semantics.
+- Make Bird movement noticeably slower than current behavior.
+- Use the smallest coherent change for speed:
+  - either lower the existing Bird patrol speed default
+  - or introduce a clearly scoped Bird speed parameter if genuinely needed
+- Do not introduce unrelated actor-system refactors.
+
+4. Bird visual / image / animation
+I want the Bird to look like a real game object, not just a plain marker.
+
+Preferred implementation:
+- original Bird artwork/shape
+- preferably animated (for example wing flapping / bobbing)
+- lightweight and local-first
+- no copyrighted assets
+- no paid/external dependencies
+
+Good options:
+- Phaser-drawn bird with layered shapes and a small wing-flap animation
+- or a tiny original local SVG/sprite if that is cleaner
+
+Requirements:
+- visually readable at gameplay size
+- clearly recognizable in the Parts palette preview
+- in-game Bird visual should match the Parts preview closely
+- do not over-engineer the asset pipeline
+
+5. Puzzle/catalog integration
+- Add Bird to inventory only where intended by puzzle data.
+- Keep existing puzzles working.
+- If needed, add/update one focused puzzle/test fixture that includes a player-owned Bird.
+- Do not redesign #23 real puzzles unless Bird is intentionally added there.
+
+6. Scope limits
+Do NOT change:
+- unrelated gameplay
+- puzzle selector behavior
+- Parts palette behavior beyond adding Bird
+- timer logic
+- header layout
+- global E2E timeout strategy
+- broader visual-polish backlog items beyond Bird itself
+
+TESTS
+
+Add/update focused coverage for:
+- Bird inventory counts
+- fixed Bird remains non-editable
+- player-owned Bird selection/drag/removal/replacement
+- Reset restores Bird defaults
+- Rerun restores Run-start Bird state
+- Bird preview appears in Parts palette
+- Bird still performs deterministic autonomous behavior in Run
+- slower Bird movement expectation only where necessary
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run:
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+- npx playwright test --list
+
+Attempt full Playwright only if practical; if sandbox EPERM blocks it, report that clearly and do not change code because of it.
+
+Double-check:
+- syntax
+- formatting
+- inventory/state consistency
+- animation not drifting from physics position
+- unrelated changes
+- accidental truncation
+
+Report:
+- Bird visual approach used
+- whether/how Bird is animated
+- how much slower Bird became
+- data/model changes
+- files changed
+- validation results

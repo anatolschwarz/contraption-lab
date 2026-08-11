@@ -3,7 +3,7 @@
   "title": "Relay Shift",
   "difficulty": "Medium",
   "order": 2,
-  "inventory": { "ball": 0, "block": 1, "ramp": 2 },
+  "inventory": { "ball": 0, "bird": 0, "block": 1, "ramp": 2 },
   "contactRules": [
     {
       "contacts": ["ball", "block"],

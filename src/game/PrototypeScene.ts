@@ -55,8 +55,10 @@ const WOOD_HIGHLIGHT_COLOR = 0xf2ca78;
 const WOOD_SHADOW_COLOR = 0x75411f;
 const FIXED_HIGHLIGHT_COLOR = 0x969b9d;
 const FIXED_SHADOW_COLOR = 0x2a2c2e;
-const ACTOR_FILL_COLOR = 0x5b7cfa;
-const ACTOR_STROKE_COLOR = 0x2d3a8c;
+const BIRD_BODY_COLOR = 0x6573c9;
+const BIRD_DARK_COLOR = 0x394174;
+const BIRD_HIGHLIGHT_COLOR = 0xb9c7ff;
+const BIRD_BEAK_COLOR = 0xf2c65c;
 const TRAY_BLOCK_DEFINITION: Omit<BlockDefinition, "id" | "x" | "y"> = {
   width: 80,
   height: 60,
@@ -82,6 +84,11 @@ const TRAY_BALL_CANDIDATES = [
   { x: 215, y: 135 },
   { x: 120, y: 135 },
   { x: 215, y: 220 },
+];
+const TRAY_BIRD_CANDIDATES = [
+  { x: 140, y: 300 },
+  { x: 240, y: 300 },
+  { x: 140, y: 380 },
 ];
 interface EditableBall {
   definition: BallDefinition;
@@ -130,9 +137,13 @@ type MatterRectangle = Phaser.GameObjects.Rectangle &
 
 interface AutonomousActor {
   definition: ActorDefinition;
+  editable: boolean;
+  flapTween: Phaser.Tweens.Tween;
+  fromTray: boolean;
   patrol: PatrolState;
   shape: MatterRectangle;
-  label: Phaser.GameObjects.Text;
+  selectionText: Phaser.GameObjects.Text;
+  visual: Phaser.GameObjects.Container;
 }
 
 type MatterGameObject = Phaser.GameObjects.GameObject & {
@@ -159,7 +170,8 @@ interface BallPartSnapshot {
 }
 
 interface ActorSnapshot {
-  id: string;
+  definition: ActorDefinition;
+  fromTray: boolean;
   patrol: PatrolState;
 }
 
@@ -173,7 +185,7 @@ export class PrototypeScene extends Phaser.Scene {
   private readonly balls = new Map<string, EditableBall>();
   private drag?: {
     componentId: string;
-    componentType: "ball" | "ramp" | "block";
+    componentType: "ball" | "bird" | "ramp" | "block";
     offset: Phaser.Math.Vector2;
     pointerStart: Phaser.Math.Vector2;
   };
@@ -185,7 +197,7 @@ export class PrototypeScene extends Phaser.Scene {
   private readonly contactObjects = new Map<MatterJS.BodyType, ContactObject>();
   private readonly editableComponents = new Map<
     string,
-    EditableComponent | EditableBall
+    EditableComponent | EditableBall | AutonomousActor
   >();
   private readonly ramps = new Map<string, EditableRamp>();
   private runSnapshot?: SceneRunSnapshot;
@@ -213,7 +225,7 @@ export class PrototypeScene extends Phaser.Scene {
     ) => void,
     private readonly onComponentRemove: (
       componentId: string,
-      returnsTrayPart: "ball" | "block" | "ramp" | null,
+      returnsTrayPart: "ball" | "bird" | "block" | "ramp" | null,
     ) => void,
     private readonly onEditFeedback: (message: string) => void,
   ) {
@@ -267,6 +279,8 @@ export class PrototypeScene extends Phaser.Scene {
           );
         } else if (this.drag.componentType === "block") {
           this.updateBlockPosition(this.drag.componentId, x, y, true);
+        } else if (this.drag.componentType === "bird") {
+          this.updateActorPosition(this.drag.componentId, x, y, true);
         } else {
           this.updateBallPosition(this.drag.componentId, x, y, true);
         }
@@ -307,7 +321,7 @@ export class PrototypeScene extends Phaser.Scene {
     for (let step = 0; step < clock.stepCount; step += 1) {
       this.updateActorVelocities();
       this.matter.world.step(SIMULATION_STEP_MS);
-      this.updateActorLabels();
+      this.updateActorVisuals();
       this.updateBallHighlights();
 
       if (!this.simulationRunning) return;
@@ -335,20 +349,14 @@ export class PrototypeScene extends Phaser.Scene {
     }
   }
 
-  private updateActorLabels(): void {
+  private updateActorVisuals(): void {
     for (const actor of this.actors.values()) {
-      const position =
-        actor.definition.movement.axis === "horizontal"
-          ? actor.shape.x
-          : actor.shape.y;
-      const labelPosition = getActorPosition(
-        actor.definition.movement.axis,
-        position,
-        actor.definition.movement.axis === "horizontal"
-          ? actor.definition.y
-          : actor.definition.x,
+      const visualPosition = { x: actor.shape.x, y: actor.shape.y };
+      actor.visual.setPosition(visualPosition.x, visualPosition.y);
+      actor.selectionText.setPosition(
+        visualPosition.x,
+        visualPosition.y - actor.definition.height / 2 - 18,
       );
-      actor.label.setPosition(labelPosition.x, labelPosition.y);
     }
   }
 
@@ -419,6 +427,29 @@ export class PrototypeScene extends Phaser.Scene {
         this.createBall(definition, true);
         this.onEditFeedback("");
         return { id, transform: { position } };
+      }
+    }
+    this.onEditFeedback("Placement rejected: no clear space is available.");
+    return null;
+  }
+
+  spawnTrayBird(availableCount: number): string | null {
+    if (!this.editInteractionEnabled || availableCount <= 0) return null;
+    const levelBird = this.level.actors.find(
+      (actor) => actor.ownership === "player" && !this.actors.has(actor.id),
+    );
+    if (!levelBird) return null;
+    for (const position of TRAY_BIRD_CANDIDATES) {
+      const definition: ActorDefinition = {
+        ...levelBird,
+        ...position,
+        initiallyPlaced: true,
+        ownership: "player",
+      };
+      if (this.isValidActorPlacement(definition.id, definition, position)) {
+        this.createActor(definition, undefined, true);
+        this.onEditFeedback("");
+        return definition.id;
       }
     }
     this.onEditFeedback("Placement rejected: no clear space is available.");
@@ -502,8 +533,13 @@ export class PrototypeScene extends Phaser.Scene {
           fromTray: block.fromTray,
         })),
       ],
-      actors: [...this.actors.values()].map((actor) => ({
-        id: actor.definition.id,
+      actors: [...this.actors.values()].map((actor): ActorSnapshot => ({
+        definition: {
+          ...actor.definition,
+          x: actor.shape.x,
+          y: actor.shape.y,
+        },
+        fromTray: actor.fromTray,
         patrol: { ...actor.patrol },
       })),
       balls: [...this.balls.values()].map((ball) => ({
@@ -879,7 +915,7 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private handleComponentPointerDown(
-    componentType: "ball" | "ramp" | "block",
+    componentType: "ball" | "bird" | "ramp" | "block",
     componentId: string,
     shape: Phaser.GameObjects.Shape,
     pointer: Phaser.Input.Pointer,
@@ -931,7 +967,7 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private removeComponent(
-    componentType: "ball" | "ramp" | "block",
+    componentType: "ball" | "bird" | "ramp" | "block",
     componentId: string,
   ): void {
     if (componentType === "ball") {
@@ -939,6 +975,14 @@ export class PrototypeScene extends Phaser.Scene {
       if (!ball || !ball.editable) return;
       this.destroyBall(componentId);
       this.onComponentRemove(componentId, "ball");
+      this.onEditFeedback("");
+      return;
+    }
+    if (componentType === "bird") {
+      const actor = this.actors.get(componentId);
+      if (!actor || !actor.editable) return;
+      this.destroyActor(componentId);
+      this.onComponentRemove(componentId, "bird");
       this.onEditFeedback("");
       return;
     }
@@ -992,13 +1036,21 @@ export class PrototypeScene extends Phaser.Scene {
     }
   }
 
-  private restoreActors(snapshot: readonly ActorSnapshot[] = []): void {
+  private restoreActors(snapshot?: readonly ActorSnapshot[]): void {
     this.destroyActors();
-    const snapshotsById = new Map(
-      snapshot.map((actorSnapshot) => [actorSnapshot.id, actorSnapshot]),
-    );
+    if (snapshot) {
+      for (const actorSnapshot of snapshot) {
+        this.createActor(
+          actorSnapshot.definition,
+          actorSnapshot.patrol,
+          actorSnapshot.fromTray,
+        );
+      }
+      return;
+    }
     for (const actor of this.level.actors) {
-      this.createActor(actor, snapshotsById.get(actor.id)?.patrol);
+      if (actor.initiallyPlaced === false) continue;
+      this.createActor(actor);
     }
   }
 
@@ -1009,6 +1061,7 @@ export class PrototypeScene extends Phaser.Scene {
         definition.movement.axis === "horizontal" ? definition.x : definition.y,
       direction: definition.movement.direction,
     },
+    fromTray = false,
   ): void {
     const position = getActorPosition(
       definition.movement.axis,
@@ -1022,9 +1075,9 @@ export class PrototypeScene extends Phaser.Scene {
           position.y,
           definition.width,
           definition.height,
-          ACTOR_FILL_COLOR,
+          0x000000,
+          0,
         )
-        .setStrokeStyle(3, ACTOR_STROKE_COLOR)
         .setDepth(2),
       {
         ...COLLISION_ACTOR_BODY_OPTIONS,
@@ -1032,21 +1085,77 @@ export class PrototypeScene extends Phaser.Scene {
       },
     ) as MatterRectangle;
     shape.setIgnoreGravity(true).setFixedRotation();
-    const label = this.add
-      .text(position.x, position.y, definition.tag.toUpperCase(), {
-        color: "#f7f3ea",
-        fontFamily: "Arial, sans-serif",
-        fontSize: "11px",
-        fontStyle: "bold",
-      })
+    const wing = this.add
+      .triangle(-4, 0, -15, 2, 10, -11, 8, 13, BIRD_DARK_COLOR)
+      .setOrigin(0.5);
+    const bird = this.add.container(position.x, position.y, [
+      this.add.ellipse(0, 10, 30, 7, 0x232741, 0.24),
+      this.add.ellipse(-3, 1, 30, 18, BIRD_BODY_COLOR),
+      wing,
+      this.add.ellipse(-7, -2, 13, 8, BIRD_HIGHLIGHT_COLOR, 0.82),
+      this.add.circle(11, -7, 9, BIRD_BODY_COLOR),
+      this.add.circle(13, -9, 2.5, 0xf7f4ed),
+      this.add.circle(13.5, -9, 1.2, BIRD_DARK_COLOR),
+      this.add.triangle(22, -6, -4, -5, 7, 0, -4, 5, BIRD_BEAK_COLOR),
+    ]);
+    bird.setDepth(3);
+    const flapTween = this.tweens.add({
+      targets: wing,
+      angle: -18,
+      duration: 180,
+      ease: "Sine.easeInOut",
+      repeat: -1,
+      yoyo: true,
+    });
+    const selectionText = this.add
+      .text(
+        position.x,
+        position.y - definition.height / 2 - 18,
+        "BIRD SELECTED",
+        {
+          color: "#394174",
+          fontFamily: "Arial, sans-serif",
+          fontSize: "14px",
+          fontStyle: "bold",
+        },
+      )
       .setOrigin(0.5)
-      .setDepth(3);
-    this.actors.set(definition.id, {
+      .setDepth(4)
+      .setVisible(false);
+    shape.on(
+      Phaser.Input.Events.POINTER_DOWN,
+      (
+        pointer: Phaser.Input.Pointer,
+        _localX: number,
+        _localY: number,
+        event: Phaser.Types.Input.EventData,
+      ) => {
+        this.handleComponentPointerDown(
+          "bird",
+          definition.id,
+          shape,
+          pointer,
+          event,
+        );
+      },
+    );
+    this.prepareComponentInput(
+      shape,
+      new Phaser.Geom.Rectangle(0, 0, definition.width, definition.height),
+      Phaser.Geom.Rectangle.Contains,
+    );
+    const actor: AutonomousActor = {
       definition,
+      editable: isEditablePart(definition, fromTray),
+      flapTween,
+      fromTray,
       patrol: { ...patrol },
       shape,
-      label,
-    });
+      selectionText,
+      visual: bird,
+    };
+    this.actors.set(definition.id, actor);
+    this.editableComponents.set(definition.id, actor);
     this.registerContactObject(shape, definition.tag, () =>
       this.destroyActorFromContact(definition.id),
     );
@@ -1084,12 +1193,9 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private destroyActors(): void {
-    for (const actor of this.actors.values()) {
-      this.unregisterContactObject(actor.shape);
-      actor.shape.destroy();
-      actor.label.destroy();
+    for (const actor of [...this.actors.values()]) {
+      this.destroyActor(actor.definition.id);
     }
-    this.actors.clear();
   }
 
   private handleContact(
@@ -1183,12 +1289,19 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private destroyActorFromContact(actorId: string): void {
+    this.destroyActor(actorId);
+  }
+
+  private destroyActor(actorId: string): void {
     const actor = this.actors.get(actorId);
     if (!actor) return;
     this.unregisterContactObject(actor.shape);
+    actor.flapTween.stop();
     actor.shape.destroy();
-    actor.label.destroy();
+    actor.selectionText.destroy();
+    actor.visual.destroy(true);
     this.actors.delete(actorId);
+    this.editableComponents.delete(actorId);
   }
 
   private getNextTrayRampId(): string {
@@ -1294,6 +1407,46 @@ export class PrototypeScene extends Phaser.Scene {
     }
   }
 
+  private updateActorPosition(
+    actorId: string,
+    x: number,
+    y: number,
+    notify: boolean,
+  ): void {
+    const actor = this.actors.get(actorId);
+    if (!actor || (notify && !actor.editable)) return;
+    const clamped = clampRampPosition(
+      { x, y },
+      { ...actor.definition, rotation: 0 },
+    );
+    const patrolPosition = Phaser.Math.Clamp(
+      actor.definition.movement.axis === "horizontal" ? clamped.x : clamped.y,
+      actor.definition.movement.min,
+      actor.definition.movement.max,
+    );
+    const position =
+      actor.definition.movement.axis === "horizontal"
+        ? { x: patrolPosition, y: clamped.y }
+        : { x: clamped.x, y: patrolPosition };
+    if (
+      notify &&
+      !this.isValidActorPlacement(actorId, actor.definition, position)
+    ) {
+      this.onEditFeedback(
+        "Placement rejected: keep parts in bounds and clear of other parts.",
+      );
+      return;
+    }
+    actor.shape.setPosition(position.x, position.y);
+    actor.visual.setPosition(position.x, position.y);
+    actor.selectionText.setPosition(
+      position.x,
+      position.y - actor.definition.height / 2 - 18,
+    );
+    actor.patrol = { ...actor.patrol, position: patrolPosition };
+    if (notify) this.onEditFeedback("");
+  }
+
   private isValidRampEditPlacement(
     rampId: string,
     position: { x: number; y: number },
@@ -1322,6 +1475,28 @@ export class PrototypeScene extends Phaser.Scene {
         ball,
         this.getOtherPlacements(blockId),
       ),
+    );
+  }
+
+  private isValidActorPlacement(
+    actorId: string,
+    definition: ActorDefinition,
+    position: { x: number; y: number },
+  ): boolean {
+    const actorPlacement = { ...definition, ...position, rotation: 0 };
+    const otherPlacements = [
+      ...this.getOtherPlacements(actorId),
+      ...[...this.actors.entries()]
+        .filter(([otherActorId]) => otherActorId !== actorId)
+        .map(([, actor]) => ({
+          ...actor.definition,
+          x: actor.shape.x,
+          y: actor.shape.y,
+          rotation: 0,
+        })),
+    ];
+    return this.getCurrentBalls().every((ball) =>
+      isRectanglePlacementValid(actorPlacement, ball, otherPlacements),
     );
   }
 
@@ -1406,11 +1581,18 @@ export class PrototypeScene extends Phaser.Scene {
         BALL_STROKE_COLOR,
       );
     }
+    for (const actor of this.actors.values()) {
+      this.updateComponentSelection(
+        actor.definition.id,
+        actor,
+        BIRD_DARK_COLOR,
+      );
+    }
   }
 
   private updateComponentSelection(
     componentId: string,
-    component: EditableComponent | EditableBall,
+    component: EditableComponent | EditableBall | AutonomousActor,
     strokeColor: number,
   ): void {
     const selected =

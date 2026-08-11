@@ -64,6 +64,9 @@ const isInventory = (value: unknown): value is InventoryDefinition =>
   isFiniteNumber(value.ball) &&
   Number.isInteger(value.ball) &&
   value.ball >= 0 &&
+  isFiniteNumber(value.bird) &&
+  Number.isInteger(value.bird) &&
+  value.bird >= 0 &&
   isFiniteNumber(value.block) &&
   Number.isInteger(value.block) &&
   value.block >= 0 &&
@@ -85,6 +88,9 @@ function validateActors(value: unknown): ActorDefinition[] {
       typeof actor.id !== "string" ||
       actor.id.trim() === "" ||
       actor.tag !== "bird" ||
+      (actor.ownership !== "fixed" && actor.ownership !== "player") ||
+      (actor.initiallyPlaced !== undefined &&
+        typeof actor.initiallyPlaced !== "boolean") ||
       !isRecord(actor.movement)
     ) {
       throw new Error(`Level actor ${index} must be a valid bird definition.`);
@@ -117,11 +123,16 @@ function validateActors(value: unknown): ActorDefinition[] {
       );
     }
     const tag: ActorDefinition["tag"] = actor.tag;
+    const ownership: ActorDefinition["ownership"] = actor.ownership;
     const axis: ActorDefinition["movement"]["axis"] = movement.axis;
     const direction: ActorDefinition["movement"]["direction"] =
       movement.direction;
     return {
       id: actor.id,
+      ...(actor.initiallyPlaced === undefined
+        ? {}
+        : { initiallyPlaced: actor.initiallyPlaced }),
+      ownership,
       tag,
       x: actor.x,
       y: actor.y,
@@ -225,11 +236,24 @@ export function validateLevel(value: unknown): LevelDefinition {
   }
   if (!isInventory(inventory)) {
     throw new Error(
-      "Level inventory must define non-negative integer ball, block, and ramp counts.",
+      "Level inventory must define non-negative integer ball, bird, block, and ramp counts.",
     );
   }
   const validatedContactRules = validateContactRules(contactRules);
   const validatedActors = validateActors(actors);
+  for (const actor of validatedActors) {
+    if (actor.ownership === "fixed" && actor.initiallyPlaced === false) {
+      throw new Error("A fixed Bird must be initially placed.");
+    }
+  }
+  const unplacedPlayerBirds = validatedActors.filter(
+    (actor) => actor.ownership === "player" && actor.initiallyPlaced === false,
+  );
+  if (inventory.bird !== unplacedPlayerBirds.length) {
+    throw new Error(
+      "Bird inventory must equal the number of initially unplaced player-owned Birds.",
+    );
+  }
   if (!Array.isArray(balls) || balls.length < 1 || !balls.every(isBall)) {
     throw new Error(
       "Level balls must contain valid definitions with ids, ownership, finite x/y, and positive radii.",
@@ -266,10 +290,11 @@ export function validateLevel(value: unknown): LevelDefinition {
   if (
     new Set([
       ...balls.map((ball) => ball.id),
+      ...validatedActors.map((actor) => actor.id),
       ...ramps.map((ramp) => ramp.id),
       ...blocks.map((block) => block.id),
     ]).size !==
-    ramps.length + blocks.length + balls.length
+    ramps.length + blocks.length + balls.length + validatedActors.length
   ) {
     throw new Error("Level component ids must be unique.");
   }

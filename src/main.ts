@@ -115,6 +115,11 @@ function handleAction(action: GameAction): void {
     if (!ball) return;
     action = { ...action, componentId: ball.id, transform: ball.transform };
   }
+  if (typeof action === "object" && action.type === "spawn-tray-bird") {
+    const componentId = scene?.spawnTrayBird(state.trayBirdCount);
+    if (!componentId) return;
+    action = { ...action, componentId };
+  }
   if (typeof action === "object" && action.type === "advance-time") {
     const previousMode = state.mode;
     replaceGameState(transitionGameState(state, action));

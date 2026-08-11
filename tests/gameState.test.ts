@@ -20,7 +20,7 @@ const lowerRampTransform = {
   rotation: 0.35,
 };
 const blockTransform = { position: { x: 830, y: 180 } };
-const initialInventory = { ball: 0, block: 1, ramp: 0 };
+const initialInventory = { ball: 0, bird: 0, block: 1, ramp: 0 };
 const initialGameState = createInitialGameState(initialInventory);
 
 describe("game-state transitions", () => {
@@ -64,6 +64,33 @@ describe("game-state transitions", () => {
     expect(transitionGameState(moved, "reset").trayBallCount).toBe(0);
   });
 
+  it("tracks Bird inventory through placement, removal, rerun, and reset", () => {
+    const initial = createInitialGameState({
+      ball: 0,
+      bird: 1,
+      block: 0,
+      ramp: 0,
+    });
+    const placed = transitionGameState(initial, {
+      type: "spawn-tray-bird",
+      componentId: "player-bird",
+    });
+    expect(placed.trayBirdCount).toBe(0);
+    expect(placed.selectedComponentId).toBe("player-bird");
+
+    const removed = transitionGameState(placed, {
+      type: "remove-component",
+      componentId: "player-bird",
+      returnsTrayPart: "bird",
+    });
+    expect(removed.trayBirdCount).toBe(1);
+    expect(removed.selectedComponentId).toBeNull();
+
+    const running = transitionGameState(removed, "toggle-simulation");
+    expect(transitionGameState(running, "rerun").trayBirdCount).toBe(1);
+    expect(transitionGameState(removed, "reset").trayBirdCount).toBe(1);
+  });
+
   it("starts in Edit with only valid actions enabled", () => {
     expect(initialGameState).toEqual({
       initialInventory,
@@ -75,6 +102,7 @@ describe("game-state transitions", () => {
       ballTransforms: {},
       selectedComponentId: null,
       trayBallCount: 0,
+      trayBirdCount: 0,
       trayBlockCount: 1,
       trayRampCount: 0,
     });
@@ -337,6 +365,7 @@ describe("game-state transitions", () => {
       blockTransforms: {},
       ballTransforms: {},
       trayBallCount: 0,
+      trayBirdCount: 0,
       trayBlockCount: 1,
       trayRampCount: 0,
     });
@@ -427,6 +456,7 @@ describe("game-state transitions", () => {
       ballTransforms: {},
       selectedComponentId: null,
       trayBallCount: 0,
+      trayBirdCount: 0,
       trayBlockCount: 1,
       trayRampCount: 0,
       runSnapshot: {
@@ -434,6 +464,7 @@ describe("game-state transitions", () => {
         blockTransforms: {},
         ballTransforms: {},
         trayBallCount: 0,
+        trayBirdCount: 0,
         trayBlockCount: 1,
         trayRampCount: 0,
       },
@@ -530,6 +561,7 @@ describe("reset behavior", () => {
       ballTransforms: {},
       selectedComponentId: TRAY_BLOCK_ID,
       trayBallCount: 0,
+      trayBirdCount: 0,
       trayBlockCount: 0,
       trayRampCount: 0,
     };
