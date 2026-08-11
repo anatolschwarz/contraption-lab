@@ -33,6 +33,7 @@ describe("the first real puzzle pair", () => {
   it("loads Down the Ramp with its 10-second timer and two Ramp inventory", () => {
     expect(downTheRamp).toMatchObject({
       id: "down-the-ramp-004",
+      levelName: "Upper Platform",
       title: "Down the Ramp",
       difficulty: "Basic",
       order: 4,
@@ -57,6 +58,7 @@ describe("the first real puzzle pair", () => {
   it("loads Bridge the Gap with its 12-second timer and two Ramp inventory", () => {
     expect(bridgeTheGap).toMatchObject({
       id: "bridge-the-gap-005",
+      levelName: "Open Gap",
       title: "Bridge the Gap",
       difficulty: "Basic",
       order: 5,

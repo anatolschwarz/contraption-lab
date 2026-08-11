@@ -22,19 +22,23 @@
         </div>
       </header>
       <section class="play-header" aria-live="polite">
-        <div class="play-header-summary">
-          <p id="level-progress-label">Level 1 of 3 — Basic</p>
-          <button
-            id="puzzle-selector-button"
-            class="puzzle-title-button"
-            type="button"
-            aria-controls="puzzle-selector-panel"
-            aria-expanded="false"
+        <button
+          id="puzzle-selector-button"
+          class="play-header-summary puzzle-selector-button"
+          type="button"
+          aria-controls="puzzle-selector-panel"
+          aria-expanded="false"
+        >
+          <span id="puzzle-title-label" class="puzzle-title-label"
+            >Relay Ramps</span
           >
-            Relay Ramps
-          </button>
-          <span id="timed-indicator" class="timed-indicator">Timed</span>
-        </div>
+          <span class="puzzle-selector-separator" aria-hidden="true">·</span>
+          <span id="puzzle-difficulty-label" class="puzzle-difficulty-label"
+            >Basic</span
+          >
+          <span class="puzzle-selector-separator" aria-hidden="true">·</span>
+          <span id="level-progress-label">Level 1</span>
+        </button>
         <div
           class="play-header-tools"
           role="group"

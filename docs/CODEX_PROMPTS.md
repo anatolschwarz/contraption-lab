@@ -3318,3 +3318,252 @@ Report:
 - data/model changes
 - files changed
 - validation results
+
+Continue milestone #23 with selector/header interaction refinement only.
+
+Do NOT change gameplay.
+Do NOT change Bird behavior.
+Do NOT address the known E2E failures in this step unless this selector change directly requires test updates.
+Do NOT commit or push.
+
+TARGET
+
+Improve the puzzle selector presentation and click target.
+
+Requirements:
+
+1. Selector/list item content
+- In the puzzle selector/list, each puzzle entry should clearly show:
+  - level number
+  - puzzle name
+  - difficulty
+- Preserve existing locked / available / completed state information.
+- Preserve existing grouping (Basic / Medium / Hard) unless the current implementation no longer uses grouping.
+
+2. Clearly clickable current-puzzle control
+- In the top header, make the current puzzle display obviously clickable.
+- Do not rely on only the puzzle title text looking clickable.
+- Use the existing current-puzzle area as the basis.
+
+3. Whole group clickable
+- Prefer making the whole current-puzzle group clickable, not only the puzzle name.
+- Clicking anywhere in that group should open/close the existing selector.
+- Preserve keyboard accessibility:
+  - Enter should toggle it
+  - aria-expanded should stay correct
+  - existing selector open/close semantics should remain correct
+
+Scope:
+- Do NOT redesign Settings / Parts behavior.
+- Do NOT change timer logic, gameplay, inventory, palette behavior, or puzzle progression rules.
+- Do NOT add new features such as Show Solution or Ignore Timer in this step.
+
+Tests:
+- Update focused UI/E2E tests only where required by the new structure/interaction.
+- Keep assertions strong.
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run:
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+- npx playwright test --list
+
+Do not commit or push.
+
+Double-check:
+- syntax
+- formatting
+- DOM ids/test hooks
+- accessibility
+- click target behavior
+- accidental truncation
+- unrelated changes
+
+Report:
+- old vs new selector/list entry format
+- how the current-puzzle clickable group works
+- files changed
+- validation results
+
+Continue milestone #23 with the puzzle selector refinement only.
+
+Do NOT commit or push.
+
+TARGET
+
+Improve the current-puzzle control and puzzle selector presentation.
+
+1. Selector/list entry format
+
+Each puzzle entry must show exactly this information hierarchy:
+
+- Puzzle name
+- Level # + Level name
+
+Example structure:
+
+Puzzle Name
+Level 3 · Level Name
+
+IMPORTANT:
+- Do NOT substitute difficulty for Level name.
+- Do NOT substitute status for Level name.
+- Locked/completed state may still be visually indicated separately, but it must not replace the requested content.
+- Preserve Basic / Medium / Hard grouping if currently used.
+
+Inspect the current puzzle/level data model first.
+If "Puzzle name" and "Level name" are not currently separate data fields, do not invent arbitrary values or silently redefine existing fields. Report the model limitation and make the smallest coherent data-model adjustment needed.
+
+2. Make current-puzzle control obviously clickable
+
+The current puzzle information shown in the Play header must visually read as an interactive selector control.
+
+Use appropriate cues such as:
+- hover/focus state
+- pointer cursor
+- subtle button/container treatment
+- dropdown chevron/indicator
+
+Keep it visually compact.
+
+3. Make the whole current-puzzle group clickable
+
+Do not limit interaction to only the puzzle-name text.
+
+The complete current-puzzle information group should toggle the existing puzzle selector.
+
+Preserve:
+- existing selector behavior
+- locked/completed semantics
+- puzzle switching
+- progression
+- Unlock All
+- keyboard accessibility
+- Enter/Space activation where appropriate
+- aria-expanded
+- existing stable test hooks where possible
+
+Do NOT change:
+- gameplay
+- physics
+- puzzle solutions/data except if a minimal name-field adjustment is genuinely required
+- Settings
+- Parts
+- timers
+- Bird behavior
+- inventory
+- Show Solution
+- Ignore Timer
+- 3D visual work
+
+TESTS
+
+Update focused UI/E2E coverage for:
+- selector entries showing Puzzle name
+- selector entries showing Level # + Level name
+- whole current-puzzle group clickable
+- keyboard toggle
+- aria-expanded state
+
+Do not weaken existing assertions or raise global timeouts.
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run:
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+- npx playwright test --list
+
+Double-check:
+- requested information hierarchy is exact
+- no difficulty/status substituted for Level name
+- accessibility
+- responsive behavior
+- syntax/formatting
+- accidental unrelated changes
+
+Report:
+- what existing fields represent Puzzle name and Level name
+- exact selector entry format implemented
+- clickable-group implementation
+- files changed
+- validation results
+
+Refine the current puzzle selector/header presentation only.
+
+Do not commit or push.
+
+TARGET HEADER
+
+The entire current-puzzle header control should be clickable and formatted exactly like:
+
+Down the Ramp · Basic · Level 4
+
+Meaning:
+- Puzzle name
+- Difficulty
+- Level number
+
+Do NOT show the level name in the header.
+Do NOT duplicate the puzzle name.
+
+TARGET SELECTOR LIST
+
+Each selector card should show:
+
+Puzzle name
+Level # · Level name
+
+Example:
+
+Relay Ramps
+Level 1 · Aim the Ramp
+
+For Down the Ramp / Bridge the Gap, remove the current duplicate-name problem.
+
+Inspect the data model:
+- Puzzle name and Level name must be distinct concepts.
+- Do not render the same field twice under different labels.
+- If current data has identical values because the model/content was populated incorrectly, make the smallest coherent data correction.
+
+Preserve:
+- Basic / Medium / Hard grouping
+- completed / available / locked state
+- timed indicator
+- selector behavior
+- progression
+- Unlock All
+- accessibility
+- whole current-puzzle group clickable
+
+Do not change gameplay, physics, puzzle geometry, inventory, timers, Bird behavior, Settings, Parts, or unrelated UI.
+
+Update focused tests for:
+- header format: Puzzle name · Difficulty · Level #
+- selector format: Puzzle name + Level # · Level name
+- no duplicate puzzle/level naming when values should differ
+- whole header group remains clickable
+
+Run:
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+- npx playwright test --list
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Report:
+- data fields used for Puzzle name / Level name / Difficulty / Level #
+- exact header output
+- exact selector-card output
+- files changed
+- validation results

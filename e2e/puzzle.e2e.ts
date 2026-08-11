@@ -583,12 +583,10 @@ test("solves the first puzzle and advances through Next Puzzle", async ({
 }) => {
   test.setTimeout(60_000);
   const app = await startApp(page);
-  await expect(page.locator("#level-progress-label")).toHaveText(
-    "Level 1 of 5 — Basic",
-  );
   await expect(page.locator("#puzzle-selector-button")).toHaveText(
-    "Relay Ramps",
+    "Relay Ramps · Basic · Level 1",
   );
+  await expect(page.locator("#puzzle-title-label")).toHaveText("Relay Ramps");
   await expect(app.timer).toHaveText("Time: 0:45");
 
   await solveFirstPuzzle(app);
@@ -598,36 +596,58 @@ test("solves the first puzzle and advances through Next Puzzle", async ({
   await expect(app.timer).toHaveText(timeAtSuccess ?? "");
 
   await page.getByRole("button", { name: "Next Puzzle: Relay Shift" }).click();
-  await expect(page.locator("#level-progress-label")).toHaveText(
-    "Level 2 of 5 — Medium",
-  );
   await expect(page.locator("#puzzle-selector-button")).toHaveText(
-    "Relay Shift",
+    "Relay Shift · Medium · Level 2",
   );
+  await expect(page.locator("#puzzle-title-label")).toHaveText("Relay Shift");
   await expect(app.timer).toBeHidden();
   expectNoConsoleErrors(app);
 });
 
-test("opens the puzzle selector from the clickable puzzle name", async ({
+test("opens the puzzle selector from the clickable current-puzzle group", async ({
   page,
 }) => {
   const app = await startApp(page);
-  const puzzleName = page.locator("#puzzle-selector-button");
+  const currentPuzzle = page.locator("#puzzle-selector-button");
   const selector = page.locator("#puzzle-selector-panel");
 
-  await expect(puzzleName).toHaveText("Relay Ramps");
-  await expect(puzzleName).toHaveAttribute(
+  await expect(currentPuzzle).toHaveText("Relay Ramps · Basic · Level 1");
+  await expect(currentPuzzle).toHaveAttribute(
     "aria-controls",
     "puzzle-selector-panel",
   );
-  await expect(puzzleName).toHaveAttribute("aria-expanded", "false");
-  await expect(page.locator("#puzzle-title-label")).toHaveCount(0);
-  await puzzleName.click();
+  await expect(currentPuzzle).toHaveAttribute("aria-expanded", "false");
+  await page.locator("#level-progress-label").click();
   await expect(selector).toBeVisible();
-  await expect(puzzleName).toHaveAttribute("aria-expanded", "true");
-  await puzzleName.press("Enter");
+  await expect(currentPuzzle).toHaveAttribute("aria-expanded", "true");
+  const firstPuzzle = page.locator('[data-puzzle-id="aim-the-ramp-001"]');
+  await expect(firstPuzzle.locator(".puzzle-option-title")).toHaveText(
+    "Relay Ramps",
+  );
+  await expect(firstPuzzle.locator(".puzzle-option-metadata")).toHaveText(
+    "Level 1 · Aim the Ramp",
+  );
+  await expect(firstPuzzle.locator(".puzzle-option-status")).toHaveText(
+    "available · Timed",
+  );
+  expect(
+    await firstPuzzle
+      .locator(":scope > span")
+      .evaluateAll((elements) => elements.map((element) => element.className)),
+  ).toEqual([
+    "puzzle-option-title",
+    "puzzle-option-metadata",
+    "puzzle-option-status",
+  ]);
+  await currentPuzzle.press("Enter");
   await expect(selector).toBeHidden();
-  await expect(puzzleName).toHaveAttribute("aria-expanded", "false");
+  await expect(currentPuzzle).toHaveAttribute("aria-expanded", "false");
+  await currentPuzzle.press("Space");
+  await expect(selector).toBeVisible();
+  await expect(currentPuzzle).toHaveAttribute("aria-expanded", "true");
+  await currentPuzzle.press("Space");
+  await expect(selector).toBeHidden();
+  await expect(currentPuzzle).toHaveAttribute("aria-expanded", "false");
   expectNoConsoleErrors(app);
 });
 
@@ -725,9 +745,7 @@ test("times a puzzle through Run, Pause, Resume, Rerun, and Timeout", async ({
   const app = await startApp(page);
   await enableUnlockAll(page);
   await selectPuzzle(page, "timed-relay-003");
-  await expect(page.locator("#puzzle-selector-button")).toHaveText(
-    "Timed Relay",
-  );
+  await expect(page.locator("#puzzle-title-label")).toHaveText("Timed Relay");
   await expect(app.timer).toHaveText("Time: 0:30");
 
   await app.simulation.click();
@@ -761,12 +779,10 @@ test("loads the first real Basic puzzle pair with their defined timers and inven
   await enableUnlockAll(page);
 
   await selectPuzzle(page, "down-the-ramp-004");
-  await expect(page.locator("#level-progress-label")).toHaveText(
-    "Level 4 of 5 — Basic",
-  );
   await expect(page.locator("#puzzle-selector-button")).toHaveText(
-    "Down the Ramp",
+    "Down the Ramp · Basic · Level 4",
   );
+  await expect(page.locator("#puzzle-title-label")).toHaveText("Down the Ramp");
   await expect(app.timer).toHaveText("Time: 0:10");
   await ensurePartsPaletteOpen(page);
   await expect(page.locator("#tray-ball-button")).toHaveText("Ball (0)");
@@ -774,10 +790,10 @@ test("loads the first real Basic puzzle pair with their defined timers and inven
   await expect(page.locator("#tray-ramp-button")).toHaveText("Ramp (2)");
 
   await selectPuzzle(page, "bridge-the-gap-005");
-  await expect(page.locator("#level-progress-label")).toHaveText(
-    "Level 5 of 5 — Basic",
-  );
   await expect(page.locator("#puzzle-selector-button")).toHaveText(
+    "Bridge the Gap · Basic · Level 5",
+  );
+  await expect(page.locator("#puzzle-title-label")).toHaveText(
     "Bridge the Gap",
   );
   await expect(app.timer).toHaveText("Time: 0:12");
@@ -785,6 +801,23 @@ test("loads the first real Basic puzzle pair with their defined timers and inven
   await expect(page.locator("#tray-ball-button")).toHaveText("Ball (0)");
   await expect(page.locator("#tray-block-button")).toHaveText("Block (0)");
   await expect(page.locator("#tray-ramp-button")).toHaveText("Ramp (2)");
+  await page.locator("#puzzle-selector-button").click();
+  const downTheRampCard = page.locator('[data-puzzle-id="down-the-ramp-004"]');
+  await expect(downTheRampCard.locator(".puzzle-option-title")).toHaveText(
+    "Down the Ramp",
+  );
+  await expect(downTheRampCard.locator(".puzzle-option-metadata")).toHaveText(
+    "Level 4 · Upper Platform",
+  );
+  const bridgeTheGapCard = page.locator(
+    '[data-puzzle-id="bridge-the-gap-005"]',
+  );
+  await expect(bridgeTheGapCard.locator(".puzzle-option-title")).toHaveText(
+    "Bridge the Gap",
+  );
+  await expect(bridgeTheGapCard.locator(".puzzle-option-metadata")).toHaveText(
+    "Level 5 · Open Gap",
+  );
   expectNoConsoleErrors(app);
 });
 

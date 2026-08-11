@@ -1,5 +1,6 @@
 {
   "id": "timed-relay-003",
+  "levelName": "Quick Route",
   "title": "Timed Relay",
   "difficulty": "Hard",
   "order": 3,

@@ -9,6 +9,8 @@ describe("the bundled relay-ramp puzzle", () => {
   const playerBall = level.balls.find((ball) => ball.id === "player-ball")!;
 
   it("defines Basic metadata and first global puzzle order", () => {
+    expect(level.title).toBe("Relay Ramps");
+    expect(level.levelName).toBe("Aim the Ramp");
     expect(level.difficulty).toBe("Basic");
     expect(level.order).toBe(1);
   });

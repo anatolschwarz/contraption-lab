@@ -205,6 +205,7 @@ export function validateLevel(value: unknown): LevelDefinition {
 
   const {
     id,
+    levelName,
     title,
     difficulty,
     order,
@@ -221,6 +222,9 @@ export function validateLevel(value: unknown): LevelDefinition {
   } = value;
   if (typeof id !== "string" || id.trim() === "") {
     throw new Error("Level id must be a non-empty string.");
+  }
+  if (typeof levelName !== "string" || levelName.trim() === "") {
+    throw new Error("Level levelName must be a non-empty string.");
   }
   if (typeof title !== "string" || title.trim() === "") {
     throw new Error("Level title must be a non-empty string.");
@@ -310,6 +314,7 @@ export function validateLevel(value: unknown): LevelDefinition {
 
   return {
     id,
+    levelName,
     title,
     difficulty: difficulty as PuzzleDifficulty,
     order,

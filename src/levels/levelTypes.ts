@@ -94,6 +94,7 @@ export function isEditablePart(
 
 export interface LevelDefinition {
   id: string;
+  levelName: string;
   title: string;
   difficulty: PuzzleDifficulty;
   order: number;

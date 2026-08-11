@@ -28,11 +28,14 @@ export class Controls {
   private readonly buttons: Record<keyof EnabledControls, HTMLButtonElement>;
   private readonly modeLabel =
     requireElement<HTMLParagraphElement>("mode-label");
-  private readonly levelProgressLabel = requireElement<HTMLParagraphElement>(
+  private readonly levelProgressLabel = requireElement<HTMLSpanElement>(
     "level-progress-label",
   );
-  private readonly timedIndicator =
-    requireElement<HTMLSpanElement>("timed-indicator");
+  private readonly puzzleTitleLabel =
+    requireElement<HTMLSpanElement>("puzzle-title-label");
+  private readonly puzzleDifficultyLabel = requireElement<HTMLSpanElement>(
+    "puzzle-difficulty-label",
+  );
   private readonly nextPuzzleButton =
     requireElement<HTMLButtonElement>("next-puzzle-button");
   private readonly puzzleSelectorButton = requireElement<HTMLButtonElement>(
@@ -173,15 +176,18 @@ export class Controls {
         ? "Failed — Time expired"
         : state.mode.charAt(0).toUpperCase() + state.mode.slice(1);
     this.modeLabel.textContent = `Mode: ${label}`;
-    this.levelProgressLabel.textContent = `Level ${view.levelNumber} of ${view.totalBuiltInPuzzles} — ${view.activePuzzle.difficulty}`;
-    this.timedIndicator.hidden =
-      view.activePuzzle.timeLimitSeconds === undefined;
+    this.levelProgressLabel.textContent = `Level ${view.levelNumber}`;
     this.nextPuzzleButton.hidden = !state.succeeded;
     this.nextPuzzleButton.disabled = !state.succeeded || !view.nextPuzzle;
     this.nextPuzzleButton.textContent = view.nextPuzzle
       ? `Next Puzzle: ${view.nextPuzzle.title}`
       : "Last Puzzle Complete";
-    this.puzzleSelectorButton.textContent = view.activePuzzle.title;
+    this.puzzleTitleLabel.textContent = view.activePuzzle.title;
+    this.puzzleDifficultyLabel.textContent = view.activePuzzle.difficulty;
+    this.puzzleSelectorButton.setAttribute(
+      "aria-label",
+      `${view.activePuzzle.title} · ${view.activePuzzle.difficulty} · Level ${view.levelNumber}`,
+    );
     this.unlockAllCheckbox.checked = view.unlockAll;
     this.renderPuzzleSelector(view);
   }
@@ -263,8 +269,17 @@ export class Controls {
           "aria-current",
           String(puzzle.id === view.activePuzzle.id),
         );
+        const metadata = document.createElement("span");
+        metadata.className = "puzzle-option-metadata";
+        metadata.textContent = `Level ${puzzle.order} · ${puzzle.levelName}`;
+        const title = document.createElement("span");
+        title.className = "puzzle-option-title";
+        title.textContent = puzzle.title;
+        const status = document.createElement("span");
+        status.className = "puzzle-option-status";
         const timed = puzzle.timeLimitSeconds ? "Timed" : "Untimed";
-        puzzleButton.textContent = `${puzzle.title} — ${availability} · ${timed}`;
+        status.textContent = `${availability} · ${timed}`;
+        puzzleButton.append(title, metadata, status);
         puzzleButton.addEventListener("click", () => {
           this.setPuzzleSelectorExpanded(false);
           this.onPuzzleSelect(puzzle.id);

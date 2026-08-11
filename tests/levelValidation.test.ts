@@ -98,7 +98,10 @@ describe("validateLevel", () => {
   });
 
   it("rejects missing level fields", () => {
-    expect(() => validateLevel({ id: "incomplete" })).toThrow(/title/i);
+    expect(() => validateLevel({ id: "incomplete" })).toThrow(/levelName/i);
+    expect(() =>
+      validateLevel({ id: "incomplete", levelName: "Incomplete" }),
+    ).toThrow(/title/i);
   });
 
   it("requires valid puzzle difficulty metadata and global order", () => {
