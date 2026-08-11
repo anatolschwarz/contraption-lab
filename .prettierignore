@@ -3,3 +3,4 @@ coverage
 test-results
 package-lock.json
 docs/CODEX_PROMPTS.md
+docs/design/phase2/*.md

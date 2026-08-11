@@ -84,6 +84,63 @@ without a separate scoped milestone request.
   ownership, inventory, Reset, Rerun, and progression behavior.
 - Visual reference: [`docs/design/timed-puzzle-concepts.png`](design/timed-puzzle-concepts.png).
 
+## Phase 2 — Planned
+
+See [PHASE2_RECONCILIATION.md](PHASE2_RECONCILIATION.md) for Phase-2 rationale,
+detailed acceptance criteria, and design decisions.
+
+### #24 — Project contract / AGENTS amendment
+
+- Planned: record the approved Phase-2 contract.
+
+### #25 — Headless simulation runner
+
+- Planned: verify level reference solutions deterministically without rendering.
+
+### #26 — Contact Actions v2
+
+- Planned: add declarative impulse, redirect, and conditions.
+
+### #27 — Gentle default + parent gate + wordless Play shell
+
+- Planned: make child-facing Play gentle and wordless by default.
+
+### #28 — Dynamic/toppling Block capability
+
+- Planned: support deterministic Block-derived toppling behavior.
+
+### #29 — Storybook asset pipeline
+
+- Planned: establish the Sunny Attic Storybook-flat asset pipeline.
+
+### #30 — Chapter 1 L1 — Good Morning, Ball
+
+- Planned: deliver the first wordless Ball/Ramp lesson.
+
+### #31 — Chapter 1 L2 — Boing
+
+- Planned: deliver the spring-mattress intuition lesson.
+
+### #32 — Chapter 1 L3 — Tea Time
+
+- Planned: deliver the teapot redirection lesson.
+
+### #33 — Chapter 1 L4 — Tell the Blocks
+
+- Planned: deliver the Painted Blocks sequence and timing lesson.
+
+### #34 — Chapter 1 L5 — The Cat Is Not Moving
+
+- Planned: deliver the deterministic approach-side Cat lesson.
+
+### #35 — Chapter 1 L6 — Wind Under the Window
+
+- Planned: deliver the mattress-and-fan airborne coordination lesson.
+
+### #36 — Chapter 1 acceptance pass
+
+- Planned: accept the six-level Chapter 1 experience.
+
 ## Backlog / To Discuss
 
 - Music
@@ -102,7 +159,3 @@ without a separate scoped milestone request.
   - mobile rotation controls
   - small-screen usability
   - real phone/tablet testing
-- Settings: Ignore timer
-  - timed puzzles continue running after zero
-  - default Off
-  - separate future feature; do not implement as part of #23

@@ -3567,3 +3567,288 @@ Report:
 - exact selector-card output
 - files changed
 - validation results
+
+Contraption Lab — Phase 2 documentation checkpoint.
+
+Do NOT implement gameplay.
+Do NOT commit or push.
+
+Goal:
+Record the approved Sunny Attic / Phase-2 direction in the repo before feature work starts.
+
+SOURCE FILES
+
+Locate these exact files under the Windows Downloads folder, somewhere under:
+
+/mnt/c/Users/*/Downloads/
+
+Files:
+- contraption-lab-review-for-sol.md
+- sunny-attic-design-v0.1.md
+- sunny-attic-art-bible-v0.1.md
+
+If more than one copy of any exact filename exists, STOP and report the paths.
+Do not guess which copy to use.
+
+1. COPY SOURCE DOCS VERBATIM
+
+Create:
+
+docs/design/phase2/
+
+Copy the three source files there WITHOUT modifying their contents:
+
+docs/design/phase2/contraption-lab-review-for-sol.md
+docs/design/phase2/sunny-attic-design-v0.1.md
+docs/design/phase2/sunny-attic-art-bible-v0.1.md
+
+Verify copied files are byte-identical to the Downloads originals.
+
+2. UPDATE AGENTS.md
+
+Amend AGENTS.md for the approved Phase-2 direction.
+
+Record:
+
+Audience:
+- private family game
+- primary audience ages 6 and 4
+- gentle
+- child-facing play must not require reading
+- no mandatory failure state
+- timers/failure/locking may survive only as parent-gated options and are OFF by default
+
+Scope:
+- explicitly scoped original artwork, animation, audio/SFX, environments,
+  visual effects and new game components are now allowed
+- generated Phaser shapes may remain development/debug fallbacks
+- no accounts/networking/cloud/backend/multiplayer/community sharing/mobile
+  packaging/general-purpose editor unless explicitly scoped
+- no new dependencies, paid services or accounts without owner approval
+
+Architecture invariants:
+- strict TypeScript
+- deterministic fixed-step simulation
+- JSON level definitions
+- validation separate from rendering
+- pure/testable state where practical
+- declarative mechanics rather than character-specific gameplay code
+- ownership/inventory semantics
+- deterministic Reset/Rerun
+- headless-verifiable reference solution required for new levels once the
+  headless runner exists
+- distinct reference solutions for materially different star routes
+
+Keep the existing original-content/copyright restriction.
+
+Make the smallest coherent amendment; do not rewrite AGENTS.md unnecessarily.
+
+3. ADD PHASE-2 RECONCILIATION DOC
+
+Create:
+
+docs/PHASE2_RECONCILIATION.md
+
+This is the approved planning delta, NOT current implemented behavior.
+
+Use these source docs:
+- the three copied Phase-2 docs
+- current AGENTS.md
+- current docs/PROJECT_STATE.md
+- current docs/ROADMAP.md
+- current code/schema where needed to avoid incorrect assumptions
+
+Record concisely:
+
+A. Fixed product decisions
+- audience ages 6/4
+- gentle / wordless child-facing play
+- no failure by default
+- timer/failure/locking parent-gated and off by default
+- Sunny Attic Storybook-flat art direction approved
+- reconcile/evolve current architecture; do not restart
+
+B. Architecture decisions
+- preserve deterministic/JSON/verifiable substrate
+- add headless simulation runner before significant new level production
+- Contact Actions v2: impulse, redirect, conditions
+- explicitly note that Painted Blocks also require dynamic/toppling behavior;
+  Contact Actions v2 alone is insufficient
+
+C. Phase-2 milestones
+
+#24 Project contract / AGENTS amendment
+#25 Headless simulation runner
+#26 Contact Actions v2
+#27 Gentle default + parent gate + wordless Play shell
+#28 Dynamic/toppling Block capability
+#29 Storybook asset pipeline
+#30 Chapter 1 L1 — Good Morning, Ball
+#31 Chapter 1 L2 — Boing
+#32 Chapter 1 L3 — Tea Time
+#33 Chapter 1 L4 — Tell the Blocks
+#34 Chapter 1 L5 — The Cat Is Not Moving
+#35 Chapter 1 L6 — Wind Under the Window
+#36 Chapter 1 acceptance pass
+
+For each milestone include:
+- target
+- concise acceptance criteria
+- no implementation details beyond what is needed to define the ticket
+
+D. Chapter-1 repo vocabulary translation
+- marble -> Ball
+- plank -> Ramp
+- teacup -> Goal presentation
+- Painted Blocks -> Block-derived dynamic/toppling component semantics
+- name required schema/runtime gains:
+  referenceSolutions, future star goals, impulse, redirect, conditions,
+  approach-side, airborne condition, deterministic dynamic/toppling behavior
+
+E. Adopt / adapt / defer/drop summary for major Sunny Attic concepts.
+
+F. Owner-only unresolved decisions:
+- disposition of existing five prototype puzzles in child-facing UI
+- parent-gate interaction
+- provisional L4/L5 ordering pending family test
+- whether SFX is required for Chapter-1-playable or follows immediately after
+
+Do not reopen settled decisions.
+
+4. UPDATE docs/ROADMAP.md
+
+Preserve completed history through #23.
+
+Add the Phase-2 milestones #24–#36 above as PLANNED, not completed.
+
+Reconcile the existing backlog:
+- do not duplicate items now covered by Phase 2
+- preserve unrelated backlog items
+- make clear Phase 2 supersedes conflicting old planning such as Ignore Timer
+  being merely an optional future behavior; timers are now parent-gated/off
+  by default per the product decision
+
+Do not claim unimplemented behavior exists.
+
+5. PROJECT_STATE.md
+
+Do NOT rewrite PROJECT_STATE.md as part of this ticket.
+It describes implemented state, while this ticket changes planning/contracts only.
+
+If you notice materially stale factual statements, report them separately;
+do not silently edit them.
+
+6. PROMPT LOG
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+7. VALIDATION
+
+Run:
+- git diff --check
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+
+Also verify:
+- the three copied Fable files are byte-identical to the originals
+- no gameplay/source files were changed
+- no generated/source document was truncated
+- Markdown formatting is structurally valid
+
+Do not commit or push.
+
+REPORT:
+- exact source paths found in Downloads
+- files added/changed
+- byte-identity verification result
+- short summary of AGENTS.md delta
+- Phase-2 milestone list
+- any PROJECT_STATE.md stale facts noticed
+- validation results
+- git status --short
+
+Phase-2 docs checkpoint cleanup only.
+
+Do not commit or push.
+Do not modify the three verbatim files under docs/design/phase2/.
+
+1. Add the smallest Prettier exclusion for:
+   docs/design/phase2/*.md
+
+2. Run:
+   npm run format:check
+   git diff --check
+
+3. Verify the three Phase-2 files are still byte-identical to the originals in Downloads.
+
+4. Run:
+   git status --short
+
+Do not touch or stage:
+- docs/design/*Zone.Identifier*
+- docs/reviews/
+
+Append this full prompt verbatim to docs/CODEX_PROMPTS.md.
+
+Report:
+- .prettierignore change
+- validation results
+- byte-identity result
+- git status --short
+
+Phase-2 docs cleanup: remove duplication between ROADMAP.md and PHASE2_RECONCILIATION.md only.
+
+Do NOT commit or push.
+Do NOT change gameplay/source files.
+Do NOT change AGENTS.md.
+Do NOT change the three verbatim Fable docs.
+
+Goal:
+Keep the detailed Phase-2 rationale and planning in:
+docs/PHASE2_RECONCILIATION.md
+
+Keep docs/ROADMAP.md as the concise execution roadmap.
+
+Required structure:
+
+1. docs/PHASE2_RECONCILIATION.md
+Keep:
+- fixed product decisions
+- architecture rationale
+- adopt/adapt/defer/drop decisions
+- Chapter-1 vocabulary/schema translation
+- detailed milestone targets and acceptance criteria
+- owner-only open questions
+
+2. docs/ROADMAP.md
+Preserve completed history through #23.
+
+For #24–#36, reduce each milestone to:
+- milestone number + title
+- Planned status
+- one concise target/summary line
+
+Do NOT repeat detailed acceptance criteria or design rationale there.
+
+Add a clear reference such as:
+"See docs/PHASE2_RECONCILIATION.md for Phase-2 rationale, detailed acceptance criteria, and design decisions."
+
+Preserve unrelated backlog items.
+
+Do not remove any unique information; if information exists only in ROADMAP.md, move it to PHASE2_RECONCILIATION.md before shortening ROADMAP.md.
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run:
+- npm run format:check
+- git diff --check
+
+Report:
+- what duplication was removed
+- whether any information was moved
+- files changed
+- validation results
+- git status --short
