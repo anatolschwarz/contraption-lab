@@ -2,3 +2,4 @@ dist
 coverage
 test-results
 package-lock.json
+docs/CODEX_PROMPTS.md

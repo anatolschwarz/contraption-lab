@@ -21,24 +21,35 @@
           <p id="mode-label" class="mode-label">Mode: Edit</p>
         </div>
       </header>
-      <section class="level-summary" aria-live="polite">
-        <p id="level-progress-label">Level 1 of 3 — Basic</p>
-        <p id="puzzle-title-label">Relay Ramps</p>
-        <span id="timed-indicator" class="timed-indicator">Timed</span>
-      </section>
-      <section class="play-tools" aria-label="Puzzle, palette, and settings">
-        <button id="puzzle-selector-button" type="button">
-          Puzzle: Relay Ramps
-        </button>
-        <button id="settings-button" type="button">Settings</button>
-        <button
-          id="parts-palette-toggle"
-          type="button"
-          aria-controls="parts-palette-content"
-          aria-expanded="false"
+      <section class="play-header" aria-live="polite">
+        <div class="play-header-summary">
+          <p id="level-progress-label">Level 1 of 3 — Basic</p>
+          <button
+            id="puzzle-selector-button"
+            class="puzzle-title-button"
+            type="button"
+            aria-controls="puzzle-selector-panel"
+            aria-expanded="false"
+          >
+            Relay Ramps
+          </button>
+          <span id="timed-indicator" class="timed-indicator">Timed</span>
+        </div>
+        <div
+          class="play-header-tools"
+          role="group"
+          aria-label="Puzzle settings and parts"
         >
-          Parts
-        </button>
+          <button id="settings-button" type="button">Settings</button>
+          <button
+            id="parts-palette-toggle"
+            type="button"
+            aria-controls="parts-palette-content"
+            aria-expanded="false"
+          >
+            Parts
+          </button>
+        </div>
       </section>
       <section
         id="puzzle-selector-panel"

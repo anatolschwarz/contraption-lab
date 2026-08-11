@@ -3091,3 +3091,104 @@ Report:
 - validation results
 
 Double-check syntax, formatting, truncation, and unrelated changes.
+
+Continue milestone #23 with the Play header refinement only.
+
+Do NOT implement editable Bird yet.
+Do NOT address the 3 currently known E2E failures in this step unless this header change directly causes a new failure.
+Do not commit or push.
+
+TARGET
+
+Merge the current two top Play rows into one compact header.
+
+Layout:
+
+LEFT SIDE:
+- Level position + difficulty, e.g.:
+  LEVEL 3 OF 5 — HARD
+- Puzzle name
+- Timed indicator when applicable
+
+RIGHT SIDE:
+- Settings
+- Parts
+
+The right-side controls should be aligned to the far right.
+
+PUZZLE NAME / SELECTOR
+
+- Make the puzzle name itself clickable.
+- Clicking the puzzle name opens the existing puzzle selector/list.
+- Remove the redundant separate "Puzzle: <name>" control/row.
+- Preserve existing:
+  - puzzle grouping
+  - locked/completed states
+  - progression behavior
+  - Unlock All behavior
+  - selector accessibility/keyboard behavior where already supported
+  - existing puzzle-switching semantics
+
+TIMED
+
+- Keep the TIMED indicator on the same header line.
+- Untimed puzzles should not show a misleading TIMED label.
+
+RESPONSIVE
+
+- Keep the header usable at narrow/mobile widths.
+- Allow sensible wrapping if necessary.
+- Do not overlay or shrink the game canvas.
+- Keep Parts Palette behavior from #22 unchanged.
+
+SCOPE
+
+Do NOT change:
+- gameplay
+- physics
+- puzzle JSON
+- timers
+- inventory
+- Parts Palette behavior
+- Settings behavior
+- progression logic
+- Bird behavior
+- object rendering/artwork
+
+KNOWN E2E STATE
+
+Before this change, the local full E2E run had 3 known failures:
+- progression persistence after reload
+- Unlock All progress preservation
+- player-owned Ball remove/replace/reset
+
+Do not weaken assertions, raise global timeouts, or change gameplay to hide those failures.
+
+Update focused UI tests only as needed for the new header structure.
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run:
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+- npx playwright test --list
+
+Do not commit or push.
+
+Double-check:
+- syntax
+- formatting
+- DOM ids/test hooks
+- responsive layout
+- accessibility
+- accidental truncation
+- unrelated changes
+
+Report:
+- old vs new header structure
+- how puzzle-name click opens the selector
+- files changed
+- validation results

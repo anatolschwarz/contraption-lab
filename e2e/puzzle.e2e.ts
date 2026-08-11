@@ -586,7 +586,9 @@ test("solves the first puzzle and advances through Next Puzzle", async ({
   await expect(page.locator("#level-progress-label")).toHaveText(
     "Level 1 of 5 — Basic",
   );
-  await expect(page.locator("#puzzle-title-label")).toHaveText("Relay Ramps");
+  await expect(page.locator("#puzzle-selector-button")).toHaveText(
+    "Relay Ramps",
+  );
   await expect(app.timer).toHaveText("Time: 0:45");
 
   await solveFirstPuzzle(app);
@@ -599,8 +601,33 @@ test("solves the first puzzle and advances through Next Puzzle", async ({
   await expect(page.locator("#level-progress-label")).toHaveText(
     "Level 2 of 5 — Medium",
   );
-  await expect(page.locator("#puzzle-title-label")).toHaveText("Relay Shift");
+  await expect(page.locator("#puzzle-selector-button")).toHaveText(
+    "Relay Shift",
+  );
   await expect(app.timer).toBeHidden();
+  expectNoConsoleErrors(app);
+});
+
+test("opens the puzzle selector from the clickable puzzle name", async ({
+  page,
+}) => {
+  const app = await startApp(page);
+  const puzzleName = page.locator("#puzzle-selector-button");
+  const selector = page.locator("#puzzle-selector-panel");
+
+  await expect(puzzleName).toHaveText("Relay Ramps");
+  await expect(puzzleName).toHaveAttribute(
+    "aria-controls",
+    "puzzle-selector-panel",
+  );
+  await expect(puzzleName).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator("#puzzle-title-label")).toHaveCount(0);
+  await puzzleName.click();
+  await expect(selector).toBeVisible();
+  await expect(puzzleName).toHaveAttribute("aria-expanded", "true");
+  await puzzleName.press("Enter");
+  await expect(selector).toBeHidden();
+  await expect(puzzleName).toHaveAttribute("aria-expanded", "false");
   expectNoConsoleErrors(app);
 });
 
@@ -698,7 +725,9 @@ test("times a puzzle through Run, Pause, Resume, Rerun, and Timeout", async ({
   const app = await startApp(page);
   await enableUnlockAll(page);
   await selectPuzzle(page, "timed-relay-003");
-  await expect(page.locator("#puzzle-title-label")).toHaveText("Timed Relay");
+  await expect(page.locator("#puzzle-selector-button")).toHaveText(
+    "Timed Relay",
+  );
   await expect(app.timer).toHaveText("Time: 0:30");
 
   await app.simulation.click();
@@ -735,7 +764,9 @@ test("loads the first real Basic puzzle pair with their defined timers and inven
   await expect(page.locator("#level-progress-label")).toHaveText(
     "Level 4 of 5 — Basic",
   );
-  await expect(page.locator("#puzzle-title-label")).toHaveText("Down the Ramp");
+  await expect(page.locator("#puzzle-selector-button")).toHaveText(
+    "Down the Ramp",
+  );
   await expect(app.timer).toHaveText("Time: 0:10");
   await ensurePartsPaletteOpen(page);
   await expect(page.locator("#tray-ball-button")).toHaveText("Ball (0)");
@@ -746,7 +777,7 @@ test("loads the first real Basic puzzle pair with their defined timers and inven
   await expect(page.locator("#level-progress-label")).toHaveText(
     "Level 5 of 5 — Basic",
   );
-  await expect(page.locator("#puzzle-title-label")).toHaveText(
+  await expect(page.locator("#puzzle-selector-button")).toHaveText(
     "Bridge the Gap",
   );
   await expect(app.timer).toHaveText("Time: 0:12");

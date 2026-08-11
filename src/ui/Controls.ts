@@ -31,8 +31,6 @@ export class Controls {
   private readonly levelProgressLabel = requireElement<HTMLParagraphElement>(
     "level-progress-label",
   );
-  private readonly puzzleTitleLabel =
-    requireElement<HTMLParagraphElement>("puzzle-title-label");
   private readonly timedIndicator =
     requireElement<HTMLSpanElement>("timed-indicator");
   private readonly nextPuzzleButton =
@@ -113,7 +111,7 @@ export class Controls {
       this.setPartsPaletteCollapsed(!this.partsPalette.hidden);
     });
     this.puzzleSelectorButton.addEventListener("click", () => {
-      this.puzzleSelectorPanel.hidden = !this.puzzleSelectorPanel.hidden;
+      this.setPuzzleSelectorExpanded(Boolean(this.puzzleSelectorPanel.hidden));
     });
     this.settingsButton.addEventListener("click", () => {
       this.settingsPanel.hidden = !this.settingsPanel.hidden;
@@ -162,7 +160,6 @@ export class Controls {
         : state.mode.charAt(0).toUpperCase() + state.mode.slice(1);
     this.modeLabel.textContent = `Mode: ${label}`;
     this.levelProgressLabel.textContent = `Level ${view.levelNumber} of ${view.totalBuiltInPuzzles} — ${view.activePuzzle.difficulty}`;
-    this.puzzleTitleLabel.textContent = view.activePuzzle.title;
     this.timedIndicator.hidden =
       view.activePuzzle.timeLimitSeconds === undefined;
     this.nextPuzzleButton.hidden = !state.succeeded;
@@ -170,7 +167,7 @@ export class Controls {
     this.nextPuzzleButton.textContent = view.nextPuzzle
       ? `Next Puzzle: ${view.nextPuzzle.title}`
       : "Last Puzzle Complete";
-    this.puzzleSelectorButton.textContent = `Puzzle: ${view.activePuzzle.title}`;
+    this.puzzleSelectorButton.textContent = view.activePuzzle.title;
     this.unlockAllCheckbox.checked = view.unlockAll;
     this.renderPuzzleSelector(view);
   }
@@ -209,6 +206,11 @@ export class Controls {
     this.partsPalette.hidden = collapsed;
     this.partsPaletteToggle.setAttribute("aria-expanded", String(!collapsed));
     this.partsPaletteToggle.textContent = collapsed ? "Parts" : "Close";
+  }
+
+  private setPuzzleSelectorExpanded(expanded: boolean): void {
+    this.puzzleSelectorPanel.hidden = !expanded;
+    this.puzzleSelectorButton.setAttribute("aria-expanded", String(expanded));
   }
 
   private renderPuzzleSelector(view: Readonly<PlayScreenView>): void {
@@ -250,7 +252,7 @@ export class Controls {
         const timed = puzzle.timeLimitSeconds ? "Timed" : "Untimed";
         puzzleButton.textContent = `${puzzle.title} — ${availability} · ${timed}`;
         puzzleButton.addEventListener("click", () => {
-          this.puzzleSelectorPanel.hidden = true;
+          this.setPuzzleSelectorExpanded(false);
           this.onPuzzleSelect(puzzle.id);
         });
         group.append(puzzleButton);
