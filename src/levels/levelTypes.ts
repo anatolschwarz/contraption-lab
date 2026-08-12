@@ -49,14 +49,54 @@ export const CONTACT_TAGS = [
 
 export type ContactTag = (typeof CONTACT_TAGS)[number];
 
+export interface ContactParticipantByRole {
+  type: "contact";
+  index: 0 | 1;
+}
+
+export interface ContactParticipantById {
+  type: "id";
+  id: string;
+}
+
+export type ContactParticipantSelector =
+  ContactParticipantByRole | ContactParticipantById;
+
+/** A legacy tag target is retained for existing destroy-rule JSON. */
+export type ContactActionTarget = ContactTag | ContactParticipantSelector;
+
 export interface DestroyContactAction {
   type: "destroy";
-  target: ContactTag;
+  target: ContactActionTarget;
 }
+
+export interface ImpulseContactAction {
+  type: "impulse";
+  target: ContactParticipantSelector;
+  impulse: Point;
+}
+
+export interface RedirectContactAction {
+  type: "redirect";
+  target: ContactParticipantSelector;
+  direction: Point;
+}
+
+export type ContactAction =
+  DestroyContactAction | ImpulseContactAction | RedirectContactAction;
+
+export interface ParticipantIdContactCondition {
+  type: "participant-id";
+  target: ContactParticipantSelector;
+  equals: string;
+}
+
+export type ContactCondition = ParticipantIdContactCondition;
 
 export interface ContactRule {
   contacts: [ContactTag, ContactTag];
-  action: DestroyContactAction;
+  conditions?: ContactCondition[];
+  action: ContactAction;
 }
 
 export type ActorTag = "bird";

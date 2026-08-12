@@ -2,6 +2,10 @@ import type {
   ActorDefinition,
   BallDefinition,
   BlockDefinition,
+  ContactAction,
+  ContactActionTarget,
+  ContactCondition,
+  ContactParticipantSelector,
   ContactRule,
   ContactTag,
   InventoryDefinition,
@@ -157,6 +161,87 @@ function validateActors(value: unknown): ActorDefinition[] {
 const isContactTag = (value: unknown): value is ContactTag =>
   typeof value === "string" && CONTACT_TAGS.includes(value as ContactTag);
 
+function validateContactParticipantSelector(
+  value: unknown,
+): ContactParticipantSelector | undefined {
+  if (!isRecord(value)) return undefined;
+  if (value.type === "contact" && (value.index === 0 || value.index === 1)) {
+    return { type: "contact", index: value.index };
+  }
+  if (
+    value.type === "id" &&
+    typeof value.id === "string" &&
+    value.id.trim() !== ""
+  ) {
+    return { type: "id", id: value.id };
+  }
+  return undefined;
+}
+
+function validateContactActionTarget(
+  value: unknown,
+  contacts: readonly [ContactTag, ContactTag],
+): ContactActionTarget | undefined {
+  if (isContactTag(value)) {
+    return contacts[0] !== contacts[1] && contacts.includes(value)
+      ? value
+      : undefined;
+  }
+  return validateContactParticipantSelector(value);
+}
+
+function validateContactConditions(
+  value: unknown,
+): ContactCondition[] | undefined {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) return undefined;
+  const conditions: ContactCondition[] = [];
+  for (const condition of value) {
+    if (!isRecord(condition) || condition.type !== "participant-id") {
+      return undefined;
+    }
+    const target = validateContactParticipantSelector(condition.target);
+    if (
+      !target ||
+      typeof condition.equals !== "string" ||
+      condition.equals.trim() === ""
+    ) {
+      return undefined;
+    }
+    conditions.push({
+      type: "participant-id",
+      target,
+      equals: condition.equals,
+    });
+  }
+  return conditions;
+}
+
+function validateContactAction(
+  value: unknown,
+  contacts: readonly [ContactTag, ContactTag],
+): ContactAction | undefined {
+  if (!isRecord(value)) return undefined;
+  const target = validateContactActionTarget(value.target, contacts);
+  if (!target) return undefined;
+  if (value.type === "destroy") {
+    return { type: "destroy", target };
+  }
+  const selector = validateContactParticipantSelector(value.target);
+  if (!selector) return undefined;
+  if (value.type === "impulse" && isPoint(value.impulse)) {
+    return { type: "impulse", target: selector, impulse: value.impulse };
+  }
+  if (
+    value.type === "redirect" &&
+    isPoint(value.direction) &&
+    (value.direction.x !== 0 || value.direction.y !== 0)
+  ) {
+    return { type: "redirect", target: selector, direction: value.direction };
+  }
+  return undefined;
+}
+
 function validateContactRules(value: unknown): ContactRule[] {
   if (!Array.isArray(value)) {
     throw new Error("Level contactRules must be an array.");
@@ -169,31 +254,48 @@ function validateContactRules(value: unknown): ContactRule[] {
     if (
       rule.contacts.length !== 2 ||
       !isContactTag(firstTag) ||
-      !isContactTag(secondTag) ||
-      firstTag === secondTag
+      !isContactTag(secondTag)
     ) {
       throw new Error(
-        `Level contact rule ${index} must name two different known contact tags.`,
+        `Level contact rule ${index} must name two known contact tags.`,
       );
     }
-    if (!isRecord(rule.action) || rule.action.type !== "destroy") {
-      throw new Error(
-        `Level contact rule ${index} has an unknown or invalid action.`,
-      );
-    }
-    if (!isContactTag(rule.action.target)) {
-      throw new Error(
-        `Level contact rule ${index} has an unknown destroy target tag.`,
-      );
-    }
-    if (rule.action.target !== firstTag && rule.action.target !== secondTag) {
+    const contacts: [ContactTag, ContactTag] = [firstTag, secondTag];
+    if (
+      isRecord(rule.action) &&
+      rule.action.type === "destroy" &&
+      isContactTag(rule.action.target) &&
+      !contacts.includes(rule.action.target)
+    ) {
       throw new Error(
         `Level contact rule ${index} must destroy one of its contact tags.`,
       );
     }
+    const action = validateContactAction(rule.action, contacts);
+    if (!action) {
+      throw new Error(
+        `Level contact rule ${index} has an unknown or invalid action.`,
+      );
+    }
+    if (
+      action.type === "destroy" &&
+      typeof action.target === "string" &&
+      !contacts.includes(action.target)
+    ) {
+      throw new Error(
+        `Level contact rule ${index} must destroy one of its contact tags.`,
+      );
+    }
+    const conditions = validateContactConditions(rule.conditions);
+    if (!conditions) {
+      throw new Error(
+        `Level contact rule ${index} has an unknown or invalid condition.`,
+      );
+    }
     return {
-      contacts: [firstTag, secondTag],
-      action: { type: "destroy", target: rule.action.target },
+      contacts,
+      ...(conditions.length === 0 ? {} : { conditions }),
+      action,
     };
   });
 }

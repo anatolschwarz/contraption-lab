@@ -106,6 +106,13 @@ same 25° rotation (five 5° Q/E steps).
   fixed platform geometry, a fixed dynamic Ball, and a Goal. The shared Phaser
   rendering now uses an off-white grid, dark fixed platforms, wooden player
   parts, glossy red Balls, and green cup-style Goals.
+- **#25 — Headless simulation runner:** added a browser-independent runner
+  using Phaser's bundled Matter engine at the same fixed 60 Hz step as the
+  scene. It simulates level geometry, Balls, Birds, declarative contact rules,
+  and Goal contact without rendering, returning deterministic solved/tick/event
+  results with a max-tick guard. Vitest verifies the legacy two-ramp, Down the
+  Ramp, and Bridge the Gap reference placements plus invalid, repeat, guard,
+  and input-immutability cases.
 
 ## Current behavior
 
@@ -163,20 +170,21 @@ same 25° rotation (five 5° Q/E steps).
 
 ## Architecture
 
-| Area                           | Responsibility                                                                                              |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| `src/levels/`                  | Built-in puzzle catalog, level JSON metadata, ownership/inventory types, validation, and loading.           |
-| `src/state/`                   | Pure game-state and progression persistence, puzzle selection, timer, transforms, inventory, and snapshots. |
-| `src/game/PrototypeScene.ts`   | Phaser rendering, Matter bodies, player interactions, collision success, and full scene-layout snapshots.   |
-| `src/game/rampPlacement.ts`    | Bounds and penetration checks for editable rectangles.                                                      |
-| `src/game/doubleClick.ts`      | Pure completed-click and movement-tolerance logic.                                                          |
-| `src/game/contactRules.ts`     | Pure order-independent contact-rule matching and action execution.                                          |
-| `src/game/autonomousActors.ts` | Pure patrol state/velocity helpers and collision-enabled actor-body options.                                |
-| `src/game/simulationClock.ts`  | Fixed 60 Hz elapsed-time accumulator used by the scene-owned Matter loop.                                   |
-| `src/ui/Controls.ts`           | DOM buttons, tray counts, and enabled states.                                                               |
-| `src/main.ts`                  | Connects state, scene snapshots, controls, and Phaser setup.                                                |
-| `tests/`                       | Vitest unit coverage for state, placement, validation, ownership, puzzle data, and gestures.                |
-| `e2e/puzzle.e2e.ts`            | Playwright MVP coverage for solve, progression, inventory, timer, ownership, actors, and contacts.          |
+| Area                             | Responsibility                                                                                              |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `src/levels/`                    | Built-in puzzle catalog, level JSON metadata, ownership/inventory types, validation, and loading.           |
+| `src/state/`                     | Pure game-state and progression persistence, puzzle selection, timer, transforms, inventory, and snapshots. |
+| `src/game/PrototypeScene.ts`     | Phaser rendering, Matter bodies, player interactions, collision success, and full scene-layout snapshots.   |
+| `src/game/rampPlacement.ts`      | Bounds and penetration checks for editable rectangles.                                                      |
+| `src/game/doubleClick.ts`        | Pure completed-click and movement-tolerance logic.                                                          |
+| `src/game/contactRules.ts`       | Pure order-independent contact-rule matching and action execution.                                          |
+| `src/game/autonomousActors.ts`   | Pure patrol state/velocity helpers and collision-enabled actor-body options.                                |
+| `src/game/simulationClock.ts`    | Fixed 60 Hz elapsed-time accumulator used by the scene-owned Matter loop.                                   |
+| `src/game/headlessSimulation.ts` | Browser-independent fixed-step Matter runner for reference-solution verification.                           |
+| `src/ui/Controls.ts`             | DOM buttons, tray counts, and enabled states.                                                               |
+| `src/main.ts`                    | Connects state, scene snapshots, controls, and Phaser setup.                                                |
+| `tests/`                         | Vitest unit coverage for state, placement, validation, ownership, puzzle data, and gestures.                |
+| `e2e/puzzle.e2e.ts`              | Playwright MVP coverage for solve, progression, inventory, timer, ownership, actors, and contacts.          |
 
 ## Automated validation
 

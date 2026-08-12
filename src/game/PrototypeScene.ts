@@ -6,7 +6,12 @@ import {
   resolvePatrolDirection,
   type PatrolState,
 } from "./autonomousActors";
-import { executeContactRules } from "./contactRules";
+import {
+  addContactVectors,
+  executeContactRules,
+  redirectVelocity,
+  type ContactParticipant,
+} from "./contactRules";
 import {
   isClickMovementWithinTolerance,
   recordCompletedClick,
@@ -126,8 +131,9 @@ interface EditableComponent {
 }
 
 interface ContactObject {
+  id: string;
   tag: ContactTag;
-  destroy: () => void;
+  destroyVisual: () => void;
 }
 
 type MatterRectangle = Phaser.GameObjects.Rectangle &
@@ -664,7 +670,7 @@ export class PrototypeScene extends Phaser.Scene {
     };
     this.balls.set(definition.id, ball);
     this.editableComponents.set(definition.id, ball);
-    this.registerContactObject(shape, "ball", () =>
+    this.registerContactObject(shape, "ball", definition.id, () =>
       this.destroyBall(definition.id),
     );
   }
@@ -704,7 +710,9 @@ export class PrototypeScene extends Phaser.Scene {
       )
       .setDepth(2);
     this.matter.add.gameObject(floorShape, { isStatic: true, label: "floor" });
-    this.registerContactObject(floorShape, "floor", () => floorShape.destroy());
+    this.registerContactObject(floorShape, "floor", "floor", () =>
+      floorShape.destroy(),
+    );
 
     const goalShape = this.add
       .rectangle(goal.x, goal.y, goal.width, goal.height, 0x5dbb35, 0)
@@ -714,7 +722,9 @@ export class PrototypeScene extends Phaser.Scene {
       isSensor: true,
       label: GOAL_LABEL,
     });
-    this.registerContactObject(goalShape, "goal", () => goalShape.destroy());
+    this.registerContactObject(goalShape, "goal", "goal", () =>
+      goalShape.destroy(),
+    );
     this.drawGoalCup(goal);
     this.add
       .text(goal.x, goal.y + 8, "GOAL", {
@@ -815,7 +825,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.updateRampSurface(ramp, definition, definition.rotation);
     this.ramps.set(definition.id, ramp);
     this.editableComponents.set(definition.id, ramp);
-    this.registerContactObject(shape, "ramp", () =>
+    this.registerContactObject(shape, "ramp", definition.id, () =>
       this.destroyRampFromContact(definition.id),
     );
   }
@@ -909,7 +919,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.updateBlockSurface(block, definition);
     this.blocks.set(definition.id, block);
     this.editableComponents.set(definition.id, block);
-    this.registerContactObject(shape, "block", () =>
+    this.registerContactObject(shape, "block", definition.id, () =>
       this.destroyBlockFromContact(definition.id),
     );
   }
@@ -1156,7 +1166,7 @@ export class PrototypeScene extends Phaser.Scene {
     };
     this.actors.set(definition.id, actor);
     this.editableComponents.set(definition.id, actor);
-    this.registerContactObject(shape, definition.tag, () =>
+    this.registerContactObject(shape, definition.tag, definition.id, () =>
       this.destroyActorFromContact(definition.id),
     );
   }
@@ -1208,8 +1218,8 @@ export class PrototypeScene extends Phaser.Scene {
 
     executeContactRules(
       this.level.contactRules,
-      { ...first, destroy: () => this.destroyContactObject(bodyA) },
-      { ...second, destroy: () => this.destroyContactObject(bodyB) },
+      this.toContactParticipant(first, bodyA),
+      this.toContactParticipant(second, bodyB),
     );
     if (
       (first.tag === "ball" && second.tag === "goal") ||
@@ -1224,18 +1234,39 @@ export class PrototypeScene extends Phaser.Scene {
     const contactObject = this.contactObjects.get(body);
     if (!contactObject) return;
     this.contactObjects.delete(body);
-    contactObject.destroy();
+    contactObject.destroyVisual();
+  }
+
+  private toContactParticipant(
+    contactObject: Readonly<ContactObject>,
+    body: MatterJS.BodyType,
+  ): ContactParticipant {
+    return {
+      id: contactObject.id,
+      tag: contactObject.tag,
+      destroy: () => this.destroyContactObject(body),
+      applyImpulse: (impulse) => {
+        const velocity = addContactVectors(body.velocity, impulse);
+        this.matter.body.setVelocity(body, velocity);
+      },
+      redirect: (direction) => {
+        const velocity = redirectVelocity(body.velocity, direction);
+        if (velocity) this.matter.body.setVelocity(body, velocity);
+      },
+    };
   }
 
   private registerContactObject(
     gameObject: MatterGameObject,
     tag: ContactTag,
-    destroy: () => void,
+    id: string,
+    destroyVisual: () => void,
   ): void {
     if (gameObject.body) {
       this.contactObjects.set(gameObject.body as MatterJS.BodyType, {
+        id,
         tag,
-        destroy,
+        destroyVisual,
       });
     }
   }

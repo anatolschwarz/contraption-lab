@@ -95,7 +95,8 @@ detailed acceptance criteria, and design decisions.
 
 ### #25 — Headless simulation runner
 
-- Planned: verify level reference solutions deterministically without rendering.
+- Completed: verifies level reference solutions deterministically without
+  rendering through the shared bundled Matter engine.
 
 ### #26 — Contact Actions v2
 

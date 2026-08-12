@@ -161,6 +161,77 @@ describe("validateLevel", () => {
     ).toThrow(/destroy one of its contact tags/i);
   });
 
+  it("validates contact action selectors, vectors, conditions, and same-tag rules", () => {
+    const level = validateLevel({
+      ...rawLevel,
+      contactRules: [
+        {
+          contacts: ["ball", "ball"],
+          conditions: [
+            {
+              type: "participant-id",
+              target: { type: "id", id: "prototype-ball" },
+              equals: "prototype-ball",
+            },
+          ],
+          action: {
+            type: "impulse",
+            target: { type: "contact", index: 1 },
+            impulse: { x: 2, y: -3 },
+          },
+        },
+      ],
+    });
+    expect(level.contactRules[0]).toMatchObject({
+      contacts: ["ball", "ball"],
+      action: { type: "impulse", impulse: { x: 2, y: -3 } },
+    });
+
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        contactRules: [
+          {
+            contacts: ["ball", "block"],
+            action: {
+              type: "redirect",
+              target: { type: "contact", index: 0 },
+              direction: { x: 0, y: 0 },
+            },
+          },
+        ],
+      }),
+    ).toThrow(/unknown or invalid action/i);
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        contactRules: [
+          {
+            contacts: ["ball", "block"],
+            conditions: [
+              {
+                type: "participant-speed",
+                target: { type: "contact", index: 0 },
+              },
+            ],
+            action: { type: "destroy", target: "block" },
+          },
+        ],
+      }),
+    ).toThrow(/unknown or invalid condition/i);
+    expect(() =>
+      validateLevel({
+        ...rawLevel,
+        contactRules: [
+          {
+            contacts: ["ball", "ball"],
+            action: { type: "destroy", target: "ball" },
+          },
+        ],
+      }),
+    ).toThrow(/unknown or invalid action/i);
+  });
+
   it("requires valid actor patrol definitions", () => {
     const actor = rawLevel.actors[0]!;
     expect(() =>

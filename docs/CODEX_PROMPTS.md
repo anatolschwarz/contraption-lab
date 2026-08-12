@@ -3770,6 +3770,158 @@ REPORT:
 - validation results
 - git status --short
 
+#25 — Headless Simulation Runner
+
+Do NOT commit or push.
+
+Goal:
+Add a browser-independent simulation runner that can prove a level/reference
+solution actually reaches the Goal under the same deterministic physics rules
+used by the game.
+
+Do NOT add Sunny Attic mechanics, UI, art, audio, new levels, or unrelated
+refactors.
+
+## Requirements
+
+Add a small API conceptually like:
+
+simulate(level, placements, options?) -> {
+solved: boolean
+ticks: number
+events: ...
+}
+
+Exact names/types are your choice, but keep the API minimal and testable.
+
+The runner must:
+
+* run under Vitest without Playwright/browser UI
+* use the existing fixed 60 Hz simulation semantics
+* reuse existing level JSON/types/validation where practical
+* preserve current collision/goal behavior
+* terminate deterministically on:
+
+  * Goal reached
+  * configured max tick limit
+* expose enough result data to diagnose failures:
+
+  * solved
+  * ticks elapsed
+  * small deterministic event/result trace
+* produce identical results for identical inputs
+
+Do NOT create a second independent interpretation of gameplay physics if the
+existing Matter/Phaser substrate can be reused safely.
+
+Do NOT add a separate matter-js dependency unless strictly necessary.
+If you believe a new dependency is required, STOP and report why before adding it.
+
+## Reference placements
+
+Use existing known working solutions already present in repo tests/docs.
+
+At minimum add headless verification for:
+
+* the legacy known two-ramp solution
+* Down the Ramp
+* Bridge the Gap
+
+Use current repo data/tests as the source of coordinates/rotations.
+
+Also add at least one deliberately incorrect placement/reference case that
+does NOT solve.
+
+Do not change puzzle geometry or existing reference solutions to make the
+runner pass.
+
+## Architecture
+
+Prefer:
+
+* browser-independent module under src/game/ or another existing appropriate area
+* pure/simple orchestration around deterministic Matter stepping
+* no DOM
+* no Phaser rendering
+* no timers tied to real wall-clock time
+* explicit max-tick guard
+
+If Phaser makes true headless execution impractical, investigate the smallest
+shared-physics extraction possible. Do not rewrite the scene architecture.
+
+## Tests
+
+Add focused Vitest coverage for:
+
+1. known valid reference solution solves
+2. invalid solution does not solve
+3. repeated runs are deterministic:
+
+   * same solved result
+   * same tick count
+   * same event ordering/result trace
+4. max-tick termination works
+5. runner does not mutate the input level/reference placement objects
+
+Keep tests fast enough for normal `npm test`.
+
+Do not remove or weaken existing Playwright tests. The headless runner
+supplements them; it does not replace browser smoke coverage yet.
+
+## Documentation
+
+Update:
+
+* docs/PROJECT_STATE.md only for factual implemented #25 capability
+* docs/ROADMAP.md: mark #25 complete only if acceptance criteria are met
+* docs/PHASE2_RECONCILIATION.md only if a small factual implementation note is
+  required; do not rewrite the plan
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+## Validation
+
+Run:
+
+npm run typecheck
+npm run lint
+npm test
+npm run format:check
+npm run build
+npx playwright test --list
+git diff --check
+
+Do not require the full Playwright suite inside the sandbox if environment
+limitations prevent it.
+
+## Acceptance criteria
+
+#25 is complete only if:
+
+* a level can be simulated without rendering/browser UI
+* valid existing reference solutions reach Goal headlessly
+* invalid reference solution fails
+* deterministic repeat runs match
+* max-tick guard prevents hangs
+* existing gameplay behavior was not changed
+* no new dependency was added
+* all required static/unit/build checks pass
+
+## Report
+
+Return:
+
+* architecture chosen
+* exact runner API
+* files changed
+* which reference solutions were verified
+* approximate Vitest runtime for the new headless tests
+* any Phaser/Matter limitation discovered
+* validation results
+* `git status --short`
+
+Do not commit or push.
+
 Phase-2 docs checkpoint cleanup only.
 
 Do not commit or push.
@@ -3852,3 +4004,181 @@ Report:
 - files changed
 - validation results
 - git status --short
+
+Implement milestone #26 — Contact Actions v2.
+
+Work from the CURRENT local tree. Do not reset, discard, or overwrite unrelated local work.
+
+Before implementation:
+- Read AGENTS.md and relevant Phase-2/project docs.
+- Inspect the current contact-rule implementation, validation, browser runtime, and #25 headless simulator.
+- Append this entire prompt verbatim to docs/CODEX_PROMPTS.md.
+
+Goal
+Extend the existing declarative contact system beyond destroy with:
+- impulse
+- redirect
+- conditional execution
+
+Architecture requirement
+Do NOT design around a presumed final object catalog.
+
+The system must make future object types convenient to add and obsolete ones convenient to remove:
+- contact/action execution must not contain object-specific branches such as Ball/Cat/Fan/etc.
+- do not introduce a switch over every object type.
+- keep object/contact identity centrally declarative or registered.
+- adding/removing an object type must not require editing the contact-action engine itself.
+- object-specific behavior belongs with the object/capability implementation, not in generic contact dispatch.
+- do not implement the future Fable/Sunny Attic object catalog now.
+- do not implement Painted Blocks/toppling; that remains #28.
+
+Preserve
+- existing destroy behavior
+- existing puzzles
+- deterministic fixed-step behavior
+- JSON-defined/validated level architecture
+- browser/headless semantic parity
+
+Actions
+1. destroy
+   - preserve current behavior and compatibility.
+
+2. impulse
+   - declarative vector impulse applied to the selected contact participant.
+   - deterministic.
+
+3. redirect
+   - declaratively changes the selected participant’s travel direction.
+   - define clear deterministic semantics.
+   - avoid object-specific assumptions.
+
+Conditions
+Add a small, generic, extensible condition mechanism for contact rules.
+
+Requirements:
+- conditions are declarative and schema-validated.
+- matching must be deterministic.
+- conditions must operate on generic participant/contact state rather than named characters or future object classes.
+- keep the condition model small; do not predict every future condition now.
+- adding another condition predicate later should require localized extension, not changes throughout the engine.
+
+Participant targeting
+Make targeting unambiguous and generic, including reversed contact order and same-type contacts where practical. Do not rely on assumptions that every contact pair contains two different tags.
+
+Shared semantics
+Browser play and #25 headless simulation must use the same core rule matching/action semantics. Do not create separate browser-only and headless-only implementations.
+
+Tests
+Add focused tests covering at least:
+- existing destroy regression
+- impulse
+- redirect
+- condition true
+- condition false
+- reversed contact participant order
+- deterministic repeated execution
+- multiple matching rules / deterministic ordering where applicable
+- proof that the action executor itself is not tied to today's concrete object list
+- browser/headless shared behavior at the appropriate layer
+
+Validation
+Run the repository’s relevant existing validation commands, including:
+- typecheck
+- lint
+- unit tests
+- format check
+- build
+- Playwright test discovery/list
+Run additional targeted tests if appropriate.
+
+Do not make unrelated UI/art/puzzle changes.
+Do not commit or push the contraption-lab repository.
+
+Final response
+Report concisely:
+- architecture chosen
+- files changed
+- exact impulse/redirect/condition semantics
+- how add/remove-object extensibility is achieved
+- tests/validation results
+- any remaining limitation or deliberate deferral
+
+Coworking delivery
+Use session token:
+s-20260812-0955-c7d4
+
+Write the exact complete final response to:
+~/code/prom-resp/s-20260812-0955-c7d4-response.md
+
+Then in ~/code/prom-resp:
+1. git add s-20260812-0955-c7d4-response.md
+2. git commit -m "Add response s-20260812-0955-c7d4" if there is a change
+3. git pull --rebase origin main
+4. git push origin main
+
+Request approval when required.
+
+Do not print the final response until the prom-resp push has succeeded. The response file and the terminal final response must contain the same complete response text.
+
+Fix and close milestone #26 based on pre-commit review.
+
+Do NOT commit or push contraption-lab.
+
+Append this full prompt verbatim to docs/CODEX_PROMPTS.md.
+
+Required fixes:
+
+1. Remove ambiguity for same-tag contacts.
+   Same-tag rules such as contacts: ["ball", "ball"] must NOT accept a legacy
+   tag-only action target such as target: "ball", because it cannot identify
+   which participant is intended.
+
+   Preserve legacy tag targets for different-tag contacts.
+
+   For same-tag contacts require an unambiguous participant selector:
+   - contact role/index, or
+   - participant id.
+
+   Enforce this in validation and add tests.
+
+2. Restore explicit regression coverage that:
+   - unrelated contacts do nothing
+   - duplicate destroy rules do not destroy the same participant twice
+   - later actions targeting an already-destroyed participant do not execute
+
+3. Run one real focused browser/Playwright execution covering the existing
+   contact path after these changes.
+   Do not only run --list.
+   Keep it narrowly scoped; do not run the whole E2E suite unless necessary.
+
+4. Re-run:
+   npm run typecheck
+   npm run lint
+   npm test
+   npm run format:check
+   npm run build
+   npx playwright test --list
+   git diff --check
+
+Do not make unrelated changes.
+
+Coworking delivery:
+session token: s-20260812-0955-c7d4
+
+Generate BOTH:
+~/code/prom-resp/s-20260812-0955-c7d4-response.md
+~/code/prom-resp/s-20260812-0955-c7d4-diff.patch
+
+The diff patch must represent all current uncommitted contraption-lab changes,
+including tracked, staged/unstaged, new/untracked files, and deletions.
+
+Push both artifacts to prom-resp.
+
+Final response must report:
+- exact fix
+- tests added/changed
+- exact Playwright test actually executed and result
+- all validation results
+- git status --short
+
+Do not commit or push contraption-lab.
