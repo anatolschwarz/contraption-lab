@@ -104,7 +104,8 @@ detailed acceptance criteria, and design decisions.
 
 ### #27 — Gentle default + parent gate + wordless Play shell
 
-- Planned: make child-facing Play gentle and wordless by default.
+- Completed: fresh play is gentle and wordless, with optional persisted parent
+  timer/timeout and sequential-locking controls.
 
 ### #28 — Dynamic/toppling Block capability
 

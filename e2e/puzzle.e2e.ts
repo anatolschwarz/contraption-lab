@@ -516,8 +516,20 @@ async function selectPuzzle(page: Page, puzzleId: string): Promise<void> {
 }
 
 async function enableUnlockAll(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "Settings" }).click();
+  const settings = page.locator("#settings-panel");
+  if (!(await settings.isVisible())) {
+    await page.getByRole("button", { name: "Settings" }).click();
+  }
+  await page.getByLabel("Puzzle locking").check();
   await page.getByLabel("Unlock all puzzles").check();
+}
+
+async function enableTimerFailureMode(page: Page): Promise<void> {
+  const settings = page.locator("#settings-panel");
+  if (!(await settings.isVisible())) {
+    await page.getByRole("button", { name: "Settings" }).click();
+  }
+  await page.getByLabel("Timers and timeout").check();
 }
 
 function getRamp(board: BoardState, id: string): ActualRampTransform {
@@ -587,7 +599,7 @@ test("solves the first puzzle and advances through Next Puzzle", async ({
     "Relay Ramps · Basic · Level 1",
   );
   await expect(page.locator("#puzzle-title-label")).toHaveText("Relay Ramps");
-  await expect(app.timer).toHaveText("Time: 0:45");
+  await expect(app.timer).toBeHidden();
 
   await solveFirstPuzzle(app);
   await expect(app.simulation).toBeDisabled();
@@ -683,7 +695,7 @@ test("hides and restores the Parts Palette across responsive layouts", async ({
   const rampPreview = page.locator(".part-preview--ramp");
   const toggle = page.locator("#parts-palette-toggle");
 
-  await expect(toggle).toHaveText("Parts");
+  await expect(toggle).toContainText("Parts");
   await expect(palette).toBeHidden();
   await expect(paletteTitle).toBeHidden();
   await expect(paletteContent).toBeHidden();
@@ -694,7 +706,7 @@ test("hides and restores the Parts Palette across responsive layouts", async ({
   await expect(blockPreview).toBeVisible();
   await expect(rampPreview).toBeVisible();
   await toggle.click();
-  await expect(toggle).toHaveText("Parts");
+  await expect(toggle).toContainText("Parts");
   await expect(palette).toBeHidden();
 
   await page.setViewportSize({ width: 600, height: 900 });
@@ -703,13 +715,13 @@ test("hides and restores the Parts Palette across responsive layouts", async ({
   await expect(paletteTitle).toBeHidden();
   await expect(paletteContent).toBeHidden();
   await toggle.click();
-  await expect(toggle).toHaveText("Close");
+  await expect(toggle).toContainText("Close");
   await expect(palette).toBeVisible();
   await expect(ballPreview).toBeVisible();
   await expect(blockPreview).toBeVisible();
   await expect(rampPreview).toBeVisible();
   await toggle.click();
-  await expect(toggle).toHaveText("Parts");
+  await expect(toggle).toContainText("Parts");
   await expect(palette).toBeHidden();
   expectNoConsoleErrors(app);
 });
@@ -739,12 +751,79 @@ test("Rerun restores its run-start layout and Reset restores JSON defaults", asy
   expectNoConsoleErrors(app);
 });
 
+test("uses gentle defaults and exposes parent options without text-dependent Play actions", async ({
+  page,
+}) => {
+  const app = await startApp(page);
+  await page.locator("#puzzle-selector-button").click();
+  await expect(
+    page.locator('[data-puzzle-id="timed-relay-003"]'),
+  ).toBeEnabled();
+  await expect(
+    page.locator('[data-puzzle-id="bridge-the-gap-005"]'),
+  ).toBeEnabled();
+  await expect(page.locator(".puzzle-option:disabled")).toHaveCount(0);
+  await page.locator('[data-puzzle-id="timed-relay-003"]').click();
+  await expect(app.timer).toBeHidden();
+
+  await expect(page.locator("#simulation-button .control-icon")).toHaveText(
+    "▶",
+  );
+  await expect(page.locator("#rerun-button .control-icon")).toHaveText("↻");
+  await expect(page.locator("#reset-button .control-icon")).toHaveText("↺");
+  await expect(page.locator("#parts-palette-toggle .control-icon")).toHaveText(
+    "▣",
+  );
+  await page.locator("#parts-palette-toggle").click();
+  await expect(page.locator(".part-preview--ramp")).toBeVisible();
+
+  await app.simulation.click();
+  await advanceSimulation(page, 31_000);
+  await expect(app.mode).toHaveText("Mode: Running");
+
+  const settings = page.locator("#settings-panel");
+  await page.getByRole("button", { name: "Settings" }).click();
+  await expect(page.getByLabel("Timers and timeout")).not.toBeChecked();
+  await expect(page.getByLabel("Puzzle locking")).not.toBeChecked();
+  await page.getByLabel("Timers and timeout").check();
+  await expect(app.timer).toHaveText("Time: 0:30");
+  await page.getByLabel("Puzzle locking").check();
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await waitForPrototypeScene(page);
+  await page.getByRole("button", { name: "Settings" }).click();
+  await expect(page.getByLabel("Timers and timeout")).toBeChecked();
+  await expect(page.getByLabel("Puzzle locking")).toBeChecked();
+  await expect(settings).toBeVisible();
+  expectNoConsoleErrors(app);
+});
+
+test("toggles Settings and retains parent controls after reopening", async ({
+  page,
+}) => {
+  const app = await startApp(page);
+  const settings = page.locator("#settings-panel");
+  const settingsButton = page.getByRole("button", { name: "Settings" });
+
+  await expect(settings).toBeHidden();
+  await settingsButton.click();
+  await expect(settings).toBeVisible();
+  await page.getByLabel("Timers and timeout").check();
+  await page.getByLabel("Puzzle locking").check();
+  await settingsButton.click();
+  await expect(settings).toBeHidden();
+  await settingsButton.click();
+  await expect(settings).toBeVisible();
+  await expect(page.getByLabel("Timers and timeout")).toBeChecked();
+  await expect(page.getByLabel("Puzzle locking")).toBeChecked();
+  expectNoConsoleErrors(app);
+});
+
 test("times a puzzle through Run, Pause, Resume, Rerun, and Timeout", async ({
   page,
 }) => {
   const app = await startApp(page);
-  await enableUnlockAll(page);
   await selectPuzzle(page, "timed-relay-003");
+  await enableTimerFailureMode(page);
   await expect(page.locator("#puzzle-title-label")).toHaveText("Timed Relay");
   await expect(app.timer).toHaveText("Time: 0:30");
 
@@ -776,7 +855,7 @@ test("loads the first real Basic puzzle pair with their defined timers and inven
   page,
 }) => {
   const app = await startApp(page);
-  await enableUnlockAll(page);
+  await enableTimerFailureMode(page);
 
   await selectPuzzle(page, "down-the-ramp-004");
   await expect(page.locator("#puzzle-selector-button")).toHaveText(
@@ -825,6 +904,8 @@ test("enforces puzzle locks and isolates switched runtime state", async ({
   page,
 }) => {
   const app = await startApp(page);
+  await page.getByRole("button", { name: "Settings" }).click();
+  await page.getByLabel("Puzzle locking").check();
   await page.locator("#puzzle-selector-button").click();
   await expect(
     page.locator('[data-puzzle-id="relay-shift-002"]'),
@@ -1378,6 +1459,7 @@ test("keeps the live Ball transform through Pause, Success, and Timeout", async 
   );
 
   await enableUnlockAll(page);
+  await enableTimerFailureMode(page);
   await selectPuzzle(page, "timed-relay-003");
   await app.simulation.click();
   const timeoutTransition = await page.evaluate(() => {

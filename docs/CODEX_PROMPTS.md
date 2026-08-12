@@ -4182,3 +4182,223 @@ Final response must report:
 - git status --short
 
 Do not commit or push contraption-lab.
+
+Implement milestone #27 — Gentle default + parent gate + wordless Play shell.
+
+Work from the CURRENT local tree.
+Do not reset/discard unrelated local work.
+Do NOT commit or push contraption-lab.
+
+Before implementation:
+- Read AGENTS.md.
+- Read docs/PHASE2_RECONCILIATION.md.
+- Read docs/PROJECT_STATE.md and docs/ROADMAP.md.
+- Inspect current Play UI, Settings, timer/failure/progression/locking behavior.
+- Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Goal
+Make the default child-facing Play experience gentle and usable without reading.
+
+The approved Phase-2 contract is:
+- no timer by default
+- no failure state by default
+- no puzzle locking by default
+- timer/failure/locking may remain only as parent-gated options
+- those options are OFF by default
+- child-facing Play controls/goals must not require reading
+
+Preserve the current deterministic/JSON architecture and existing mechanics.
+
+1. Gentle defaults
+
+For a fresh user/default state:
+- timed puzzles must continue playing after their configured timer reaches zero
+- reaching zero must NOT enter Timeout/Failed
+- puzzle selection must not be blocked by progression locks
+- all built-in puzzles must be selectable
+- earned completion/progression data may continue to be recorded
+- Reset/Rerun/puzzle switching semantics must remain deterministic
+
+Do NOT delete the existing timer/failure/locking capabilities.
+
+2. Parent gate
+
+Create the smallest coherent parent-only Settings area/control that exposes:
+- Timers / failure mode
+- Puzzle locking / progression gating
+
+Both must default OFF.
+
+When parent timer/failure mode is ON:
+- preserve the existing timed-puzzle countdown and Timeout/Failed behavior.
+
+When parent puzzle-locking mode is ON:
+- preserve existing sequential unlocking/progression behavior.
+
+Requirements:
+- persist parent settings locally
+- disabling a parent option must not erase earned progress
+- re-enabling it restores the existing underlying behavior
+- do not add accounts, PIN systems, backend, or elaborate parental-control infrastructure
+- keep the gate deliberately minimal for this milestone
+
+If the existing Settings architecture already provides a suitable parent-facing
+boundary, extend it rather than creating a parallel settings system.
+
+3. Wordless Play shell
+
+Audit the CHILD-FACING Play screen only.
+
+Replace or supplement essential text-dependent controls with clear visual/iconic
+affordances so a child does not need to read in order to:
+- start/pause play
+- rerun
+- reset
+- open Parts
+- identify/place available parts
+- open/select puzzles
+- recognize the Goal / success state
+
+Requirements:
+- retain text/aria-labels for accessibility and tests
+- parent-facing Settings may remain textual
+- puzzle names/metadata may remain visible, but reading them must not be required
+  to operate Play
+- do not perform a broad art redesign; #29 owns the Storybook asset pipeline
+- use lightweight existing/CSS/Phaser primitives where appropriate
+- preserve existing stable ids/test hooks where practical
+
+4. Scope limits
+
+Do NOT implement:
+- #28 dynamic/toppling Blocks
+- #29 Storybook asset pipeline
+- Chapter-1 levels #30+
+- new mechanics
+- new dependencies
+- accounts/network/backend
+- large Settings redesign
+- final parent-gate interaction beyond the smallest functional gate
+
+Do not change puzzle physics, reference solutions, contact semantics, or fixed-step simulation.
+
+5. Tests
+
+Add focused coverage for at least:
+- fresh/default state has timer/failure OFF
+- timed puzzle continues after zero with gentle default
+- enabling parent timer/failure restores Timeout behavior
+- fresh/default state has puzzle locking OFF
+- all built-in puzzles selectable with locking OFF
+- enabling locking restores sequential progression restrictions
+- toggling locking does not delete earned progress
+- parent settings persist locally
+- essential Play actions remain operable without relying on visible text
+- Reset/Rerun remain deterministic under both modes
+
+Run one focused real Playwright scenario exercising the new gentle/default behavior.
+
+6. Documentation
+
+Update:
+- docs/PROJECT_STATE.md with factual implemented #27 behavior
+- docs/ROADMAP.md: mark #27 complete only if acceptance criteria are met
+- docs/PHASE2_RECONCILIATION.md only for a small factual completion note if appropriate
+
+Do not rewrite the Phase-2 plan.
+
+7. Validation
+
+Run:
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+- npx playwright test --list
+- focused real Playwright test for #27
+- git diff --check
+
+Report:
+- parent-setting model/storage
+- exact default behavior
+- exact behavior when each parent option is enabled
+- wordless Play-shell changes
+- files changed
+- tests and validation results
+- exact focused Playwright command/result
+- anything deliberately deferred
+- git status --short
+
+Coworking delivery
+
+Use session token:
+s-20260812-0955-c7d4
+
+Generate BOTH:
+~/code/prom-resp/s-20260812-0955-c7d4-response.md
+~/code/prom-resp/s-20260812-0955-c7d4-diff.patch
+
+The patch must represent all current uncommitted contraption-lab changes,
+including tracked staged/unstaged changes, new/untracked files, deletions,
+and binary changes where practical.
+
+Push both artifacts to prom-resp.
+
+Do not print the final response until the prom-resp push succeeds.
+Do NOT commit or push contraption-lab.
+
+Fix the #27 Settings-panel regression only.
+
+Do NOT commit or push contraption-lab.
+Work from the CURRENT local tree.
+Do not reset/discard unrelated local work.
+
+Bug:
+The Settings panel is always visible after #27.
+
+Likely cause:
+`.settings-panel { display: grid; }` overrides the HTML `hidden` state.
+
+Required fix:
+- When the Settings panel has the `hidden` attribute, it must be completely hidden.
+- Preserve the current Settings toggle behavior and #27 parent-setting controls.
+- Make the smallest CSS/markup fix needed.
+- Do not redesign Settings.
+- Do not change gameplay, timer, locking, progression, parent settings, Parts Palette, or unrelated UI.
+
+Add focused regression coverage:
+- Settings panel is hidden on initial load.
+- Click Settings -> panel visible.
+- Click Settings again -> panel hidden.
+- Existing parent-setting controls still work after reopening.
+
+Append THIS FULL PROMPT verbatim to docs/CODEX_PROMPTS.md.
+
+Run:
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run format:check
+- npm run build
+- focused real Playwright test for the Settings toggle
+- git diff --check
+
+Coworking delivery:
+session token: s-20260812-0955-c7d4
+
+Update BOTH:
+~/code/prom-resp/s-20260812-0955-c7d4-response.md
+~/code/prom-resp/s-20260812-0955-c7d4-diff.patch
+
+Push both artifacts to prom-resp.
+
+Final response must report:
+- exact root cause
+- exact fix
+- test added/changed
+- exact focused Playwright command/result
+- validation results
+- git status --short
+
+Do not commit or push contraption-lab.

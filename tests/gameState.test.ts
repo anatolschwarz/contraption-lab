@@ -499,6 +499,45 @@ describe("timed puzzle state", () => {
     expect(resumed).toMatchObject({ mode: "running", timeRemainingMs: 7_500 });
   });
 
+  it("continues running when the parent timer/failure mode suppresses ticks", () => {
+    const running = transitionGameState(timedInitialState, "toggle-simulation");
+    const gentleTick = transitionGameState(running, {
+      type: "advance-time",
+      deltaMs: 20_000,
+      enforceTimer: false,
+    });
+
+    expect(gentleTick).toMatchObject({
+      mode: "running",
+      timeRemainingMs: 10_000,
+    });
+  });
+
+  it("keeps Reset and Rerun deterministic with timer enforcement on or off", () => {
+    const running = transitionGameState(timedInitialState, "toggle-simulation");
+    const gentle = transitionGameState(running, {
+      type: "advance-time",
+      deltaMs: 9_000,
+      enforceTimer: false,
+    });
+    const timed = transitionGameState(running, {
+      type: "advance-time",
+      deltaMs: 9_000,
+      enforceTimer: true,
+    });
+
+    expect(transitionGameState(gentle, "rerun")).toMatchObject({
+      mode: "running",
+      timeRemainingMs: 10_000,
+    });
+    expect(transitionGameState(timed, "rerun")).toMatchObject({
+      mode: "running",
+      timeRemainingMs: 10_000,
+    });
+    expect(transitionGameState(gentle, "reset")).toEqual(timedInitialState);
+    expect(transitionGameState(timed, "reset")).toEqual(timedInitialState);
+  });
+
   it("reruns with the full limit and Reset restores Edit with the original timer", () => {
     const running = transitionGameState(timedInitialState, "toggle-simulation");
     const elapsed = transitionGameState(running, {

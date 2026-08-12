@@ -93,6 +93,7 @@ export function saveProgression(
 export function getPuzzleProgress(
   puzzles: readonly LevelDefinition[],
   progression: Readonly<ProgressionState>,
+  lockingEnabled = true,
 ): PuzzleProgress[] {
   const completed = new Set(progression.completedPuzzleIds);
   return puzzles.map((puzzle, index) => {
@@ -101,6 +102,7 @@ export function getPuzzleProgress(
     }
     const previousPuzzle = puzzles[index - 1];
     const isAvailable =
+      !lockingEnabled ||
       progression.unlockAll ||
       index === 0 ||
       (previousPuzzle !== undefined && completed.has(previousPuzzle.id));
@@ -139,8 +141,9 @@ export function canSelectPuzzle(
   puzzleId: string,
   puzzles: readonly LevelDefinition[],
   progression: Readonly<ProgressionState>,
+  lockingEnabled = true,
 ): boolean {
-  return getPuzzleProgress(puzzles, progression).some(
+  return getPuzzleProgress(puzzles, progression, lockingEnabled).some(
     ({ availability, puzzle }) =>
       puzzle.id === puzzleId && availability !== "locked",
   );
@@ -168,9 +171,13 @@ export function switchPuzzle(
   puzzleId: string,
   puzzles: readonly LevelDefinition[],
   progression: Readonly<ProgressionState>,
+  lockingEnabled = true,
 ): PuzzleRuntime {
   const target = puzzles.find((puzzle) => puzzle.id === puzzleId);
-  if (!target || !canSelectPuzzle(target.id, puzzles, progression)) {
+  if (
+    !target ||
+    !canSelectPuzzle(target.id, puzzles, progression, lockingEnabled)
+  ) {
     return {
       puzzleId: current.puzzleId,
       gameState: { ...current.gameState },
@@ -183,11 +190,13 @@ export function getNextUnlockedPuzzle(
   puzzleId: string,
   puzzles: readonly LevelDefinition[],
   progression: Readonly<ProgressionState>,
+  lockingEnabled = true,
 ): LevelDefinition | undefined {
   const currentIndex = puzzles.findIndex((puzzle) => puzzle.id === puzzleId);
   if (currentIndex < 0) return undefined;
   const nextPuzzle = puzzles[currentIndex + 1];
-  return nextPuzzle && canSelectPuzzle(nextPuzzle.id, puzzles, progression)
+  return nextPuzzle &&
+    canSelectPuzzle(nextPuzzle.id, puzzles, progression, lockingEnabled)
     ? nextPuzzle
     : undefined;
 }

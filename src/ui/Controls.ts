@@ -1,5 +1,6 @@
 import type { LevelDefinition, PuzzleDifficulty } from "../levels/levelTypes";
 import type { PuzzleProgress } from "../state/progression";
+import type { ParentSettings } from "../state/parentSettings";
 import type {
   EnabledControls,
   GameAction,
@@ -22,6 +23,7 @@ export interface PlayScreenView {
   puzzleProgress: readonly PuzzleProgress[];
   totalBuiltInPuzzles: number;
   unlockAll: boolean;
+  parentSettings: ParentSettings;
 }
 
 export class Controls {
@@ -81,12 +83,22 @@ export class Controls {
   private readonly unlockAllCheckbox = requireElement<HTMLInputElement>(
     "unlock-all-checkbox",
   );
+  private readonly puzzleLockingCheckbox = requireElement<HTMLInputElement>(
+    "puzzle-locking-checkbox",
+  );
+  private readonly timerFailureCheckbox = requireElement<HTMLInputElement>(
+    "timer-failure-checkbox",
+  );
   private puzzleViewKey?: string;
 
   constructor(
     onAction: (action: GameAction) => void,
     private readonly onPuzzleSelect: (puzzleId: string) => void,
     private readonly onSetUnlockAll: (unlockAll: boolean) => void,
+    private readonly onSetParentSetting: (
+      key: keyof ParentSettings,
+      value: boolean,
+    ) => void,
     private readonly onNextPuzzle: () => void,
   ) {
     this.buttons = {
@@ -129,6 +141,18 @@ export class Controls {
     this.unlockAllCheckbox.addEventListener("change", () =>
       this.onSetUnlockAll(this.unlockAllCheckbox.checked),
     );
+    this.puzzleLockingCheckbox.addEventListener("change", () =>
+      this.onSetParentSetting(
+        "puzzleLocking",
+        this.puzzleLockingCheckbox.checked,
+      ),
+    );
+    this.timerFailureCheckbox.addEventListener("change", () =>
+      this.onSetParentSetting(
+        "timerFailureMode",
+        this.timerFailureCheckbox.checked,
+      ),
+    );
     this.nextPuzzleButton.addEventListener("click", () => this.onNextPuzzle());
   }
 
@@ -137,8 +161,9 @@ export class Controls {
     for (const key of Object.keys(this.buttons) as (keyof EnabledControls)[]) {
       this.buttons[key].disabled = !enabled[key];
     }
-    this.buttons.simulation.textContent =
-      state.mode === "running" ? "Pause" : "Run";
+    const simulationLabel = state.mode === "running" ? "Pause" : "Run";
+    const simulationIcon = state.mode === "running" ? "Ⅱ" : "▶";
+    this.buttons.simulation.innerHTML = `<span class="control-icon" aria-hidden="true">${simulationIcon}</span> ${simulationLabel}`;
     this.renderPaletteItem(
       this.trayBlockButton,
       this.trayBlockLabel,
@@ -169,19 +194,20 @@ export class Controls {
     );
     this.partsPaletteToggle.disabled = state.mode !== "edit" || state.succeeded;
     this.rerunButton.disabled = state.mode === "edit" || !state.runSnapshot;
-    this.renderTimer(state);
+    this.renderTimer(state, view.parentSettings.timerFailureMode);
     const label = state.succeeded
       ? "Success"
       : state.mode === "failed"
         ? "Failed — Time expired"
         : state.mode.charAt(0).toUpperCase() + state.mode.slice(1);
     this.modeLabel.textContent = `Mode: ${label}`;
+    this.modeLabel.dataset.mode = state.succeeded ? "success" : state.mode;
     this.levelProgressLabel.textContent = `Level ${view.levelNumber}`;
     this.nextPuzzleButton.hidden = !state.succeeded;
     this.nextPuzzleButton.disabled = !state.succeeded || !view.nextPuzzle;
     this.nextPuzzleButton.textContent = view.nextPuzzle
-      ? `Next Puzzle: ${view.nextPuzzle.title}`
-      : "Last Puzzle Complete";
+      ? `➜ Next Puzzle: ${view.nextPuzzle.title}`
+      : "★ Last Puzzle Complete";
     this.puzzleTitleLabel.textContent = view.activePuzzle.title;
     this.puzzleDifficultyLabel.textContent = view.activePuzzle.difficulty;
     this.puzzleSelectorButton.setAttribute(
@@ -189,11 +215,14 @@ export class Controls {
       `${view.activePuzzle.title} · ${view.activePuzzle.difficulty} · Level ${view.levelNumber}`,
     );
     this.unlockAllCheckbox.checked = view.unlockAll;
+    this.unlockAllCheckbox.disabled = !view.parentSettings.puzzleLocking;
+    this.puzzleLockingCheckbox.checked = view.parentSettings.puzzleLocking;
+    this.timerFailureCheckbox.checked = view.parentSettings.timerFailureMode;
     this.renderPuzzleSelector(view);
   }
 
-  renderTimer(state: Readonly<GameState>): void {
-    if (state.timeRemainingMs === undefined) {
+  renderTimer(state: Readonly<GameState>, timerFailureMode = true): void {
+    if (!timerFailureMode || state.timeRemainingMs === undefined) {
       this.timerLabel.hidden = true;
       return;
     }
@@ -225,7 +254,7 @@ export class Controls {
     this.playArea.classList.toggle("play-area--palette-collapsed", collapsed);
     this.partsPalette.hidden = collapsed;
     this.partsPaletteToggle.setAttribute("aria-expanded", String(!collapsed));
-    this.partsPaletteToggle.textContent = collapsed ? "Parts" : "Close";
+    this.partsPaletteToggle.innerHTML = `<span class="control-icon" aria-hidden="true">${collapsed ? "▣" : "×"}</span> ${collapsed ? "Parts" : "Close"}`;
   }
 
   private setPuzzleSelectorExpanded(expanded: boolean): void {

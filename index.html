@@ -51,7 +51,7 @@
             aria-controls="parts-palette-content"
             aria-expanded="false"
           >
-            Parts
+            <span class="control-icon" aria-hidden="true">▣</span> Parts
           </button>
         </div>
       </section>
@@ -69,6 +69,15 @@
         aria-label="Settings"
         hidden
       >
+        <p class="settings-heading">Parent options</p>
+        <label>
+          <input id="timer-failure-checkbox" type="checkbox" />
+          Timers and timeout
+        </label>
+        <label>
+          <input id="puzzle-locking-checkbox" type="checkbox" />
+          Puzzle locking
+        </label>
         <label>
           <input id="unlock-all-checkbox" type="checkbox" />
           Unlock all puzzles
@@ -132,16 +141,28 @@
       </section>
       <p id="edit-feedback" class="edit-feedback" aria-live="polite" hidden></p>
       <nav class="controls simulation-toolbar" aria-label="Simulation controls">
-        <button id="edit-button" type="button">Edit</button>
-        <button id="simulation-button" type="button">Run</button>
-        <button id="rerun-button" type="button" disabled>Rerun</button>
-        <button id="reset-button" type="button">Reset</button>
+        <button id="edit-button" type="button">
+          <span class="control-icon" aria-hidden="true">✋</span> Edit
+        </button>
+        <button id="simulation-button" type="button">
+          <span class="control-icon" aria-hidden="true">▶</span> Run
+        </button>
+        <button id="rerun-button" type="button" disabled>
+          <span class="control-icon" aria-hidden="true">↻</span> Rerun
+        </button>
+        <button id="reset-button" type="button">
+          <span class="control-icon" aria-hidden="true">↺</span> Reset
+        </button>
         <button id="next-puzzle-button" type="button" hidden>
           Next Puzzle
         </button>
       </nav>
-      <p class="hint">
-        Use both brass ramps to guide the ball into the striped goal.
+      <p
+        class="hint"
+        aria-label="Guide the ball to the goal"
+        aria-hidden="true"
+      >
+        ● → ★
       </p>
     </main>
     <script type="module" src="/src/main.ts"></script>

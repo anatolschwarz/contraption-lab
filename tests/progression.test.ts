@@ -57,6 +57,37 @@ describe("built-in puzzle progression", () => {
     ]);
   });
 
+  it("makes every puzzle selectable when parent puzzle locking is off", () => {
+    const progression = createInitialProgression();
+
+    expect(getPuzzleProgress(builtInPuzzles, progression, false)).toEqual(
+      builtInPuzzles.map((puzzle) => ({ puzzle, availability: "available" })),
+    );
+    expect(canSelectPuzzle(hard!.id, builtInPuzzles, progression, false)).toBe(
+      true,
+    );
+  });
+
+  it("restores sequential restrictions without deleting earned completion", () => {
+    const earned = completePuzzle(
+      createInitialProgression(),
+      basic!.id,
+      builtInPuzzles,
+    );
+
+    expect(getPuzzleProgress(builtInPuzzles, earned, false)[2]).toMatchObject({
+      availability: "available",
+    });
+    expect(
+      getPuzzleProgress(builtInPuzzles, earned, true).slice(0, 3),
+    ).toMatchObject([
+      { availability: "completed" },
+      { availability: "available" },
+      { availability: "locked" },
+    ]);
+    expect(earned.completedPuzzleIds).toEqual([basic!.id]);
+  });
+
   it("marks a completed puzzle and unlocks the next one", () => {
     const progression = completePuzzle(
       createInitialProgression(),

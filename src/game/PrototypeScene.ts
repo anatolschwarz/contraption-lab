@@ -727,7 +727,7 @@ export class PrototypeScene extends Phaser.Scene {
     );
     this.drawGoalCup(goal);
     this.add
-      .text(goal.x, goal.y + 8, "GOAL", {
+      .text(goal.x, goal.y + 8, "★", {
         color: "#1e4b24",
         fontFamily: "Arial, sans-serif",
         fontSize: "18px",

@@ -22,6 +22,12 @@ import {
   type StorageAdapter,
 } from "./state/progression";
 import {
+  loadParentSettings,
+  saveParentSettings,
+  setParentSetting,
+  type ParentSettings,
+} from "./state/parentSettings";
+import {
   transitionGameState,
   type GameAction,
   type GameState,
@@ -41,6 +47,7 @@ function getLocalStorage(): StorageAdapter | undefined {
 
 const storage = getLocalStorage();
 let progression: ProgressionState = loadProgression(storage, builtInPuzzles);
+let parentSettings: ParentSettings = loadParentSettings(storage);
 let activePuzzle = builtInPuzzles[0]!;
 let runtime: PuzzleRuntime = createPuzzleRuntime(activePuzzle);
 let state: GameState = runtime.gameState;
@@ -65,6 +72,7 @@ const controls = new Controls(
   handleAction,
   selectPuzzle,
   updateUnlockAll,
+  updateParentSetting,
   loadNextPuzzle,
 );
 
@@ -76,10 +84,16 @@ function getPlayScreenView(): PlayScreenView {
       activePuzzle.id,
       builtInPuzzles,
       progression,
+      parentSettings.puzzleLocking,
     ),
-    puzzleProgress: getPuzzleProgress(builtInPuzzles, progression),
+    puzzleProgress: getPuzzleProgress(
+      builtInPuzzles,
+      progression,
+      parentSettings.puzzleLocking,
+    ),
     totalBuiltInPuzzles: builtInPuzzles.length,
     unlockAll: progression.unlockAll,
+    parentSettings,
   };
 }
 
@@ -121,10 +135,14 @@ function handleAction(action: GameAction): void {
     action = { ...action, componentId };
   }
   if (typeof action === "object" && action.type === "advance-time") {
+    action = {
+      ...action,
+      enforceTimer: parentSettings.timerFailureMode,
+    };
     const previousMode = state.mode;
     replaceGameState(transitionGameState(state, action));
     if (state.mode !== previousMode) applyState();
-    else controls.renderTimer(state);
+    else controls.renderTimer(state, parentSettings.timerFailureMode);
     return;
   }
   if (action === "toggle-simulation" && state.mode === "edit") {
@@ -148,12 +166,21 @@ function handleAction(action: GameAction): void {
 
 function selectPuzzle(puzzleId: string): void {
   if (puzzleId === activePuzzle.id) return;
-  if (!canSelectPuzzle(puzzleId, builtInPuzzles, progression)) return;
+  if (
+    !canSelectPuzzle(
+      puzzleId,
+      builtInPuzzles,
+      progression,
+      parentSettings.puzzleLocking,
+    )
+  )
+    return;
   const nextRuntime = switchPuzzle(
     runtime,
     puzzleId,
     builtInPuzzles,
     progression,
+    parentSettings.puzzleLocking,
   );
   const nextPuzzle = getBuiltInPuzzle(nextRuntime.puzzleId);
   if (!nextPuzzle) return;
@@ -173,11 +200,18 @@ function updateUnlockAll(unlockAll: boolean): void {
   controls.render(state, getPlayScreenView());
 }
 
+function updateParentSetting(key: keyof ParentSettings, value: boolean): void {
+  parentSettings = setParentSetting(parentSettings, key, value);
+  saveParentSettings(storage, parentSettings);
+  controls.render(state, getPlayScreenView());
+}
+
 function loadNextPuzzle(): void {
   const nextPuzzle = getNextUnlockedPuzzle(
     activePuzzle.id,
     builtInPuzzles,
     progression,
+    parentSettings.puzzleLocking,
   );
   if (nextPuzzle) selectPuzzle(nextPuzzle.id);
 }

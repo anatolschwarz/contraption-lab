@@ -61,6 +61,12 @@ h1 {
   font-weight: 800;
 }
 
+.mode-label[data-mode="success"]::before {
+  margin-right: 0.35em;
+  content: "★";
+  color: #d18b28;
+}
+
 .status-panel {
   display: flex;
   align-items: center;
@@ -254,6 +260,29 @@ h1 {
   align-items: center;
   gap: 8px;
   font-weight: 800;
+}
+
+.settings-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-panel[hidden] {
+  display: none;
+}
+
+.settings-heading {
+  color: #344e41;
+  font-weight: 800;
+}
+
+.control-icon {
+  display: inline-block;
+  min-width: 1.1em;
+  color: currentcolor;
+  font-size: 1.15em;
+  line-height: 1;
+  text-align: center;
 }
 
 #game-container {

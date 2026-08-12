@@ -64,6 +64,7 @@ export interface RemoveComponentAction {
 export interface AdvanceTimeAction {
   type: "advance-time";
   deltaMs: number;
+  enforceTimer?: boolean;
 }
 
 export type GameAction =
@@ -225,7 +226,11 @@ export function transitionGameState(
     };
   }
   if (typeof action === "object" && action.type === "advance-time") {
-    if (state.mode !== "running" || state.timeRemainingMs === undefined) {
+    if (
+      action.enforceTimer === false ||
+      state.mode !== "running" ||
+      state.timeRemainingMs === undefined
+    ) {
       return {
         ...state,
         rampTransforms: { ...state.rampTransforms },

@@ -27,19 +27,23 @@ same 25° rotation (five 5° Q/E steps).
   per-puzzle dockable Parts Palette, compact simulation toolbar, timer/status, puzzle
   selector, and Settings.
   There is no separate Home screen.
+- **Gentle default:** fresh play hides timers, never times out, and exposes all
+  built-in puzzles while still recording completion. Parent Settings can
+  independently enable timer/timeout and sequential puzzle locking.
 - **Polish feedback:** the persistent level/title/difficulty summary stays
   visible in every mode. Selector state is visually and textually distinct, the
   Parts Palette and controls wrap cleanly, and invalid placement or fixed-part edit
   attempts show a concise live message without changing the board.
 - **Puzzle selector:** a compact Play-screen selector opens a grouped panel for
-  Basic, Medium, and Hard. It shows locked, available, and completed states
-  plus a timed-puzzle indicator. Locked puzzles cannot be selected. Success
-  offers Next Puzzle when another unlocked puzzle exists.
+  Basic, Medium, and Hard. Fresh play permits every built-in selection; when
+  parent puzzle locking is enabled, it shows locked, available, and completed
+  states and prevents locked selection. Success offers Next Puzzle when one is
+  available under the active parent setting.
 - **Progression:** one global sequential order, such as Basic → Medium → Hard.
   Difficulty is metadata/grouping only, not a separate progression system.
-  Progress persists locally through `localStorage`; Settings can enable manual
-  Unlock all puzzles. Disabling it keeps earned completion and restores normal
-  selection rules.
+  Progress and parent options persist locally through `localStorage`. Parent
+  puzzle locking is off by default, so completion is recorded without blocking
+  selection; re-enabling it restores sequential rules without deleting progress.
 - **Inventory:** each puzzle JSON defines its available parts and counts, which
   supply the Play-screen Parts Palette. A global object library remains future
   work and is separate from puzzle quantities.
@@ -113,6 +117,12 @@ same 25° rotation (five 5° Q/E steps).
   results with a max-tick guard. Vitest verifies the legacy two-ramp, Down the
   Ramp, and Bridge the Gap reference placements plus invalid, repeat, guard,
   and input-immutability cases.
+- **#27 — Gentle default + parent gate + wordless Play shell:** fresh play
+  hides timers, never times out, and exposes every built-in puzzle while still
+  recording completion. Persisted parent Settings can independently restore
+  timer/timeout and sequential-locking behavior. Play controls, Parts, puzzle
+  selection, Goal, and success use lightweight visual affordances while keeping
+  text and ARIA labels for accessibility.
 
 ## Current behavior
 
@@ -126,11 +136,10 @@ same 25° rotation (five 5° Q/E steps).
   the live Ball physics transform rather than restoring its Edit layout.
 - **Success:** goal contact pauses the simulation and locks Edit/Run. Rerun and
   Reset remain available.
-- **Timed puzzles:** an optional positive `timeLimitSeconds` starts counting
-  down with Run, freezes in Pause, and resumes with Run. Success freezes the
-  remaining time. Reaching zero first enters `Failed — Time expired`; Rerun and
-  Reset remain available. Rerun restores the full time limit and Reset returns
-  to Edit with the original limit. Untimed levels have no countdown.
+- **Timed puzzles:** parent timer/timeout mode is off by default, so configured
+  limits are hidden and do not advance or fail the puzzle. When enabled in
+  Settings, the existing countdown, Pause, Success, Timeout, Rerun, and Reset
+  behavior applies. Untimed levels have no countdown.
 - **Rerun:** restores the specific layout, part set, transforms, and inventory
   captured when Run was last started from Edit, then runs immediately.
 - **Reset:** restores the original level JSON and initial JSON inventory.
