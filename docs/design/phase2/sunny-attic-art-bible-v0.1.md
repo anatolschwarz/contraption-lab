@@ -1,5 +1,7 @@
 # The Sunny Attic — Art Bible v0.1 (Style A: Storybook flat)
 
+> **SUPERSEDED by sunny-attic-art-bible-v0.4.md** (this file is kept as provenance; its prompts lack the flatness, anchor-discipline, wood grain and ring-contrast rules discovered during generation — do not generate from it).
+
 Companion to sunny-attic-design-v0.1.md. Purpose: reference-image generation
 before implementation. Every prompt below is ready to paste.
 

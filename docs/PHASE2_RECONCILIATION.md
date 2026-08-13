@@ -6,7 +6,7 @@ the approved Sunny Attic direction; it does not restart the project.
 
 Sources: [repo review](design/phase2/contraption-lab-review-for-sol.md),
 [design direction](design/phase2/sunny-attic-design-v0.1.md),
-[art bible](design/phase2/sunny-attic-art-bible-v0.1.md), [project
+[art bible](design/phase2/sunny-attic-art-bible-v0.4.md) (v0.1 superseded, kept as provenance), [project
 contract](../AGENTS.md), [implemented state](PROJECT_STATE.md), and
 [roadmap](ROADMAP.md).
 
