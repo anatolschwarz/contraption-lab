@@ -146,6 +146,7 @@ detailed acceptance criteria, and design decisions.
 ## Backlog / To Discuss
 
 - Music
+- German Shoutout
 - Rotation UX
   - mouse rotation
   - arrow keys vs Q/E
