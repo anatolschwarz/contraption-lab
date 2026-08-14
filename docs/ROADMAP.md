@@ -162,3 +162,7 @@ detailed acceptance criteria, and design decisions.
   - mobile rotation controls
   - small-screen usability
   - real phone/tablet testing
+
+- Minimize flow approvals
+-- git diff --check → allow everywhere.
+-- prom-resp pull/rebase + push → allow automatically for that repo.
