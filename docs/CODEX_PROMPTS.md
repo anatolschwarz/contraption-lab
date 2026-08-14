@@ -4560,6 +4560,331 @@ FINAL RESPONSE MUST INCLUDE
 - prom-resp commit/push result
 
 Then print the same complete final response in the Codex terminal and STOP.
+
+Continue Phase 2 milestone #31 from the CURRENT working tree.
+
+The previous run stopped after groundwork. Do NOT stop after partial implementation or a progress summary.
+
+Finish the complete #31 scope from the previous prompt:
+- playable L2 “Boing”
+- mattress placement/browser flow
+- deterministic mattress bounce in browser + headless
+- L2 assets/presentation
+- reference solution
+- Reset/Rerun behavior
+- focused unit tests
+- focused L2 Playwright
+- typecheck, lint, npm test, build, git diff --check
+
+Preserve the existing partial #31 work if correct.
+
+If blocked by a concrete technical blocker, report the blocker precisely. Otherwise continue until the milestone and handoff are complete.
+
+Do not commit or push contraption-lab.
+
+Append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to:
+docs/CODEX_PROMPTS.md
+
+Handoff using:
+~/code/prom-resp/push-response.sh s-20260815-0041-l31a
+
+Ensure response + diff reflect the FINAL working tree.
+
+Then STOP.
+
+Start Phase 2 milestone #31 — Chapter 1 L2 “Boing”.
+
+Continue from the current Contraption Lab working tree.
+
+Do NOT redesign or polish #30. We are intentionally moving on with its current known visual imperfections.
+
+Implement #31 according to the approved L2 card in:
+- docs/PHASE2_RECONCILIATION.md
+- docs/design/phase2/sunny-attic-design-v0.1.md
+
+Required behavior:
+
+- SETTING: mattress corner; wardrobe and hatstand background
+- NEW PART: Spring mattress
+- GOAL: marble bounces upward into an elevated teacup
+- LAYOUT:
+  - marble rolls from a fixed shelf and falls
+  - teacup sits high on a tall box
+  - one Spring mattress in inventory
+  - one obvious useful mattress placement zone plus two plausible alternatives
+- INTENDED SOLUTION:
+  - place mattress under the fall point
+  - Run
+  - marble falls onto mattress
+  - mattress bounces marble into the cup
+- POKE:
+  - mattress sproing/jiggle is visual-only
+  - hatstand hat-tip reaction is visual-only and resets
+- PUZZLE:
+  - bounce height must depend deterministically on fall/impact behavior
+- No failure/timer/locking in child-facing play.
+
+Architecture requirements:
+
+1. Use the existing #29 Storybook asset registry/runtime processing pipeline.
+   - approved reference originals remain untouched
+   - runtime part/fx assets remain transparent
+   - environment remains opaque
+   - sprite dimensions must NOT define Matter geometry
+
+2. Implement mattress bounce as the smallest reusable declarative/deterministic mechanic.
+   - no level-id-specific gameplay branch
+   - browser and headless simulation must use equivalent semantics
+   - Reset/Rerun must restore deterministic state
+
+3. Encode the intended solution as level data/referenceSolutions.
+   - prove it solves headlessly
+   - report solved tick and relevant events
+
+4. Preserve existing levels and behavior.
+
+5. Add focused tests for:
+   - mattress bounce semantics
+   - validation/schema changes if any
+   - deterministic headless solution
+   - Reset/Rerun behavior
+   - L2 catalog/progression
+   - focused browser interaction/solve path
+
+Validation at handoff:
+- targeted affected tests during implementation
+- npm run typecheck
+- npm run lint
+- npm test
+- focused L2 Playwright
+- npm run build
+- git diff --check
+
+Do not run full Playwright unless a broad integration problem requires it.
+
+Do not commit or push contraption-lab.
+
+Append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to:
+  docs/CODEX_PROMPTS.md
+
+Create/update the prom-resp handoff and use ONLY:
+  ~/code/prom-resp/push-response.sh s-20260815-0041-l31a
+
+The response and diff artifacts must represent the FINAL working tree.
+
+Then STOP.
+
+Continue #30 from the current working tree.
+
+A real Storybook asset-pipeline defect remains.
+
+Manual inspection of:
+  http://localhost:5173/?storybookAssetProof=1
+
+shows opaque cream rectangles around at least:
+- teapot
+- mattress
+
+The five L1 assets were fixed, but transparency cleanup must apply consistently to the ENTIRE runtime Storybook parts/fx set, not only #30 assets.
+
+Required fix:
+
+1. Reference originals
+   - Do NOT modify anything under the approved reference-art archive.
+   - Preserve originals exactly.
+
+2. Runtime Storybook assets
+   - For EVERY runtime asset classified as part or fx:
+     - remove the cream/matte background deterministically;
+     - preserve antialiased object edges;
+     - trim unnecessary transparent margins appropriately;
+     - output RGBA PNG with real transparency.
+   - Environment/background/backdrop assets MUST remain opaque.
+   - Do not infer Matter/body geometry from processed sprite dimensions.
+
+3. Pipeline
+   - Make this a pipeline-level rule/process, not five or seven manually special-cased files.
+   - Future part/fx runtime copies must follow the same transparent-background processing.
+   - Update runtime asset documentation/provenance accordingly.
+
+4. Verification
+   - verify every runtime part/fx PNG has alpha transparency;
+   - verify environments remain opaque;
+   - verify mattress + teapot in:
+       http://localhost:5173/?storybookAssetProof=1
+     render without cream rectangles/halos;
+   - verify Good Morning, Marble still renders correctly;
+   - run affected unit tests;
+   - typecheck;
+   - lint;
+   - focused Storybook proof Playwright if available;
+   - focused Good Morning, Marble Playwright;
+   - build;
+   - git diff --check.
+
+5. If visual inspection reveals bad edge halos, excessive trimming, clipped artwork, or transparency damage, fix it before handoff.
+
+6. Append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to:
+   docs/CODEX_PROMPTS.md
+
+7. Do not commit or push contraption-lab.
+
+8. Update the SAME #30 handoff using:
+   ~/code/prom-resp/push-response.sh s-20260814-1207-l30a
+
+Ensure response + diff represent the FINAL working tree.
+
+Then STOP.
+
+Continue #30 from the current working tree.
+
+Do not redesign or add features.
+
+1. Regenerate the CURRENT #30 diff artifact so it includes the latest transparency/background-removal changes.
+
+2. Run a final browser visual sanity check for Good Morning, Marble:
+   - L1 background renders correctly
+   - marble/plank/teacup/sparkle have transparent backgrounds
+   - Plank is easy to grab, drag, and snap
+   - Run solves into the teacup
+   - solved teacup + sparkle appear
+   - Reset restores the initial scene
+
+3. If you find a real defect:
+   - fix it
+   - rerun the affected checks
+   - report exactly what changed
+
+4. Append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to:
+   docs/CODEX_PROMPTS.md
+
+5. Do not commit or push contraption-lab.
+
+6. Handoff using:
+   ~/code/prom-resp/push-response.sh s-20260814-1207-l30a
+
+7. Ensure the response and diff artifacts reflect the FINAL working tree after all fixes/checks.
+
+Then STOP.
+
+#30 review corrections:
+
+1. Remove the duplicate:
+   ramp.sprite?.destroy();
+   ramp.sprite?.destroy();
+   Keep exactly one call.
+
+2. Get a definitive focused Playwright result:
+   npx playwright test e2e/goodMorningMarble.e2e.ts --reporter=line
+
+Do not weaken/bypass the test.
+
+If it fails or hangs, diagnose and fix the actual cause.
+
+Then rerun only the necessary affected checks plus git diff --check,
+update the SAME prom-resp response + diff, commit/push prom-resp,
+and do not commit/push contraption-lab.
+
+Manual focused Playwright produced a real failure.
+
+Observed:
+expected snapped Plank: (500,353), rotation 0.26
+actual: unchanged spawn (480,110), rotation 0
+
+So the browser drag is not starting.
+
+Investigate Storybook Ramp input. In #30, createRamp hides the existing
+interactive Matter/rectangle shape with shape.setAlpha(0), while the visible
+storybook sprite is not interactive. Preserve the existing generic ramp
+drag semantics in Storybook mode without coupling physics geometry to sprite
+dimensions.
+
+Fix the actual interaction cause; do not change the E2E expectation or bypass
+the drag.
+
+Then run:
+npx playwright test e2e/goodMorningMarble.e2e.ts --reporter=line
+
+It must produce a definitive PASS.
+
+Also run the smallest affected unit checks and git diff --check.
+Update the SAME prom-resp response + diff and push prom-resp.
+Do not commit/push contraption-lab.
+
+Continue #30 from the current working tree.
+
+The focused Playwright test still fails because the Plank stays at spawn:
+  actual:   x=480, y=110, rotation=0
+  expected: x=500, y=353, rotation=0.26
+
+Diagnose the real browser interaction path.
+
+Important clue:
+the established working moveRamp helper in e2e/puzzle.e2e.ts uses:
+  page.mouse.move(end.x, end.y, { steps: 12 })
+
+while goodMorningMarble.e2e.ts currently uses a single mouse.move.
+
+Determine whether:
+1. POINTER_DOWN creates the drag state;
+2. POINTER_MOVE updates dragMoved / ramp transform;
+3. this is only an unrealistic E2E gesture, or a real runtime drag bug.
+
+If the problem is only the gesture simulation, update the #30 E2E to use the established realistic multi-step drag pattern.
+
+Do not bypass interaction, call scene transform methods directly, or weaken expectations.
+
+Required result:
+  npx playwright test e2e/goodMorningMarble.e2e.ts --reporter=line
+must finish with:
+  1 passed
+
+Then run only necessary affected checks plus git diff --check.
+
+Update the SAME s-20260814-1207-l30a response + diff in prom-resp and push them.
+Do not commit/push contraption-lab.
+
+continue
+
+git status
+
+run: git diff --check
+
+run: curl -I --max-time 2 http://127.0.0.1:4173
+
+Continue #30. Do not commit/push contraption-lab.
+
+Fix these review findings:
+
+1. Runtime Storybook parts/fx MUST have transparent backgrounds.
+   - Reference-art originals remain untouched.
+   - Environments/backdrops remain opaque.
+   - Remove the cream background from the runtime copies used by #30:
+     marble, plank, teacup_empty, teacup_goal, sparkle.
+   - Trim transparent margins appropriately.
+   - Do not derive Matter geometry from resulting sprite bounds.
+   - Update runtime asset provenance/README accordingly.
+
+2. Fix s-20260814-1207-l30a-response.md so validation reporting is internally consistent:
+   - focused L1 Playwright final result is 1 passed (24.2s);
+   - remove the obsolete statement saying no final result was obtained.
+
+3. docs/CODEX_PROMPTS.md:
+   - append every operational #30 follow-up prompt from this Codex session that occurred after the initial milestone prompt;
+   - preserve them VERBATIM;
+   - do not reconstruct or paraphrase them.
+
+Validation:
+- targeted asset/transparency checks
+- targeted affected unit tests
+- typecheck
+- lint
+- focused L1 Playwright
+- build
+- git diff --check
+
+Update the SAME prom-resp response + diff and push prom-resp.
+Do not commit/push contraption-lab.
 Do not commit or push contraption-lab.
 
 ---
@@ -4769,3 +5094,391 @@ Before handoff, inspect the patch for:
 - scope creep
 
 Then stop.
+
+Implement Phase 2 milestone #30 — Chapter 1 L1: Good Morning, Ball.
+
+Repository:
+~/code/contraption-lab
+
+Expected starting HEAD:
+697ff9c Update roadmap backlog
+
+Coworking session:
+s-20260814-1207-l30a
+
+IMPORTANT WORKFLOW
+- Do NOT commit or push contraption-lab.
+- Normal prom-resp review flow.
+- Do NOT run git reset or otherwise move/reset HEAD or index.
+- For repository state inspection use read-only commands such as:
+  git rev-parse HEAD
+  git log -1 --oneline
+  git status -sb
+- Normal in-scope local reads/writes/tests are authorized.
+- Preserve all unrelated local changes/untracked files exactly as-is.
+- Known unrelated untracked paths may include:
+  - docs/ROADMAP.md.bak
+  - docs/reviews/
+  - s-20260812-1003-c7d4-response.md
+- Do not include unrelated paths in the #30 patch.
+- Append this FULL operational prompt VERBATIM to docs/CODEX_PROMPTS.md.
+  Do not summarize or rewrite it.
+
+Read first:
+- AGENTS.md
+- docs/PHASE2_RECONCILIATION.md
+- docs/design/phase2/sunny-attic-design-v0.1.md
+- docs/design/phase2/sunny-attic-art-bible-v0.4.md
+- docs/design/phase2/reference-art/assets-manifest.json
+- current #29 Storybook asset/rendering pipeline
+- current level schema/validation/catalog
+- current rendered and headless simulation paths
+- existing ownership/inventory/placement/Reset/Rerun/progression tests
+
+AUTHORITATIVE MILESTONE
+
+#30 target from PHASE2_RECONCILIATION:
+
+“introduce Ball and Ramp through the wordless first placement lesson.”
+
+Acceptance:
+
+“the level follows its approved card and has a headless-verifiable reference
+solution.”
+
+The approved design card is:
+
+L1 — Good Morning, Marble
+- SETTING: sunbeam by the skylight; a shelf, one cardboard box, dust motes
+- NEW PART: Plank
+- GOAL-PICTURE: marble -> teacup -> sparkle
+- LAYOUT: marble on high shelf (left); teacup on box (right, lower); one gap;
+  one Plank in inventory; plank near-snaps into place
+- INTENDED SOLUTION: bridge the gap with the Plank; RUN; marble rolls into cup
+- POKE: marble wiggles; cup clinks; sunbeam motes swirl. Placement itself is
+  poke-solvable
+- PUZZLE: none — this level is the contract: place, run, joy
+- LAUGH: plink, confetti, distant purr
+- STAR: solve on first RUN
+
+The milestone/repo may call this “Good Morning, Ball”; the approved card calls
+it “Good Morning, Marble”. Follow the approved card for the level presentation
+and use existing repository Ball/Ramp vocabulary internally where appropriate.
+Do not reopen the naming architecture.
+
+GOAL
+
+Build the first actual Sunny Attic Chapter-1 level as a gentle, wordless,
+forgiving placement lesson using the #29 Storybook asset pipeline and the
+existing deterministic gameplay substrate.
+
+REQUIREMENTS
+
+1. New level
+Add one new built-in Basic level implementing the approved L1 card.
+
+Do not modify, remove, reorder, hide, or redesign the existing five puzzles.
+Their child-facing disposition is still an owner-only unresolved decision.
+
+Append L1 after the current five puzzles using the next valid catalog order.
+
+2. Wordless child-facing experience
+The level itself must require no reading.
+
+Do not add textual gameplay instructions, tutorial paragraphs, arrows with text,
+failure messages, score requirements, or mandatory timer behavior.
+
+The intended interaction must be visually understandable:
+- marble starts high on the left;
+- teacup goal is lower on the right;
+- visible gap between them;
+- exactly one player Plank is available;
+- placing the Plank bridges the gap;
+- RUN sends the marble into the cup.
+
+3. Gentle / forgiving placement
+The approved card says the Plank “near-snaps into place” and that placement is
+poke-solvable.
+
+Make placement forgiving enough that a child does not need pixel precision.
+
+Prefer the smallest reusable/data-driven placement-assist or snap mechanism if
+one is needed.
+
+Do NOT hard-code behavior based on the L1 level id.
+
+If existing placement tolerance already provides equivalent forgiving behavior,
+reuse it and prove it instead of adding another system.
+
+4. Storybook presentation
+Use the approved Sunny Attic art through the #29 pipeline.
+
+Core L1 approved assets:
+- environment/corner_L1_v1.png
+- part/marble_v1.png
+- part/plank_v1.png
+- part/teacup_empty_v1.png
+- part/teacup_goal_v1.png
+- fx/sparkle_v1.png
+
+marble_hop_v1.png may be used for solve celebration if it fits the smallest
+clean implementation.
+
+Inspect the approved L1 background before adding decorative props. Do not
+duplicate a shelf/box/other prop already baked into the background.
+
+If an additional cardboard box is needed to follow the card, use an approved
+box asset rather than generating new art.
+
+Do not regenerate or alter approved reference originals.
+
+Runtime copies/processing must follow the #29 provenance convention.
+
+5. Production Storybook integration
+#29 proved the pipeline with mattress and teapot.
+
+#30 must use that pipeline for actual gameplay presentation, not a query-string
+proof fixture.
+
+Extend the smallest existing asset/presentation structure necessary so:
+- the L1 Ball displays as the approved marble;
+- the player Ramp displays as the approved Plank;
+- the goal displays as the approved teacup;
+- the L1 environment displays the approved L1 corner;
+- solved goal presentation can use the approved goal/sparkle state.
+
+Do not add level-id-specific rendering branches.
+
+Existing old levels must continue to render and behave as before unless they
+explicitly opt into Storybook presentation.
+
+6. Rendering / physics separation
+Preserve the #29 rule strictly:
+
+- sprite trimming/scale/anchors are rendering concerns;
+- Matter body geometry is explicit gameplay data;
+- background artwork never defines collision geometry;
+- sprite silhouettes never silently define collision bodies.
+
+Align explicit invisible/static gameplay geometry with the visual shelf,
+box/floor/gap as needed, but keep those responsibilities separate.
+
+Generated Phaser primitives remain usable fallback/debug rendering.
+
+7. Poke / delight
+Follow the L1 card without building a large animation framework.
+
+Provide simple visual-only child-safe reactions where practical:
+- marble wiggle on poke;
+- teacup clink/jiggle on poke;
+- subtle sunbeam/dust-mote reaction.
+
+These reactions must not alter deterministic gameplay physics or headless state.
+
+No new audio system is required in #30.
+The Chapter-1 SFX delivery decision remains owner-only/unresolved.
+
+Reuse any existing visual celebration/confetti behavior where appropriate.
+
+8. Reference solution
+The approved card requires a machine-verifiable REFERENCE SOLUTION.
+
+The repository does not yet have level-encoded referenceSolutions.
+
+Add the smallest optional validated reference-solution representation needed
+for Chapter-1 production.
+
+Requirements:
+- L1 JSON contains one main reference solution.
+- It represents the intended Plank placement.
+- Headless simulation consumes that encoded solution and solves L1.
+- The result is deterministic across repeated runs.
+- Do not hard-code the reference placement only inside a test.
+- Existing five level JSON files do not need referenceSolutions added merely
+  because the optional schema now exists.
+- Design this narrowly enough that later #32/#34 can add distinct star-route
+  reference solutions without redesigning the basic representation.
+
+Do NOT implement the future star-goal system in #30.
+
+The card’s “solve on first RUN” STAR remains future challenge metadata/behavior,
+not a requirement to build profiles/stars now.
+
+9. Reset / Rerun / inventory
+Verify normal existing semantics:
+- exactly one player Plank available initially;
+- placement consumes/uses inventory according to current rules;
+- removal returns it according to current rules;
+- Reset restores JSON initial state;
+- Rerun restores run-start state;
+- no timer/failure/locking is required for the default child flow.
+
+10. Headless determinism
+Add focused tests that load L1’s encoded reference solution and prove:
+- solved = true;
+- deterministic tick count across repeated simulations;
+- relevant final goal event;
+- the reference solution comes from level data, not duplicated test constants.
+
+Do not change the existing #29 baseline tick counts for:
+- Prototype: 215
+- Down the Ramp: 244
+- Bridge the Gap: 299
+
+Existing dynamic/toppling Block tests must remain green.
+
+11. Browser proof
+Add focused Playwright coverage for L1 proving only the important browser path:
+- L1 can be selected/opened through the existing catalog flow;
+- approved L1 Storybook environment/core sprites render;
+- the one Plank can be placed in the intended forgiving area;
+- Run solves the level;
+- no browser console/page errors.
+
+Do not run the full Playwright suite unless this focused coverage reveals a
+credible broad regression.
+
+12. Scope exclusions
+Do NOT:
+- implement L2–L6;
+- implement mattress bounce;
+- implement teapot redirection;
+- implement Painted Block level behavior beyond existing #28 capability;
+- implement Cat or Fan;
+- implement star/profile/challenge systems;
+- resolve disposition of the five old puzzles;
+- resolve parent-gate interaction;
+- add a new audio/SFX system;
+- add dependencies;
+- perform broad unrelated refactors;
+- modify approved reference originals;
+- commit or push contraption-lab.
+
+CALM VALIDATION PROCESS
+
+During implementation:
+- use focused unit/headless tests while iterating;
+- use focused L1 Playwright only when browser behavior needs checking;
+- do not repeatedly run full suites.
+
+Before handoff, run ONCE:
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run build
+- git diff --check
+
+Formatting:
+- check/format only #30-changed text/code files.
+- do not clean unrelated repository files.
+
+Browser:
+- run the focused L1 Playwright test.
+- do NOT run the full Playwright suite unless focused testing exposes a
+  plausible cross-level regression.
+
+Before handoff inspect the complete #30 diff for:
+- syntax errors
+- formatting errors
+- truncation/cutoff
+- erroneous empty files/lines
+- accidental unrelated changes
+- level-id-specific hacks
+- sprite-to-physics coupling
+- unnecessary scope expansion
+
+PROM-RESP HANDOFF
+
+Write the complete final response to:
+
+~/code/prom-resp/s-20260814-1207-l30a-response.md
+
+Generate:
+
+~/code/prom-resp/s-20260814-1207-l30a-diff.patch
+
+The patch must contain ONLY #30 changes, including new runtime assets, while
+excluding unrelated local files.
+
+Do not create make-diff.sh.
+
+Then in ~/code/prom-resp:
+1. stage ONLY the response and diff artifacts;
+2. commit them;
+3. pull --rebase origin main if required;
+4. push origin main.
+
+prom-resp commit/pull/push is explicitly authorized by the owner.
+Do not add an extra confirmation step for those normal handoff operations unless
+the environment itself forces an approval.
+
+FINAL RESPONSE MUST REPORT
+
+- concise L1 implementation summary
+- exact approved-card elements implemented
+- level/catalog decision
+- Storybook assets/runtime copies added
+- rendering/physics separation
+- placement-assist/snap decision
+- poke/delight behavior
+- referenceSolutions schema/API decision
+- exact encoded L1 reference solution
+- headless solved result + deterministic tick count
+- confirmation existing #29 baseline tick counts remain unchanged
+- focused Playwright result
+- final typecheck/lint/test/build results
+- git diff --check result
+- files changed
+- confirmation unrelated local files were preserved/excluded
+- confirmation contraption-lab was NOT committed or pushed
+- prom-resp commit SHA and push result
+
+Append THIS ENTIRE PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
+
+Then print the same complete final response in the Codex terminal and STOP.
+# Codex correction prompt — Phase 2 #31
+
+Continue Phase 2 milestone #31 only. Do not reopen #30 or redesign L2.
+
+The actual #31 diff was reviewed and has these required corrections:
+
+1. Fix `referenceSolutions` validation:
+
+   * reject a reference solution whose placement arrays are all empty;
+   * reject duplicate mattress IDs within a reference solution;
+   * update validation/error wording so it is not Ramp-specific now that mattresses are supported.
+
+2. Add a focused unit test that directly proves the generic deterministic ball–mattress bounce/restitution semantic, rather than only proving that L2 eventually solves.
+
+3. Extend the focused L2 Playwright coverage to verify mattress Rerun restoration.
+
+Do not expand scope beyond these corrections.
+
+Preserve unrelated/owner work, especially:
+
+* `docs/ROADMAP.md`
+* `docs/ROADMAP.md.bak`
+* `docs/reviews/`
+* unrelated response artifacts
+
+Do not commit or push the Contraption Lab repo.
+
+Run appropriate targeted tests, then the normal handoff checks:
+
+* typecheck
+* lint
+* full unit suite once
+* build
+* `git diff --check`
+* focused L2 Playwright
+
+Create/update:
+
+* `s-20260815-0041-l31a-response.md`
+* `s-20260815-0041-l31a-diff.patch`
+
+Use exactly:
+
+`~/code/prom-resp/push-response.sh s-20260815-0041-l31a`
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to `docs/CODEX_PROMPTS.md`. Do not paraphrase, reconstruct, summarize, or omit any part of it.

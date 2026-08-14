@@ -78,5 +78,47 @@ test("renders the mattress and teapot Storybook proof with independent bodies", 
       },
     ]);
 
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const scene =
+          window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+            textures: {
+              get: (key: string) => {
+                getSourceImage: () => HTMLImageElement;
+              };
+            };
+          };
+        const alphaAtCorners = (textureKey: string): number[] => {
+          const image = scene.textures.get(textureKey).getSourceImage();
+          const canvas = document.createElement("canvas");
+          canvas.width = image.width;
+          canvas.height = image.height;
+          const context = canvas.getContext("2d");
+          if (!context) throw new Error("Canvas context is unavailable.");
+          context.drawImage(image, 0, 0);
+          const pixelAlpha = (x: number, y: number): number => {
+            const alpha = context.getImageData(x, y, 1, 1).data[3];
+            if (alpha === undefined) throw new Error("Alpha is unavailable.");
+            return alpha;
+          };
+          return [
+            pixelAlpha(0, 0),
+            pixelAlpha(image.width - 1, 0),
+            pixelAlpha(0, image.height - 1),
+            pixelAlpha(image.width - 1, image.height - 1),
+          ];
+        };
+        return [
+          alphaAtCorners("storybook-mattress-idle"),
+          alphaAtCorners("storybook-teapot-idle"),
+        ];
+      }),
+    )
+    .toEqual([
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ]);
+
   expect(errors).toEqual([]);
 });

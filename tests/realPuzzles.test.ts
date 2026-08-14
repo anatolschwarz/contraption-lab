@@ -80,14 +80,15 @@ describe("the first real puzzle pair", () => {
     ]);
   });
 
-  it("adds both puzzles to the sequential built-in catalog", () => {
+  it("keeps the real puzzle pair ahead of the appended Chapter-1 level", () => {
     expect(getBuiltInPuzzle("down-the-ramp-004")).toEqual(downTheRamp);
     expect(getBuiltInPuzzle("bridge-the-gap-005")).toEqual(bridgeTheGap);
     expect(getBuiltInPuzzlePosition(downTheRamp.id)).toBe(4);
     expect(getBuiltInPuzzlePosition(bridgeTheGap.id)).toBe(5);
-    expect(builtInPuzzles.slice(-2).map((puzzle) => puzzle.id)).toEqual([
-      downTheRamp.id,
+    expect(builtInPuzzles.slice(-3).map((puzzle) => puzzle.id)).toEqual([
       bridgeTheGap.id,
+      "good-morning-marble-006",
+      "boing-007",
     ]);
   });
 

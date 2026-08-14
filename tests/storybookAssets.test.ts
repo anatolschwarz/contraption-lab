@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getStorybookAsset } from "../src/game/storybookAssets";
+import {
+  getStorybookAsset,
+  getStorybookAssetById,
+} from "../src/game/storybookAssets";
 import { STORYBOOK_ASSET_PROOF } from "../src/game/storybookObjectProof";
 import {
   PART_REGISTRY,
@@ -11,12 +14,17 @@ import rawLevel from "../src/levels/prototype.json";
 import { validateLevel } from "../src/levels/validateLevel";
 
 describe("Storybook asset registry", () => {
-  it("registers only mattress and teapot as the first Storybook parts", () => {
+  it("registers Storybook parts and the approved L1 presentation assets", () => {
     expect(isStorybookPartKey("mattress")).toBe(true);
     expect(isStorybookPartKey("teapot")).toBe(true);
     expect(isStorybookPartKey("cat")).toBe(false);
     expect(PART_REGISTRY.mattress.storybookAssetId).toBe("mattress_idle");
     expect(PART_REGISTRY.teapot.storybookAssetId).toBe("teapot_idle");
+    expect(PART_REGISTRY.ball.storybookAssetId).toBe("marble");
+    expect(PART_REGISTRY.ramp.storybookAssetId).toBe("plank");
+    expect(getStorybookAssetById("corner_l1").source).toMatch(
+      /environment\/corner_L1_v1\.png/,
+    );
   });
 
   it("keeps rendering dimensions independent from explicit body geometry", () => {

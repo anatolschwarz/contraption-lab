@@ -16,6 +16,7 @@ import type {
   ActorDefinition,
   ContactTag,
   LevelDefinition,
+  ReferenceSolution,
   RampDefinition,
 } from "../levels/levelTypes";
 
@@ -97,10 +98,24 @@ export interface SimulationRampPlacement {
 
 export interface SimulationPlacements {
   ramps?: readonly SimulationRampPlacement[];
+  mattresses?: readonly import("../levels/levelTypes").MattressDefinition[];
 }
 
 export interface SimulationOptions {
   maxTicks?: number;
+}
+
+/** Runs an encoded level route without duplicating its placement in tests. */
+export function simulateReferenceSolution(
+  level: Readonly<LevelDefinition>,
+  solution: Readonly<ReferenceSolution>,
+  options: Readonly<SimulationOptions> = {},
+): SimulationResult {
+  return simulate(
+    level,
+    { ramps: solution.ramps, mattresses: solution.mattresses },
+    options,
+  );
 }
 
 export type SimulationEvent =
@@ -314,6 +329,24 @@ export function simulate(
     add(body);
     register(body, "ramp", ramp.id);
   }
+  for (const mattress of [
+    ...level.mattresses,
+    ...(placements.mattresses ?? []),
+  ]) {
+    const body = Matter.Bodies.rectangle(
+      mattress.x,
+      mattress.y,
+      mattress.width,
+      mattress.height,
+      {
+        isStatic: true,
+        label: `mattress:${mattress.id}`,
+        restitution: mattress.restitution,
+      },
+    );
+    add(body);
+    register(body, "mattress", mattress.id);
+  }
 
   for (const ball of level.balls) {
     if (ball.initiallyPlaced === false) continue;
@@ -358,17 +391,40 @@ export function simulate(
         tick,
         participants: orderedParticipants(first, second),
       });
-      executeContactRules(level.contactRules, first, second);
       const ball =
         first.tag === "ball"
           ? first
           : second.tag === "ball"
             ? second
             : undefined;
+      const mattress =
+        first.tag === "mattress"
+          ? first
+          : second.tag === "mattress"
+            ? second
+            : undefined;
+      if (ball && mattress && ball.body.velocity.y > 0) {
+        const definition = [
+          ...level.mattresses,
+          ...(placements.mattresses ?? []),
+        ].find((item) => item.id === mattress.id);
+        if (definition)
+          Matter.Body.setVelocity(ball.body, {
+            x: ball.body.velocity.x,
+            y: -ball.body.velocity.y * definition.restitution,
+          });
+      }
+      executeContactRules(level.contactRules, first, second);
+      const goalBall =
+        first.tag === "ball"
+          ? first
+          : second.tag === "ball"
+            ? second
+            : undefined;
       const goalContact = first.tag === "goal" || second.tag === "goal";
-      if (ball && goalContact) {
+      if (goalBall && goalContact) {
         solved = true;
-        events.push({ type: "goal", tick, ballId: ball.id });
+        events.push({ type: "goal", tick, ballId: goalBall.id });
       }
     }
   });

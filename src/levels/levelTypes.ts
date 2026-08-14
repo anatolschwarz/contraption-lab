@@ -1,6 +1,7 @@
 import type {
   ContactTag,
   InventoryDefinition as RegistryInventoryDefinition,
+  StorybookAssetId,
 } from "./partRegistry";
 
 export { CONTACT_TAGS } from "./partRegistry";
@@ -25,6 +26,30 @@ export interface LevelPartDefinition extends RectangleDefinition {
 
 export interface RampDefinition extends LevelPartDefinition {
   rotation: number;
+}
+
+/** Explicit gameplay geometry and spawning data for a player-owned Ramp. */
+export interface TrayRampDefinition extends Omit<RampDefinition, "id"> {
+  spawn: Point;
+}
+
+/** Explicit spring surface geometry; restitution is gameplay data, not art. */
+export interface MattressDefinition extends LevelPartDefinition {
+  restitution: number;
+}
+
+export interface TrayMattressDefinition extends Omit<MattressDefinition, "id"> {
+  spawn: Point;
+}
+
+export interface MattressSnapTarget extends Point {
+  tolerance: number;
+}
+
+/** A forgiving placement target; it never derives geometry from a sprite. */
+export interface RampSnapTarget extends Point {
+  rotation: number;
+  tolerance: number;
 }
 
 export interface BlockDefinition extends LevelPartDefinition {
@@ -124,6 +149,36 @@ export interface ActorDefinition extends RectangleDefinition {
   movement: PatrolMovementDefinition;
 }
 
+export interface StorybookRenderDefinition {
+  asset: StorybookAssetId;
+  width: number;
+  height: number;
+}
+
+/** Optional presentation only. Physics remains in the level's regular geometry. */
+export interface StorybookPresentation {
+  environment: StorybookRenderDefinition;
+  ball: StorybookRenderDefinition;
+  ramp?: StorybookRenderDefinition;
+  mattress?: StorybookRenderDefinition;
+  goal: StorybookRenderDefinition & {
+    solvedAsset: StorybookAssetId;
+    sparkle?: StorybookRenderDefinition;
+  };
+}
+
+export type ReferenceRampPlacement = RampDefinition;
+
+/**
+ * Optional machine-verifiable placement route. Later star routes can add
+ * further named solutions without changing the base level model.
+ */
+export interface ReferenceSolution {
+  id: string;
+  ramps?: ReferenceRampPlacement[];
+  mattresses?: MattressDefinition[];
+}
+
 export function isPlayerPart(
   definition: Readonly<Pick<LevelPartDefinition, "ownership">>,
 ): boolean {
@@ -145,10 +200,17 @@ export interface LevelDefinition {
   order: number;
   timeLimitSeconds?: number;
   inventory: InventoryDefinition;
+  trayRamp?: TrayRampDefinition;
+  trayMattress?: TrayMattressDefinition;
+  rampSnapTargets?: RampSnapTarget[];
+  mattressSnapTargets?: MattressSnapTarget[];
+  storybookPresentation?: StorybookPresentation;
+  referenceSolutions?: ReferenceSolution[];
   contactRules: ContactRule[];
   actors: ActorDefinition[];
   balls: BallDefinition[];
   ramps: RampDefinition[];
+  mattresses: MattressDefinition[];
   blocks: BlockDefinition[];
   floor: RectangleDefinition;
   goal: RectangleDefinition;

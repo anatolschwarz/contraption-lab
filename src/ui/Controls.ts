@@ -73,6 +73,12 @@ export class Controls {
     requireElement<HTMLButtonElement>("tray-ramp-button");
   private readonly trayRampLabel =
     requireElement<HTMLSpanElement>("tray-ramp-label");
+  private readonly trayMattressButton = requireElement<HTMLButtonElement>(
+    "tray-mattress-button",
+  );
+  private readonly trayMattressLabel = requireElement<HTMLSpanElement>(
+    "tray-mattress-label",
+  );
   private readonly partsPalette = requireElement<HTMLElement>("parts-palette");
   private readonly partsPaletteToggle = requireElement<HTMLButtonElement>(
     "parts-palette-toggle",
@@ -128,6 +134,9 @@ export class Controls {
     );
     this.trayRampButton.addEventListener("click", () =>
       onAction({ type: "spawn-tray-ramp", componentId: "" }),
+    );
+    this.trayMattressButton.addEventListener("click", () =>
+      onAction({ type: "spawn-tray-mattress", componentId: "" }),
     );
     this.partsPaletteToggle.addEventListener("click", () => {
       this.setPartsPaletteCollapsed(!this.partsPalette.hidden);
@@ -190,6 +199,13 @@ export class Controls {
       this.trayRampLabel,
       "Ramp",
       state.trayRampCount,
+      state,
+    );
+    this.renderPaletteItem(
+      this.trayMattressButton,
+      this.trayMattressLabel,
+      "Mattress",
+      state.trayMattressCount,
       state,
     );
     this.partsPaletteToggle.disabled = state.mode !== "edit" || state.succeeded;

@@ -40,6 +40,7 @@ describe("built-in puzzle progression", () => {
     expect(getBuiltInPuzzlePosition(hard!.id)).toBe(3);
     expect(getBuiltInPuzzlePosition(downTheRamp!.id)).toBe(4);
     expect(getBuiltInPuzzlePosition(bridgeTheGap!.id)).toBe(5);
+    expect(getBuiltInPuzzlePosition("good-morning-marble-006")).toBe(6);
   });
 
   it("initially unlocks only the first puzzle", () => {
@@ -50,6 +51,8 @@ describe("built-in puzzle progression", () => {
 
     expect(progress.map(({ availability }) => availability)).toEqual([
       "available",
+      "locked",
+      "locked",
       "locked",
       "locked",
       "locked",
@@ -99,6 +102,8 @@ describe("built-in puzzle progression", () => {
     expect(getPuzzleProgress(builtInPuzzles, progression)).toMatchObject([
       { availability: "completed" },
       { availability: "available" },
+      { availability: "locked" },
+      { availability: "locked" },
       { availability: "locked" },
       { availability: "locked" },
       { availability: "locked" },
@@ -157,6 +162,8 @@ describe("built-in puzzle progression", () => {
     expect(getPuzzleProgress(builtInPuzzles, restoredRules)).toMatchObject([
       { availability: "completed" },
       { availability: "available" },
+      { availability: "locked" },
+      { availability: "locked" },
       { availability: "locked" },
       { availability: "locked" },
       { availability: "locked" },
@@ -225,7 +232,7 @@ describe("built-in puzzle progression", () => {
       medium,
     );
     expect(
-      getNextUnlockedPuzzle(bridgeTheGap!.id, builtInPuzzles, afterAll),
+      getNextUnlockedPuzzle("boing-007", builtInPuzzles, afterAll),
     ).toBeUndefined();
   });
 });

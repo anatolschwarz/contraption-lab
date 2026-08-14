@@ -10,6 +10,7 @@ export const TRAY_BLOCK_ID = "tray-block-1";
 export const TRAY_BALL_ID_PREFIX = "tray-ball-";
 export const TRAY_BLOCK_ID_PREFIX = "tray-block-";
 export const TRAY_RAMP_ID_PREFIX = "tray-ramp-";
+export const TRAY_MATTRESS_ID_PREFIX = "tray-mattress-";
 
 export interface RampTransform {
   position: Point;
@@ -32,6 +33,7 @@ export interface RunSnapshot {
   trayBirdCount: number;
   trayBlockCount: number;
   trayRampCount: number;
+  trayMattressCount: number;
 }
 
 export interface SelectComponentAction {
@@ -59,11 +61,15 @@ export interface SpawnTrayRampAction {
   type: "spawn-tray-ramp";
   componentId: string;
 }
+export interface SpawnTrayMattressAction {
+  type: "spawn-tray-mattress";
+  componentId: string;
+}
 
 export interface RemoveComponentAction {
   type: "remove-component";
   componentId: string;
-  returnsTrayPart: "ball" | "bird" | "block" | "ramp" | null;
+  returnsTrayPart: "ball" | "bird" | "block" | "ramp" | "mattress" | null;
 }
 
 export interface AdvanceTimeAction {
@@ -84,6 +90,7 @@ export type GameAction =
   | SpawnTrayBallAction
   | SpawnTrayBirdAction
   | SpawnTrayRampAction
+  | SpawnTrayMattressAction
   | RemoveComponentAction
   | AdvanceTimeAction;
 
@@ -102,6 +109,7 @@ export interface GameState {
   trayBirdCount: number;
   trayBlockCount: number;
   trayRampCount: number;
+  trayMattressCount: number;
   runSnapshot?: RunSnapshot;
 }
 
@@ -136,6 +144,7 @@ export function createInitialGameState(
     trayBirdCount: normalizedInventory.bird,
     trayBlockCount: normalizedInventory.block,
     trayRampCount: normalizedInventory.ramp,
+    trayMattressCount: normalizedInventory.mattress,
   };
 }
 
@@ -176,6 +185,7 @@ function createRunSnapshot(state: Readonly<GameState>): RunSnapshot {
     trayBirdCount: state.trayBirdCount,
     trayBlockCount: state.trayBlockCount,
     trayRampCount: state.trayRampCount,
+    trayMattressCount: state.trayMattressCount,
   };
 }
 
@@ -191,6 +201,7 @@ function cloneRunSnapshot(
       trayBirdCount: snapshot.trayBirdCount,
       trayBlockCount: snapshot.trayBlockCount,
       trayRampCount: snapshot.trayRampCount,
+      trayMattressCount: snapshot.trayMattressCount,
     }
   );
 }
@@ -221,6 +232,7 @@ export function transitionGameState(
       trayBirdCount: state.runSnapshot.trayBirdCount,
       trayBlockCount: state.runSnapshot.trayBlockCount,
       trayRampCount: state.runSnapshot.trayRampCount,
+      trayMattressCount: state.runSnapshot.trayMattressCount,
       runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }
@@ -263,6 +275,7 @@ export function transitionGameState(
       trayBirdCount: state.trayBirdCount,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
+      trayMattressCount: state.trayMattressCount,
       runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }
@@ -332,6 +345,15 @@ export function transitionGameState(
           blockTransforms: { ...state.blockTransforms },
         };
   }
+  if (typeof action === "object" && action.type === "spawn-tray-mattress") {
+    return state.mode === "edit" && state.trayMattressCount > 0
+      ? {
+          ...state,
+          selectedComponentId: action.componentId,
+          trayMattressCount: state.trayMattressCount - 1,
+        }
+      : { ...state };
+  }
   if (typeof action === "object" && action.type === "remove-component") {
     if (state.mode !== "edit") {
       return {
@@ -379,6 +401,10 @@ export function transitionGameState(
         action.returnsTrayPart === "ramp"
           ? state.trayRampCount + 1
           : state.trayRampCount,
+      trayMattressCount:
+        action.returnsTrayPart === "mattress"
+          ? state.trayMattressCount + 1
+          : state.trayMattressCount,
     };
   }
   if (action === "deselect" && state.mode === "edit") {
@@ -399,6 +425,7 @@ export function transitionGameState(
       trayBirdCount: state.trayBirdCount,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
+      trayMattressCount: state.trayMattressCount,
       runSnapshot: createRunSnapshot(state),
     };
   }
@@ -417,6 +444,7 @@ export function transitionGameState(
       trayBirdCount: state.trayBirdCount,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
+      trayMattressCount: state.trayMattressCount,
       runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }
@@ -435,6 +463,7 @@ export function transitionGameState(
       trayBirdCount: state.trayBirdCount,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
+      trayMattressCount: state.trayMattressCount,
       runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }
@@ -453,6 +482,7 @@ export function transitionGameState(
       trayBirdCount: state.trayBirdCount,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
+      trayMattressCount: state.trayMattressCount,
       runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }

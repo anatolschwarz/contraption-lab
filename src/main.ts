@@ -127,6 +127,11 @@ function handleAction(action: GameAction): void {
     if (!componentId) return;
     action = { ...action, componentId };
   }
+  if (typeof action === "object" && action.type === "spawn-tray-mattress") {
+    const componentId = scene?.spawnTrayMattress(state.trayMattressCount);
+    if (!componentId) return;
+    action = { ...action, componentId };
+  }
   if (typeof action === "object" && action.type === "spawn-tray-ball") {
     const ball = scene?.spawnTrayBall(state.trayBallCount);
     if (!ball) return;

@@ -1,4 +1,4 @@
-import type { Point } from "../levels/levelTypes";
+import type { Point, RampSnapTarget } from "../levels/levelTypes";
 
 export const PLAYABLE_WIDTH = 960;
 export const PLAYABLE_HEIGHT = 540;
@@ -14,6 +14,26 @@ export interface RectanglePlacement extends Point, RampGeometry {}
 
 export interface CircleGeometry extends Point {
   radius: number;
+}
+
+export interface SnappedRampTransform {
+  position: Point;
+  rotation: number;
+}
+
+export function snapRampPlacement(
+  position: Readonly<Point>,
+  rotation: number,
+  targets: readonly RampSnapTarget[],
+): SnappedRampTransform {
+  const target = targets.find(
+    (candidate) =>
+      (candidate.x - position.x) ** 2 + (candidate.y - position.y) ** 2 <=
+      candidate.tolerance ** 2,
+  );
+  return target
+    ? { position: { x: target.x, y: target.y }, rotation: target.rotation }
+    : { position: { ...position }, rotation };
 }
 
 export function clampRampPosition(

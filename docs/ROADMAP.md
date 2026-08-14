@@ -164,5 +164,31 @@ detailed acceptance criteria, and design decisions.
   - real phone/tablet testing
 
 - Minimize flow approvals
+-- /home/anatolschwartz/code/prom-resp/push-response.sh s-20260814-1207-l30a
 -- git diff --check → allow everywhere.
 -- prom-resp pull/rebase + push → allow automatically for that repo.
+-- prom-resp handoff Git operations → allow automatically
+  - add the session response + diff artifacts
+  - status
+  - commit
+  - pull --rebase
+  - push
+-- Storybook asset processing
+  - allow `npm run storybook-assets:process` in contraption-lab
+  - do not broadly allow arbitrary `npm run`
+  - npm run storybook-assets:check
+-- focused formatting + focused test commands on explicitly in-scope files
+--- npx prettier --write <in-scope-file>
+--- npx playwright test <in-scope-test> --reporter=dot
+--- npx prettier --write src/game/PrototypeScene.ts && npx playwright test e2e/goodMorningMarble.e2e.ts
+-- Minimize read-only local diagnostics approvals
+--- allow `ss` socket/listener inspection
+-- e.g. `ss -ltnp '( sport = :4173 )'`
+-- allow local HTTP health/probe checks
+--- e.g. curl -I --max-time 2 http://127.0.0.1:<port>
+--- curl -I --max-time 2 http://127.0.0.1:4173 || true
+-- Also worth pre-allowing Bash(:), Bash(echo:*), Bash(true)
+** "approval friendly prettifier"?
+--- should  tehr be an entity that turns teh code to be "apprval freindly"
+--- if such functionalty to be implemented within Terra implemneter, will harm Terra coding capabities due to off-topic context etc?
+--- smae applies to the prom-resp instructns in the "to execute prompt" 

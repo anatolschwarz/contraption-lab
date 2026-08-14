@@ -10,13 +10,24 @@ import type {
   ContactTag,
   InventoryDefinition,
   LevelDefinition,
+  MattressDefinition,
+  MattressSnapTarget,
   Point,
   PuzzleDifficulty,
+  RampSnapTarget,
   RampDefinition,
+  ReferenceSolution,
   RectangleDefinition,
+  StorybookPresentation,
+  TrayRampDefinition,
+  TrayMattressDefinition,
 } from "./levelTypes";
 import { PUZZLE_DIFFICULTIES } from "./levelTypes";
-import { isContactTag, isInventoryPartKey } from "./partRegistry";
+import {
+  isContactTag,
+  isInventoryPartKey,
+  isStorybookAssetId,
+} from "./partRegistry";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -56,6 +67,130 @@ const isRamp = (value: unknown): value is RampDefinition =>
   value.id.trim() !== "" &&
   (value.ownership === "fixed" || value.ownership === "player") &&
   isFiniteNumber(value.rotation);
+
+const isTrayRamp = (value: unknown): value is TrayRampDefinition =>
+  isRecord(value) &&
+  isRectangle(value) &&
+  isPoint(value.spawn) &&
+  (value.ownership === "fixed" || value.ownership === "player") &&
+  isFiniteNumber(value.rotation);
+
+const isMattress = (value: unknown): value is MattressDefinition =>
+  isRecord(value) &&
+  isRectangle(value) &&
+  typeof value.id === "string" &&
+  value.id.trim() !== "" &&
+  (value.ownership === "fixed" || value.ownership === "player") &&
+  isFiniteNumber(value.restitution) &&
+  value.restitution > 0;
+
+const isTrayMattress = (value: unknown): value is TrayMattressDefinition =>
+  isRecord(value) &&
+  isMattress({ ...value, id: "tray" }) &&
+  isPoint(value.spawn);
+
+const isMattressSnapTarget = (value: unknown): value is MattressSnapTarget =>
+  isRecord(value) &&
+  isPoint(value) &&
+  isFiniteNumber(value.tolerance) &&
+  value.tolerance > 0;
+
+const isRampSnapTarget = (value: unknown): value is RampSnapTarget =>
+  isRecord(value) &&
+  isPoint(value) &&
+  isFiniteNumber(value.rotation) &&
+  isFiniteNumber(value.tolerance) &&
+  value.tolerance > 0;
+
+const isStorybookRenderDefinition = (
+  value: unknown,
+): value is StorybookPresentation["environment"] =>
+  isRecord(value) &&
+  isStorybookAssetId(value.asset) &&
+  isFiniteNumber(value.width) &&
+  value.width > 0 &&
+  isFiniteNumber(value.height) &&
+  value.height > 0;
+
+const isStorybookPresentation = (
+  value: unknown,
+): value is StorybookPresentation => {
+  if (!isRecord(value)) return false;
+  if (
+    !isStorybookRenderDefinition(value.environment) ||
+    !isStorybookRenderDefinition(value.ball) ||
+    !isRecord(value.goal) ||
+    !isStorybookRenderDefinition(value.goal) ||
+    !isStorybookAssetId(value.goal.solvedAsset)
+  ) {
+    return false;
+  }
+  if (value.ramp !== undefined && !isStorybookRenderDefinition(value.ramp))
+    return false;
+  if (
+    value.mattress !== undefined &&
+    !isStorybookRenderDefinition(value.mattress)
+  )
+    return false;
+  if (value.ramp === undefined && value.mattress === undefined) return false;
+  return (
+    value.goal.sparkle === undefined ||
+    isStorybookRenderDefinition(value.goal.sparkle)
+  );
+};
+
+function validateReferenceSolutions(value: unknown): ReferenceSolution[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new Error("Level referenceSolutions must be a non-empty array.");
+  }
+  const solutions = value.map((solution, index) => {
+    if (
+      !isRecord(solution) ||
+      typeof solution.id !== "string" ||
+      solution.id.trim() === "" ||
+      (solution.ramps !== undefined &&
+        (!Array.isArray(solution.ramps) || !solution.ramps.every(isRamp))) ||
+      (solution.mattresses !== undefined &&
+        (!Array.isArray(solution.mattresses) ||
+          !solution.mattresses.every(isMattress))) ||
+      (solution.ramps === undefined && solution.mattresses === undefined) ||
+      (solution.ramps?.length ?? 0) + (solution.mattresses?.length ?? 0) === 0
+    ) {
+      throw new Error(
+        `Level reference solution ${index} must contain at least one placement.`,
+      );
+    }
+    if (
+      solution.ramps &&
+      new Set(solution.ramps.map((ramp) => ramp.id)).size !==
+        solution.ramps.length
+    ) {
+      throw new Error(
+        `Level reference solution ${index} Ramp placement ids must be unique.`,
+      );
+    }
+    if (
+      solution.mattresses &&
+      new Set(solution.mattresses.map((mattress) => mattress.id)).size !==
+        solution.mattresses.length
+    ) {
+      throw new Error(
+        `Level reference solution ${index} Mattress placement ids must be unique.`,
+      );
+    }
+    return {
+      id: solution.id,
+      ...(solution.ramps ? { ramps: solution.ramps } : {}),
+      ...(solution.mattresses ? { mattresses: solution.mattresses } : {}),
+    };
+  });
+  if (
+    new Set(solutions.map((solution) => solution.id)).size !== solutions.length
+  ) {
+    throw new Error("Level reference solution ids must be unique.");
+  }
+  return solutions;
+}
 
 const isBlock = (value: unknown): value is BlockDefinition =>
   isRecord(value) &&
@@ -308,10 +443,17 @@ export function validateLevel(value: unknown): LevelDefinition {
     order,
     timeLimitSeconds,
     inventory,
+    trayRamp,
+    trayMattress,
+    rampSnapTargets,
+    mattressSnapTargets,
+    storybookPresentation,
+    referenceSolutions,
     contactRules,
     actors,
     balls,
     ramps,
+    mattresses,
     blocks,
     floor,
     goal,
@@ -340,6 +482,40 @@ export function validateLevel(value: unknown): LevelDefinition {
       "Level inventory must contain only registered parts with non-negative integer counts.",
     );
   }
+  if (trayRamp !== undefined && !isTrayRamp(trayRamp)) {
+    throw new Error("Level trayRamp must be a valid Ramp with a spawn point.");
+  }
+  if (trayMattress !== undefined && !isTrayMattress(trayMattress))
+    throw new Error("Level trayMattress must be valid.");
+  if (
+    rampSnapTargets !== undefined &&
+    (!Array.isArray(rampSnapTargets) ||
+      !rampSnapTargets.every(isRampSnapTarget))
+  ) {
+    throw new Error(
+      "Level rampSnapTargets must contain valid placement targets.",
+    );
+  }
+  if (
+    mattressSnapTargets !== undefined &&
+    (!Array.isArray(mattressSnapTargets) ||
+      !mattressSnapTargets.every(isMattressSnapTarget))
+  )
+    throw new Error(
+      "Level mattressSnapTargets must contain valid placement targets.",
+    );
+  if (
+    storybookPresentation !== undefined &&
+    !isStorybookPresentation(storybookPresentation)
+  ) {
+    throw new Error(
+      "Level storybookPresentation must contain approved render assets.",
+    );
+  }
+  const validatedReferenceSolutions =
+    referenceSolutions === undefined
+      ? undefined
+      : validateReferenceSolutions(referenceSolutions);
   const validatedContactRules = validateContactRules(contactRules);
   const validatedActors = validateActors(actors);
   for (const actor of validatedActors) {
@@ -379,6 +555,14 @@ export function validateLevel(value: unknown): LevelDefinition {
   if (!Array.isArray(ramps) || !ramps.every(isRamp)) {
     throw new Error("Level ramps must be an array of valid ramps with ids.");
   }
+  const validatedMattresses = mattresses === undefined ? [] : mattresses;
+  if (
+    !Array.isArray(validatedMattresses) ||
+    !validatedMattresses.every(isMattress)
+  )
+    throw new Error(
+      "Level mattresses must be an array of valid mattress definitions.",
+    );
   if (new Set(ramps.map((ramp) => ramp.id)).size !== ramps.length) {
     throw new Error("Level ramp ids must be unique.");
   }
@@ -393,9 +577,14 @@ export function validateLevel(value: unknown): LevelDefinition {
       ...balls.map((ball) => ball.id),
       ...validatedActors.map((actor) => actor.id),
       ...ramps.map((ramp) => ramp.id),
+      ...validatedMattresses.map((mattress) => mattress.id),
       ...blocks.map((block) => block.id),
     ]).size !==
-    ramps.length + blocks.length + balls.length + validatedActors.length
+    ramps.length +
+      validatedMattresses.length +
+      blocks.length +
+      balls.length +
+      validatedActors.length
   ) {
     throw new Error("Level component ids must be unique.");
   }
@@ -417,10 +606,19 @@ export function validateLevel(value: unknown): LevelDefinition {
     order,
     ...(timeLimitSeconds === undefined ? {} : { timeLimitSeconds }),
     inventory,
+    ...(trayRamp === undefined ? {} : { trayRamp }),
+    ...(trayMattress === undefined ? {} : { trayMattress }),
+    ...(rampSnapTargets === undefined ? {} : { rampSnapTargets }),
+    ...(mattressSnapTargets === undefined ? {} : { mattressSnapTargets }),
+    ...(storybookPresentation === undefined ? {} : { storybookPresentation }),
+    ...(validatedReferenceSolutions === undefined
+      ? {}
+      : { referenceSolutions: validatedReferenceSolutions }),
     contactRules: validatedContactRules,
     actors: validatedActors,
     balls,
     ramps,
+    mattresses: validatedMattresses,
     blocks,
     floor,
     goal,

@@ -1,0 +1,82 @@
+{
+  "id": "good-morning-marble-006",
+  "levelName": "Good Morning, Marble",
+  "title": "Good Morning, Marble",
+  "difficulty": "Basic",
+  "order": 6,
+  "inventory": { "ramp": 1 },
+  "trayRamp": {
+    "x": 0,
+    "y": 0,
+    "width": 430,
+    "height": 24,
+    "rotation": 0,
+    "ownership": "player",
+    "spawn": { "x": 480, "y": 110 }
+  },
+  "rampSnapTargets": [
+    { "x": 500, "y": 353, "rotation": 0.26, "tolerance": 170 }
+  ],
+  "storybookPresentation": {
+    "environment": { "asset": "corner_l1", "width": 960, "height": 540 },
+    "ball": { "asset": "marble", "width": 56, "height": 56 },
+    "ramp": { "asset": "plank", "width": 430, "height": 64 },
+    "goal": {
+      "asset": "teacup_empty",
+      "solvedAsset": "teacup_goal",
+      "width": 112,
+      "height": 112,
+      "sparkle": { "asset": "sparkle", "width": 86, "height": 86 }
+    }
+  },
+  "referenceSolutions": [
+    {
+      "id": "main-plank-bridge",
+      "ramps": [
+        {
+          "id": "l1-plank",
+          "x": 500,
+          "y": 353,
+          "width": 430,
+          "height": 24,
+          "rotation": 0.26,
+          "ownership": "player"
+        }
+      ]
+    }
+  ],
+  "contactRules": [],
+  "actors": [],
+  "balls": [
+    {
+      "id": "morning-marble",
+      "x": 252,
+      "y": 240,
+      "radius": 18,
+      "ownership": "fixed"
+    }
+  ],
+  "ramps": [],
+  "blocks": [
+    {
+      "id": "left-shelf-geometry",
+      "x": 160,
+      "y": 295,
+      "width": 300,
+      "height": 50,
+      "rotation": 0.12,
+      "ownership": "fixed"
+    },
+    {
+      "id": "right-box-geometry",
+      "x": 785,
+      "y": 435,
+      "width": 270,
+      "height": 70,
+      "ownership": "fixed"
+    }
+  ],
+  "floor": { "x": 480, "y": 530, "width": 960, "height": 20 },
+  "goal": { "x": 730, "y": 355, "width": 90, "height": 90 },
+  "gravity": { "x": 0, "y": 1 }
+}

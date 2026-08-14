@@ -1,5 +1,7 @@
 import rawBridgeTheGapLevel from "./bridgeTheGap.json";
 import rawDownTheRampLevel from "./downTheRamp.json";
+import rawGoodMorningMarbleLevel from "./goodMorningMarble.json";
+import rawBoingLevel from "./boing.json";
 import rawHardLevel from "./hard.json";
 import rawMediumLevel from "./medium.json";
 import rawBasicLevel from "./prototype.json";
@@ -12,6 +14,8 @@ const levels = [
   loadLevel(rawHardLevel),
   loadLevel(rawDownTheRampLevel),
   loadLevel(rawBridgeTheGapLevel),
+  loadLevel(rawGoodMorningMarbleLevel),
+  loadLevel(rawBoingLevel),
 ].sort((first, second) => first.order - second.order);
 
 if (new Set(levels.map((level) => level.id)).size !== levels.length) {

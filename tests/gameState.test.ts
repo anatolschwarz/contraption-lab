@@ -112,6 +112,7 @@ describe("game-state transitions", () => {
       trayBirdCount: 0,
       trayBlockCount: 1,
       trayRampCount: 0,
+      trayMattressCount: 0,
     });
     expect(getEnabledControls(initialGameState)).toEqual({
       edit: false,
@@ -375,6 +376,7 @@ describe("game-state transitions", () => {
       trayBirdCount: 0,
       trayBlockCount: 1,
       trayRampCount: 0,
+      trayMattressCount: 0,
     });
     expect(rerun).toMatchObject({
       mode: "running",
@@ -466,6 +468,7 @@ describe("game-state transitions", () => {
       trayBirdCount: 0,
       trayBlockCount: 1,
       trayRampCount: 0,
+      trayMattressCount: 0,
       runSnapshot: {
         rampTransforms: {},
         blockTransforms: {},
@@ -474,6 +477,7 @@ describe("game-state transitions", () => {
         trayBirdCount: 0,
         trayBlockCount: 1,
         trayRampCount: 0,
+        trayMattressCount: 0,
       },
     });
     expect(getEnabledControls(success)).toEqual({
@@ -610,6 +614,7 @@ describe("reset behavior", () => {
       trayBirdCount: 0,
       trayBlockCount: 0,
       trayRampCount: 0,
+      trayMattressCount: 0,
     };
     const firstReset = transitionGameState(changed, "reset");
     const secondReset = transitionGameState(firstReset, "reset");

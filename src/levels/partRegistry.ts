@@ -4,7 +4,17 @@
  * Adding a future Chapter-1 part belongs here instead of widening a closed
  * inventory shape or accepting unchecked strings from level JSON.
  */
-export const STORYBOOK_ASSET_IDS = ["mattress_idle", "teapot_idle"] as const;
+export const STORYBOOK_ASSET_IDS = [
+  "mattress_idle",
+  "teapot_idle",
+  "corner_l1",
+  "corner_l2",
+  "marble",
+  "plank",
+  "teacup_empty",
+  "teacup_goal",
+  "sparkle",
+] as const;
 export type StorybookAssetId = (typeof STORYBOOK_ASSET_IDS)[number];
 
 interface PartRegistryEntry {
@@ -13,10 +23,10 @@ interface PartRegistryEntry {
 }
 
 export const PART_REGISTRY = {
-  ball: { contactTag: "ball", storybookAssetId: undefined },
+  ball: { contactTag: "ball", storybookAssetId: "marble" },
   bird: { contactTag: "bird", storybookAssetId: undefined },
   block: { contactTag: "block", storybookAssetId: undefined },
-  ramp: { contactTag: "ramp", storybookAssetId: undefined },
+  ramp: { contactTag: "ramp", storybookAssetId: "plank" },
   mattress: { contactTag: "mattress", storybookAssetId: "mattress_idle" },
   teapot: { contactTag: "teapot", storybookAssetId: "teapot_idle" },
 } as const satisfies Record<string, PartRegistryEntry>;
@@ -53,6 +63,13 @@ export function isInventoryPartKey(value: unknown): value is InventoryPartKey {
 export function isContactTag(value: unknown): value is ContactTag {
   return (
     typeof value === "string" && CONTACT_TAGS.includes(value as ContactTag)
+  );
+}
+
+export function isStorybookAssetId(value: unknown): value is StorybookAssetId {
+  return (
+    typeof value === "string" &&
+    STORYBOOK_ASSET_IDS.includes(value as StorybookAssetId)
   );
 }
 

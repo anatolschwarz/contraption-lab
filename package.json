@@ -9,6 +9,8 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "storybook-assets:check": "node scripts/process-storybook-assets.mjs --check",
+    "storybook-assets:process": "node scripts/process-storybook-assets.mjs",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "format:check": "prettier --check ."

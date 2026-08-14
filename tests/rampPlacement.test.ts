@@ -6,6 +6,7 @@ import {
   isRectanglePlacementValid,
   RAMP_ROTATION_STEP,
   rotateRampByStep,
+  snapRampPlacement,
 } from "../src/game/rampPlacement";
 
 describe("clampRampPosition", () => {
@@ -31,6 +32,21 @@ describe("clampRampPosition", () => {
     expect(RAMP_ROTATION_STEP).toBeCloseTo(Math.PI / 36);
     expect(rotateRampByStep(0, 1)).toBeCloseTo(Math.PI / 36);
     expect(rotateRampByStep(0, -1)).toBeCloseTo(-Math.PI / 36);
+  });
+});
+
+describe("snapRampPlacement", () => {
+  const target = { x: 500, y: 353, rotation: 0.26, tolerance: 170 };
+
+  it("uses a nearby data-defined target and leaves distant placements alone", () => {
+    expect(snapRampPlacement({ x: 450, y: 250 }, 0, [target])).toEqual({
+      position: { x: 500, y: 353 },
+      rotation: 0.26,
+    });
+    expect(snapRampPlacement({ x: 100, y: 100 }, 0, [target])).toEqual({
+      position: { x: 100, y: 100 },
+      rotation: 0,
+    });
   });
 });
 

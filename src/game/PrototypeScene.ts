@@ -17,7 +17,11 @@ import {
   recordCompletedClick,
   type CompletedClick,
 } from "./doubleClick";
-import { getStorybookAsset, preloadStorybookAssets } from "./storybookAssets";
+import {
+  getStorybookAsset,
+  getStorybookAssetById,
+  preloadStorybookAssets,
+} from "./storybookAssets";
 import {
   STORYBOOK_ASSET_PROOF,
   type StorybookObjectDefinition,
@@ -29,9 +33,15 @@ import {
   type BlockDefinition,
   type ContactTag,
   type LevelDefinition,
+  type MattressDefinition,
   type RampDefinition,
 } from "../levels/levelTypes";
-import { TRAY_BLOCK_ID_PREFIX, TRAY_RAMP_ID_PREFIX } from "../state/gameState";
+import { getStorybookAssetId } from "../levels/partRegistry";
+import {
+  TRAY_BLOCK_ID_PREFIX,
+  TRAY_MATTRESS_ID_PREFIX,
+  TRAY_RAMP_ID_PREFIX,
+} from "../state/gameState";
 import type {
   BallTransform,
   BlockTransform,
@@ -44,6 +54,7 @@ import {
   isRectanglePlacementValid,
   PLAYABLE_HEIGHT,
   PLAYABLE_WIDTH,
+  snapRampPlacement,
   type RectanglePlacement,
   rotateRampByStep,
 } from "./rampPlacement";
@@ -108,6 +119,7 @@ interface EditableBall {
   shadow: Phaser.GameObjects.Arc;
   shape: Phaser.GameObjects.Arc;
   selectionText: Phaser.GameObjects.Text;
+  sprite?: Phaser.GameObjects.Image;
 }
 interface EditableRamp {
   definition: RampDefinition;
@@ -117,6 +129,7 @@ interface EditableRamp {
   shadow: Phaser.GameObjects.Rectangle;
   shape: Phaser.GameObjects.Rectangle;
   selectionText: Phaser.GameObjects.Text;
+  sprite?: Phaser.GameObjects.Image;
 }
 
 interface EditableBlock {
@@ -127,6 +140,16 @@ interface EditableBlock {
   shadow: Phaser.GameObjects.Rectangle;
   shape: Phaser.GameObjects.Rectangle;
   selectionText: Phaser.GameObjects.Text;
+}
+interface EditableMattress {
+  definition: MattressDefinition;
+  editable: boolean;
+  fromTray: boolean;
+  highlight: Phaser.GameObjects.Rectangle;
+  shadow: Phaser.GameObjects.Rectangle;
+  shape: Phaser.GameObjects.Rectangle;
+  selectionText: Phaser.GameObjects.Text;
+  sprite?: Phaser.GameObjects.Image;
 }
 
 interface EditableComponent {
@@ -178,8 +201,14 @@ interface BlockPartSnapshot {
   definition: BlockDefinition;
   fromTray: boolean;
 }
+interface MattressPartSnapshot {
+  componentType: "mattress";
+  definition: MattressDefinition;
+  fromTray: boolean;
+}
 
-type PlayerPartSnapshot = RampPartSnapshot | BlockPartSnapshot;
+type PlayerPartSnapshot =
+  RampPartSnapshot | BlockPartSnapshot | MattressPartSnapshot;
 
 interface BallPartSnapshot {
   definition: BallDefinition;
@@ -202,7 +231,7 @@ export class PrototypeScene extends Phaser.Scene {
   private readonly balls = new Map<string, EditableBall>();
   private drag?: {
     componentId: string;
-    componentType: "ball" | "bird" | "ramp" | "block";
+    componentType: "ball" | "bird" | "ramp" | "block" | "mattress";
     offset: Phaser.Math.Vector2;
     pointerStart: Phaser.Math.Vector2;
   };
@@ -210,11 +239,12 @@ export class PrototypeScene extends Phaser.Scene {
   private editInteractionEnabled = false;
   private lastComponentClick?: CompletedClick;
   private readonly blocks = new Map<string, EditableBlock>();
+  private readonly mattresses = new Map<string, EditableMattress>();
   private readonly actors = new Map<string, AutonomousActor>();
   private readonly contactObjects = new Map<MatterJS.BodyType, ContactObject>();
   private readonly editableComponents = new Map<
     string,
-    EditableComponent | EditableBall | AutonomousActor
+    EditableComponent | EditableBall | AutonomousActor | EditableMattress
   >();
   private readonly ramps = new Map<string, EditableRamp>();
   private readonly storybookObjects = new Map<string, StorybookObject>();
@@ -223,6 +253,9 @@ export class PrototypeScene extends Phaser.Scene {
   private simulationRunning = false;
   private selectedComponentId: string | null = null;
   private successText?: Phaser.GameObjects.Text;
+  private storybookEnvironment?: Phaser.GameObjects.Image;
+  private storybookGoal?: Phaser.GameObjects.Image;
+  private storybookSparkle?: Phaser.GameObjects.Image;
 
   constructor(
     private readonly level: LevelDefinition,
@@ -243,7 +276,7 @@ export class PrototypeScene extends Phaser.Scene {
     ) => void,
     private readonly onComponentRemove: (
       componentId: string,
-      returnsTrayPart: "ball" | "bird" | "block" | "ramp" | null,
+      returnsTrayPart: "ball" | "bird" | "block" | "ramp" | "mattress" | null,
     ) => void,
     private readonly onEditFeedback: (message: string) => void,
     private readonly showStorybookAssetProof = false,
@@ -252,7 +285,25 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   preload(): void {
-    preloadStorybookAssets(this.load);
+    const presentation = this.level.storybookPresentation;
+    const assetIds = presentation
+      ? [
+          presentation.environment.asset,
+          presentation.ball.asset,
+          ...(presentation.ramp ? [presentation.ramp.asset] : []),
+          ...(presentation.mattress ? [presentation.mattress.asset] : []),
+          presentation.goal.asset,
+          presentation.goal.solvedAsset,
+          ...(presentation.goal.sparkle
+            ? [presentation.goal.sparkle.asset]
+            : []),
+        ]
+      : this.showStorybookAssetProof
+        ? STORYBOOK_ASSET_PROOF.map((definition) =>
+            getStorybookAssetId(definition.part),
+          )
+        : [];
+    preloadStorybookAssets(this.load, assetIds);
   }
 
   create(): void {
@@ -303,6 +354,8 @@ export class PrototypeScene extends Phaser.Scene {
           );
         } else if (this.drag.componentType === "block") {
           this.updateBlockPosition(this.drag.componentId, x, y, true);
+        } else if (this.drag.componentType === "mattress") {
+          this.updateMattressPosition(this.drag.componentId, x, y, true);
         } else if (this.drag.componentType === "bird") {
           this.updateActorPosition(this.drag.componentId, x, y, true);
         } else {
@@ -553,9 +606,20 @@ export class PrototypeScene extends Phaser.Scene {
   spawnTrayRamp(availableCount: number): string | null {
     if (!this.editInteractionEnabled || availableCount <= 0) return null;
     const id = this.getNextTrayRampId();
-    for (const position of TRAY_RAMP_CANDIDATES) {
+    const trayRamp = this.level.trayRamp;
+    const trayRampGeometry = trayRamp
+      ? {
+          height: trayRamp.height,
+          ownership: trayRamp.ownership,
+          rotation: trayRamp.rotation,
+          width: trayRamp.width,
+        }
+      : {};
+    const candidates = trayRamp ? [trayRamp.spawn] : TRAY_RAMP_CANDIDATES;
+    for (const position of candidates) {
       const definition: RampDefinition = {
         ...TRAY_RAMP_DEFINITION,
+        ...trayRampGeometry,
         ...position,
         id,
       };
@@ -575,6 +639,17 @@ export class PrototypeScene extends Phaser.Scene {
     }
     this.onEditFeedback("Placement rejected: no clear space is available.");
     return null;
+  }
+
+  spawnTrayMattress(availableCount: number): string | null {
+    if (!this.editInteractionEnabled || availableCount <= 0) return null;
+    const tray = this.level.trayMattress;
+    if (!tray) return null;
+    const id = `${TRAY_MATTRESS_ID_PREFIX}${this.mattresses.size + 1}`;
+    const definition: MattressDefinition = { ...tray, ...tray.spawn, id };
+    this.createMattress(definition, true);
+    this.onEditFeedback("");
+    return id;
   }
 
   captureRunLayout(): void {
@@ -604,6 +679,17 @@ export class PrototypeScene extends Phaser.Scene {
           },
           fromTray: block.fromTray,
         })),
+        ...[...this.mattresses.values()].map(
+          (mattress): MattressPartSnapshot => ({
+            componentType: "mattress",
+            definition: {
+              ...mattress.definition,
+              x: mattress.shape.x,
+              y: mattress.shape.y,
+            },
+            fromTray: mattress.fromTray,
+          }),
+        ),
       ],
       actors: [...this.actors.values()].map((actor): ActorSnapshot => ({
         definition: {
@@ -653,9 +739,28 @@ export class PrototypeScene extends Phaser.Scene {
   private clearSuccess(): void {
     this.successText?.destroy();
     this.successText = undefined;
+    this.storybookSparkle?.destroy();
+    this.storybookSparkle = undefined;
+    const presentation = this.level.storybookPresentation;
+    if (presentation && this.storybookGoal) {
+      this.storybookGoal.setTexture(
+        getStorybookAssetById(presentation.goal.asset).textureKey,
+      );
+    }
   }
 
   private createBall(definition: BallDefinition, fromTray = false): void {
+    const presentation = this.level.storybookPresentation;
+    const sprite = presentation
+      ? this.add
+          .image(
+            definition.x,
+            definition.y,
+            getStorybookAssetById(presentation.ball.asset).textureKey,
+          )
+          .setDisplaySize(presentation.ball.width, presentation.ball.height)
+          .setDepth(3)
+      : undefined;
     const shadow = this.add
       .circle(
         definition.x + definition.radius * 0.14,
@@ -678,6 +783,11 @@ export class PrototypeScene extends Phaser.Scene {
         0.9,
       )
       .setDepth(3);
+    if (sprite) {
+      shadow.setVisible(false);
+      shape.setAlpha(0);
+      highlight.setVisible(false);
+    }
     this.matter.add.gameObject(shape, {
       shape: { type: "circle", radius: definition.radius },
       restitution: 0.15,
@@ -733,6 +843,7 @@ export class PrototypeScene extends Phaser.Scene {
       shadow,
       shape,
       selectionText,
+      sprite,
     };
     this.balls.set(definition.id, ball);
     this.editableComponents.set(definition.id, ball);
@@ -745,6 +856,7 @@ export class PrototypeScene extends Phaser.Scene {
     const { floor, goal, gravity } = this.level;
     this.matter.world.setGravity(gravity.x, gravity.y);
 
+    const presentation = this.level.storybookPresentation;
     const floorShape = this.add
       .rectangle(
         floor.x,
@@ -755,7 +867,8 @@ export class PrototypeScene extends Phaser.Scene {
       )
       .setStrokeStyle(4, FIXED_BLOCK_STROKE_COLOR)
       .setDepth(1);
-    this.add
+    if (presentation) floorShape.setVisible(false);
+    const floorHighlight = this.add
       .rectangle(
         floor.x,
         floor.y - floor.height * 0.28,
@@ -765,7 +878,7 @@ export class PrototypeScene extends Phaser.Scene {
         0.62,
       )
       .setDepth(2);
-    this.add
+    const floorShadow = this.add
       .rectangle(
         floor.x,
         floor.y + floor.height * 0.34,
@@ -775,6 +888,10 @@ export class PrototypeScene extends Phaser.Scene {
         0.72,
       )
       .setDepth(2);
+    if (presentation) {
+      floorHighlight.setVisible(false);
+      floorShadow.setVisible(false);
+    }
     this.matter.add.gameObject(floorShape, { isStatic: true, label: "floor" });
     this.registerContactObject(floorShape, "floor", "floor", () =>
       floorShape.destroy(),
@@ -791,22 +908,50 @@ export class PrototypeScene extends Phaser.Scene {
     this.registerContactObject(goalShape, "goal", "goal", () =>
       goalShape.destroy(),
     );
-    this.drawGoalCup(goal);
-    this.add
-      .text(goal.x, goal.y + 8, "★", {
-        color: "#1e4b24",
-        fontFamily: "Arial, sans-serif",
-        fontSize: "18px",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5)
-      .setDepth(4);
+    if (presentation) {
+      this.storybookGoal = this.add
+        .image(
+          goal.x,
+          goal.y,
+          getStorybookAssetById(presentation.goal.asset).textureKey,
+        )
+        .setDisplaySize(presentation.goal.width, presentation.goal.height)
+        .setDepth(4)
+        .setInteractive({ useHandCursor: true });
+      this.storybookGoal.on(Phaser.Input.Events.POINTER_DOWN, () =>
+        this.playStorybookPoke("goal"),
+      );
+    } else {
+      this.drawGoalCup(goal);
+      this.add
+        .text(goal.x, goal.y + 8, "★", {
+          color: "#1e4b24",
+          fontFamily: "Arial, sans-serif",
+          fontSize: "18px",
+          fontStyle: "bold",
+        })
+        .setOrigin(0.5)
+        .setDepth(4);
+    }
 
     this.resetLevel();
     this.updateSelectionDisplay();
   }
 
   private createRamp(definition: RampDefinition, fromTray = false): void {
+    const presentation = this.level.storybookPresentation;
+    const rampPresentation = presentation?.ramp;
+    const sprite = rampPresentation
+      ? this.add
+          .image(
+            definition.x,
+            definition.y,
+            getStorybookAssetById(rampPresentation.asset).textureKey,
+          )
+          .setDisplaySize(rampPresentation.width, rampPresentation.height)
+          .setRotation(definition.rotation)
+          .setDepth(3)
+      : undefined;
     const shadow = this.add
       .rectangle(
         definition.x + 3,
@@ -840,6 +985,11 @@ export class PrototypeScene extends Phaser.Scene {
       )
       .setRotation(definition.rotation)
       .setDepth(2);
+    if (sprite) {
+      shadow.setVisible(false);
+      shape.setAlpha(0);
+      highlight.setVisible(false);
+    }
     this.matter.add.gameObject(shape, {
       isStatic: true,
       label: `ramp:${definition.id}`,
@@ -873,6 +1023,23 @@ export class PrototypeScene extends Phaser.Scene {
         );
       },
     );
+    sprite?.on(
+      Phaser.Input.Events.POINTER_DOWN,
+      (
+        pointer: Phaser.Input.Pointer,
+        _localX: number,
+        _localY: number,
+        event: Phaser.Types.Input.EventData,
+      ) => {
+        this.handleComponentPointerDown(
+          "ramp",
+          definition.id,
+          shape,
+          pointer,
+          event,
+        );
+      },
+    );
     this.prepareComponentInput(
       shape,
       new Phaser.Geom.Rectangle(0, 0, definition.width, definition.height),
@@ -887,6 +1054,7 @@ export class PrototypeScene extends Phaser.Scene {
       shadow,
       shape,
       selectionText,
+      sprite,
     };
     this.updateRampSurface(ramp, definition, definition.rotation);
     this.ramps.set(definition.id, ramp);
@@ -938,6 +1106,11 @@ export class PrototypeScene extends Phaser.Scene {
         0.75,
       )
       .setDepth(2);
+    if (this.level.storybookPresentation) {
+      shadow.setVisible(false);
+      shape.setVisible(false);
+      highlight.setVisible(false);
+    }
     this.matter.add.gameObject(shape, {
       isStatic: !isDynamic,
       label: `block:${definition.id}`,
@@ -995,21 +1168,148 @@ export class PrototypeScene extends Phaser.Scene {
     );
   }
 
+  /** Matter dimensions come from level data; the mattress sprite is visual only. */
+  private createMattress(
+    definition: MattressDefinition,
+    fromTray = false,
+  ): void {
+    const presentation = this.level.storybookPresentation?.mattress;
+    const sprite = presentation
+      ? this.add
+          .image(
+            definition.x,
+            definition.y,
+            getStorybookAssetById(presentation.asset).textureKey,
+          )
+          .setDisplaySize(presentation.width, presentation.height)
+          .setDepth(3)
+      : undefined;
+    const shape = this.add
+      .rectangle(
+        definition.x,
+        definition.y,
+        definition.width,
+        definition.height,
+        0x9d6a94,
+      )
+      .setStrokeStyle(4, 0x593c58)
+      .setDepth(1);
+    const shadow = this.add
+      .rectangle(
+        definition.x + 3,
+        definition.y + 4,
+        definition.width,
+        definition.height,
+        0x593c58,
+        0.35,
+      )
+      .setDepth(0);
+    const highlight = this.add
+      .rectangle(
+        definition.x,
+        definition.y - definition.height * 0.24,
+        definition.width - 12,
+        3,
+        0xffe1ef,
+        0.8,
+      )
+      .setDepth(2);
+    if (sprite) {
+      shape.setAlpha(0);
+      shadow.setVisible(false);
+      highlight.setVisible(false);
+    }
+    this.matter.add.gameObject(shape, {
+      isStatic: true,
+      restitution: definition.restitution,
+      label: `mattress:${definition.id}`,
+    });
+    const selectionText = this.add
+      .text(definition.x, definition.y - 34, "MATTRESS SELECTED", {
+        color: "#593c58",
+        fontFamily: "Arial, sans-serif",
+        fontSize: "14px",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(2)
+      .setVisible(false);
+    shape.on(
+      Phaser.Input.Events.POINTER_DOWN,
+      (
+        pointer: Phaser.Input.Pointer,
+        _x: number,
+        _y: number,
+        event: Phaser.Types.Input.EventData,
+      ) =>
+        this.handleComponentPointerDown(
+          "mattress",
+          definition.id,
+          shape,
+          pointer,
+          event,
+        ),
+    );
+    sprite
+      ?.setInteractive({ useHandCursor: true })
+      .on(
+        Phaser.Input.Events.POINTER_DOWN,
+        (
+          pointer: Phaser.Input.Pointer,
+          _x: number,
+          _y: number,
+          event: Phaser.Types.Input.EventData,
+        ) =>
+          this.handleComponentPointerDown(
+            "mattress",
+            definition.id,
+            shape,
+            pointer,
+            event,
+          ),
+      );
+    this.prepareComponentInput(
+      shape,
+      new Phaser.Geom.Rectangle(0, 0, definition.width, definition.height),
+      Phaser.Geom.Rectangle.Contains,
+    );
+    const mattress: EditableMattress = {
+      definition,
+      editable: isEditablePart(definition, fromTray),
+      fromTray,
+      highlight,
+      shadow,
+      shape,
+      selectionText,
+      sprite,
+    };
+    this.mattresses.set(definition.id, mattress);
+    this.editableComponents.set(definition.id, mattress);
+    this.registerContactObject(shape, "mattress", definition.id, () =>
+      this.destroyMattress(definition.id),
+    );
+  }
+
   private handleComponentPointerDown(
-    componentType: "ball" | "bird" | "ramp" | "block",
+    componentType: "ball" | "bird" | "ramp" | "block" | "mattress",
     componentId: string,
     shape: Phaser.GameObjects.Shape,
     pointer: Phaser.Input.Pointer,
     event: Phaser.Types.Input.EventData,
   ): void {
     event.stopPropagation();
-    if (!this.editInteractionEnabled) return;
+    if (!this.editInteractionEnabled) {
+      this.playStorybookPoke(componentType, componentId);
+      return;
+    }
     const component = this.editableComponents.get(componentId);
     if (!component) {
       this.onEditFeedback("Part is no longer available.");
       return;
     }
     if (!component.editable) {
+      this.playStorybookPoke(componentType, componentId);
+      if (this.level.storybookPresentation) return;
       this.onEditFeedback("Fixed parts cannot be moved or removed.");
       return;
     }
@@ -1048,7 +1348,7 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private removeComponent(
-    componentType: "ball" | "bird" | "ramp" | "block",
+    componentType: "ball" | "bird" | "ramp" | "block" | "mattress",
     componentId: string,
   ): void {
     if (componentType === "ball") {
@@ -1075,12 +1375,21 @@ export class PrototypeScene extends Phaser.Scene {
       ramp.highlight.destroy();
       ramp.shadow.destroy();
       ramp.selectionText.destroy();
+      ramp.sprite?.destroy();
       this.ramps.delete(componentId);
       this.editableComponents.delete(componentId);
       this.onComponentRemove(
         componentId,
         isEditablePart(ramp.definition, ramp.fromTray) ? "ramp" : null,
       );
+      this.onEditFeedback("");
+      return;
+    }
+    if (componentType === "mattress") {
+      const mattress = this.mattresses.get(componentId);
+      if (!mattress || !mattress.editable) return;
+      this.destroyMattress(componentId);
+      this.onComponentRemove(componentId, "mattress");
       this.onEditFeedback("");
       return;
     }
@@ -1108,6 +1417,7 @@ export class PrototypeScene extends Phaser.Scene {
     for (const block of this.level.blocks) {
       this.createBlock(block);
     }
+    for (const mattress of this.level.mattresses) this.createMattress(mattress);
   }
 
   private restoreBalls(snapshot: readonly BallPartSnapshot[]): void {
@@ -1247,8 +1557,10 @@ export class PrototypeScene extends Phaser.Scene {
     for (const part of snapshot) {
       if (part.componentType === "ramp") {
         this.createRamp(part.definition, part.fromTray);
-      } else {
+      } else if (part.componentType === "block") {
         this.createBlock(part.definition, part.fromTray);
+      } else {
+        this.createMattress(part.definition, part.fromTray);
       }
     }
   }
@@ -1268,8 +1580,17 @@ export class PrototypeScene extends Phaser.Scene {
       block.shadow.destroy();
       block.selectionText.destroy();
     }
+    for (const mattress of this.mattresses.values()) {
+      this.unregisterContactObject(mattress.shape);
+      mattress.shape.destroy();
+      mattress.highlight.destroy();
+      mattress.shadow.destroy();
+      mattress.selectionText.destroy();
+      mattress.sprite?.destroy();
+    }
     this.ramps.clear();
     this.blocks.clear();
+    this.mattresses.clear();
     this.editableComponents.clear();
   }
 
@@ -1286,6 +1607,27 @@ export class PrototypeScene extends Phaser.Scene {
     const first = this.contactObjects.get(bodyA);
     const second = this.contactObjects.get(bodyB);
     if (!first || !second) return;
+
+    const ball =
+      first.tag === "ball"
+        ? { object: first, body: bodyA }
+        : second.tag === "ball"
+          ? { object: second, body: bodyB }
+          : undefined;
+    const mattress =
+      first.tag === "mattress"
+        ? first
+        : second.tag === "mattress"
+          ? second
+          : undefined;
+    if (ball && mattress && ball.body.velocity.y > 0) {
+      const definition = this.mattresses.get(mattress.id)?.definition;
+      if (definition)
+        this.matter.body.setVelocity(ball.body, {
+          x: ball.body.velocity.x,
+          y: -ball.body.velocity.y * definition.restitution,
+        });
+    }
 
     executeContactRules(
       this.level.contactRules,
@@ -1356,6 +1698,7 @@ export class PrototypeScene extends Phaser.Scene {
     ball.highlight.destroy();
     ball.shadow.destroy();
     ball.selectionText.destroy();
+    ball.sprite?.destroy();
     this.editableComponents.delete(componentId);
     this.balls.delete(componentId);
   }
@@ -1374,6 +1717,7 @@ export class PrototypeScene extends Phaser.Scene {
     ramp.highlight.destroy();
     ramp.shadow.destroy();
     ramp.selectionText.destroy();
+    ramp.sprite?.destroy();
     this.ramps.delete(componentId);
     this.editableComponents.delete(componentId);
   }
@@ -1432,18 +1776,39 @@ export class PrototypeScene extends Phaser.Scene {
       { x, y },
       { ...ramp.definition, rotation },
     );
-    if (notify && !this.isValidRampEditPlacement(rampId, position, rotation)) {
+    const snapped = snapRampPlacement(
+      position,
+      rotation,
+      this.level.rampSnapTargets ?? [],
+    );
+    const isSnapTarget = this.level.rampSnapTargets?.some(
+      (target) =>
+        target.x === snapped.position.x &&
+        target.y === snapped.position.y &&
+        target.rotation === snapped.rotation,
+    );
+    if (
+      notify &&
+      !this.isValidRampEditPlacement(
+        rampId,
+        snapped.position,
+        snapped.rotation,
+        isSnapTarget,
+      )
+    ) {
       this.onEditFeedback(
         "Placement rejected: keep parts in bounds and clear of other parts.",
       );
       return;
     }
-    ramp.shape.setPosition(position.x, position.y).setRotation(rotation);
-    this.updateRampSurface(ramp, position, rotation);
-    ramp.selectionText.setPosition(position.x, position.y - 34);
+    ramp.shape
+      .setPosition(snapped.position.x, snapped.position.y)
+      .setRotation(snapped.rotation);
+    this.updateRampSurface(ramp, snapped.position, snapped.rotation);
+    ramp.selectionText.setPosition(snapped.position.x, snapped.position.y - 34);
     if (notify) {
       this.onEditFeedback("");
-      this.onRampTransformChange(rampId, { position, rotation });
+      this.onRampTransformChange(rampId, snapped);
     }
   }
 
@@ -1553,14 +1918,19 @@ export class PrototypeScene extends Phaser.Scene {
     rampId: string,
     position: { x: number; y: number },
     rotation: number,
+    allowFixedBlockOverlap = false,
   ): boolean {
     const ramp = this.ramps.get(rampId);
     if (!ramp) return false;
+    const otherPlacements = this.getOtherPlacements(
+      rampId,
+      !allowFixedBlockOverlap,
+    );
     return this.getCurrentBalls().every((ball) =>
       isRectanglePlacementValid(
         { ...ramp.definition, ...position, rotation },
         ball,
-        this.getOtherPlacements(rampId),
+        otherPlacements,
       ),
     );
   }
@@ -1622,14 +1992,29 @@ export class PrototypeScene extends Phaser.Scene {
       }));
   }
 
-  private getOtherPlacements(componentId: string): RectanglePlacement[] {
+  private getOtherPlacements(
+    componentId: string,
+    includeFixedBlocks = true,
+  ): RectanglePlacement[] {
     return [
       ...[...this.ramps.entries()]
         .filter(([rampId]) => rampId !== componentId)
         .map(([, ramp]) => this.getRampPlacement(ramp)),
       ...[...this.blocks.entries()]
-        .filter(([blockId]) => blockId !== componentId)
+        .filter(
+          ([blockId, block]) =>
+            blockId !== componentId &&
+            (includeFixedBlocks || block.definition.ownership !== "fixed"),
+        )
         .map(([, block]) => this.getBlockPlacement(block)),
+      ...[...this.mattresses.entries()]
+        .filter(([mattressId]) => mattressId !== componentId)
+        .map(([, mattress]) => ({
+          ...mattress.definition,
+          x: mattress.shape.x,
+          y: mattress.shape.y,
+          rotation: 0,
+        })),
     ];
   }
 
@@ -1649,6 +2034,47 @@ export class PrototypeScene extends Phaser.Scene {
       y: block.shape.y,
       rotation: 0,
     };
+  }
+
+  private updateMattressPosition(
+    id: string,
+    x: number,
+    y: number,
+    snap: boolean,
+  ): void {
+    const mattress = this.mattresses.get(id);
+    if (!mattress || !mattress.editable) return;
+    const target = snap
+      ? this.level.mattressSnapTargets?.find(
+          (candidate) =>
+            Phaser.Math.Distance.Between(x, y, candidate.x, candidate.y) <=
+            candidate.tolerance,
+        )
+      : undefined;
+    const position = target ?? { x, y };
+    mattress.shape.setPosition(position.x, position.y);
+    const body = mattress.shape.body as MatterJS.BodyType | undefined;
+    if (body) this.matter.body.setPosition(body, position);
+    mattress.sprite?.setPosition(position.x, position.y);
+    mattress.shadow.setPosition(position.x + 3, position.y + 4);
+    mattress.highlight.setPosition(
+      position.x,
+      position.y - mattress.definition.height * 0.24,
+    );
+    mattress.selectionText.setPosition(position.x, position.y - 34);
+  }
+
+  private destroyMattress(id: string): void {
+    const mattress = this.mattresses.get(id);
+    if (!mattress) return;
+    this.unregisterContactObject(mattress.shape);
+    mattress.shape.destroy();
+    mattress.highlight.destroy();
+    mattress.shadow.destroy();
+    mattress.selectionText.destroy();
+    mattress.sprite?.destroy();
+    this.mattresses.delete(id);
+    this.editableComponents.delete(id);
   }
 
   private rotateSelectedRamp(direction: -1 | 1): void {
@@ -1676,6 +2102,8 @@ export class PrototypeScene extends Phaser.Scene {
         block.editable ? BLOCK_STROKE_COLOR : FIXED_BLOCK_STROKE_COLOR,
       );
     }
+    for (const [mattressId, mattress] of this.mattresses)
+      this.updateComponentSelection(mattressId, mattress, 0x593c58);
     for (const ball of this.balls.values()) {
       this.updateComponentSelection(
         ball.definition.id,
@@ -1694,20 +2122,29 @@ export class PrototypeScene extends Phaser.Scene {
 
   private updateComponentSelection(
     componentId: string,
-    component: EditableComponent | EditableBall | AutonomousActor,
+    component:
+      EditableComponent | EditableBall | AutonomousActor | EditableMattress,
     strokeColor: number,
   ): void {
     const selected =
       this.editInteractionEnabled && this.selectedComponentId === componentId;
-    component.selectionText.setVisible(selected);
+    component.selectionText.setVisible(
+      selected && this.level.storybookPresentation === undefined,
+    );
     component.shape.setStrokeStyle(
       selected ? 5 : 4,
       selected ? SELECTED_RAMP_STROKE_COLOR : strokeColor,
     );
     if (this.editInteractionEnabled) {
       component.shape.setInteractive({ useHandCursor: component.editable });
+      if ("sprite" in component && component.sprite) {
+        component.sprite.setInteractive({ useHandCursor: component.editable });
+      }
     } else {
       component.shape.disableInteractive();
+      if ("sprite" in component && component.sprite) {
+        component.sprite.disableInteractive();
+      }
     }
   }
 
@@ -1721,6 +2158,22 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private drawWorkshop(): void {
+    const presentation = this.level.storybookPresentation;
+    if (presentation) {
+      this.cameras.main.setBackgroundColor(0xf7f4ed);
+      this.storybookEnvironment = this.add
+        .image(
+          PLAYABLE_WIDTH / 2,
+          PLAYABLE_HEIGHT / 2,
+          getStorybookAssetById(presentation.environment.asset).textureKey,
+        )
+        .setDisplaySize(
+          presentation.environment.width,
+          presentation.environment.height,
+        )
+        .setDepth(0);
+      return;
+    }
     this.cameras.main.setBackgroundColor(0xf7f4ed);
     const graphics = this.add.graphics();
     graphics.lineStyle(1, 0xd8d8d2, 0.9);
@@ -1769,6 +2222,7 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private updateBallHighlight(ball: EditableBall): void {
+    ball.sprite?.setPosition(ball.shape.x, ball.shape.y);
     ball.shadow.setPosition(
       ball.shape.x + ball.definition.radius * 0.14,
       ball.shape.y + ball.definition.radius * 0.18,
@@ -1795,6 +2249,7 @@ export class PrototypeScene extends Phaser.Scene {
         position.y - cosine * (ramp.definition.height * 0.22),
       )
       .setRotation(rotation);
+    ramp.sprite?.setPosition(position.x, position.y).setRotation(rotation);
   }
 
   private updateBlockSurface(
@@ -1817,6 +2272,40 @@ export class PrototypeScene extends Phaser.Scene {
         position.y - highlightOffset * cosine,
       )
       .setRotation(rotation);
+  }
+
+  /** Visual-only reactions: no state or Matter body changes occur here. */
+  private playStorybookPoke(
+    target: "ball" | "bird" | "ramp" | "block" | "mattress" | "goal",
+    componentId?: string,
+  ): void {
+    if (!this.level.storybookPresentation) return;
+    const visual =
+      target === "ball" && componentId
+        ? this.balls.get(componentId)?.sprite
+        : target === "mattress" && componentId
+          ? this.mattresses.get(componentId)?.sprite
+          : target === "goal"
+            ? this.storybookGoal
+            : undefined;
+    if (visual) {
+      this.tweens.add({
+        targets: visual,
+        angle: target === "ball" ? 9 : 5,
+        duration: 90,
+        ease: "Sine.easeInOut",
+        yoyo: true,
+      });
+    }
+    if (this.storybookEnvironment) {
+      this.tweens.add({
+        targets: this.storybookEnvironment,
+        alpha: 0.88,
+        duration: 120,
+        ease: "Sine.easeInOut",
+        yoyo: true,
+      });
+    }
   }
 
   private drawGoalCup(goal: LevelDefinition["goal"]): void {
@@ -1874,6 +2363,31 @@ export class PrototypeScene extends Phaser.Scene {
 
   private showSuccess(): void {
     if (this.successText) return;
+    const presentation = this.level.storybookPresentation;
+    if (presentation && this.storybookGoal) {
+      this.storybookGoal.setTexture(
+        getStorybookAssetById(presentation.goal.solvedAsset).textureKey,
+      );
+      const sparkle = presentation.goal.sparkle;
+      if (sparkle) {
+        this.storybookSparkle = this.add
+          .image(
+            this.level.goal.x,
+            this.level.goal.y - this.level.goal.height * 0.65,
+            getStorybookAssetById(sparkle.asset).textureKey,
+          )
+          .setDisplaySize(sparkle.width, sparkle.height)
+          .setDepth(6);
+        this.tweens.add({
+          targets: this.storybookSparkle,
+          scale: 1.16,
+          duration: 220,
+          ease: "Sine.easeOut",
+          yoyo: true,
+        });
+      }
+      return;
+    }
     this.successText = this.add
       .text(480, 105, "CONTRAPTION COMPLETE!", {
         backgroundColor: "#f3e2b8",

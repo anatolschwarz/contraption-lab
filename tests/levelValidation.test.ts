@@ -4,7 +4,7 @@ import { validateLevel } from "../src/levels/validateLevel";
 
 describe("validateLevel", () => {
   it("accepts the bundled prototype level", () => {
-    expect(validateLevel(rawLevel)).toEqual(rawLevel);
+    expect(validateLevel(rawLevel)).toEqual({ ...rawLevel, mattresses: [] });
   });
 
   it("rejects malformed level data with a useful message", () => {
