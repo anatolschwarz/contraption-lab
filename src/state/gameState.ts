@@ -1,4 +1,9 @@
-import type { InventoryDefinition, Point } from "../levels/levelTypes";
+import type {
+  CompleteInventoryDefinition,
+  InventoryDefinition,
+  Point,
+} from "../levels/levelTypes";
+import { createEmptyInventory } from "../levels/partRegistry";
 
 export type GameMode = "edit" | "running" | "paused" | "failed";
 export const TRAY_BLOCK_ID = "tray-block-1";
@@ -83,7 +88,7 @@ export type GameAction =
   | AdvanceTimeAction;
 
 export interface GameState {
-  initialInventory: InventoryDefinition;
+  initialInventory: CompleteInventoryDefinition;
   initialBallTransforms: Record<string, BallTransform>;
   mode: GameMode;
   succeeded: boolean;
@@ -101,17 +106,11 @@ export interface GameState {
 }
 
 export function createInitialGameState(
-  inventory: Readonly<
-    Omit<InventoryDefinition, "ball" | "bird"> & Partial<InventoryDefinition>
-  >,
+  inventory: Readonly<InventoryDefinition>,
   timeLimitSeconds?: number,
   ballTransforms: Readonly<Record<string, BallTransform>> = {},
 ): GameState {
-  const normalizedInventory: InventoryDefinition = {
-    ball: 0,
-    bird: 0,
-    ...inventory,
-  };
+  const normalizedInventory = createEmptyInventory(inventory);
   const normalizedBallTransforms = Object.fromEntries(
     Object.entries(ballTransforms).map(([id, transform]) => [
       id,

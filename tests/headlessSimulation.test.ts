@@ -77,16 +77,16 @@ const BRIDGE_THE_GAP_SOLUTION: SimulationPlacements = {
 
 describe("headless simulation", () => {
   it.each([
-    [prototype, LEGACY_SOLUTION],
-    [downTheRamp, DOWN_THE_RAMP_SOLUTION],
-    [bridgeTheGap, BRIDGE_THE_GAP_SOLUTION],
+    [prototype, LEGACY_SOLUTION, 215],
+    [downTheRamp, DOWN_THE_RAMP_SOLUTION, 244],
+    [bridgeTheGap, BRIDGE_THE_GAP_SOLUTION, 299],
   ] as const)(
-    "solves the known %s reference placement",
-    (level, placements) => {
+    "preserves the known %s reference verdict and tick count",
+    (level, placements, expectedTicks) => {
       const result = simulate(level, placements, { maxTicks: 1_200 });
 
       expect(result.solved).toBe(true);
-      expect(result.ticks).toBeLessThanOrEqual(1_200);
+      expect(result.ticks).toBe(expectedTicks);
       expect(result.events.at(-1)).toMatchObject({ type: "goal" });
     },
   );

@@ -20,7 +20,14 @@ const lowerRampTransform = {
   rotation: 0.35,
 };
 const blockTransform = { position: { x: 830, y: 180 } };
-const initialInventory = { ball: 0, bird: 0, block: 1, ramp: 0 };
+const initialInventory = {
+  ball: 0,
+  bird: 0,
+  block: 1,
+  ramp: 0,
+  mattress: 0,
+  teapot: 0,
+};
 const initialGameState = createInitialGameState(initialInventory);
 
 describe("game-state transitions", () => {

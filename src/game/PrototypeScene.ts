@@ -17,6 +17,11 @@ import {
   recordCompletedClick,
   type CompletedClick,
 } from "./doubleClick";
+import { getStorybookAsset, preloadStorybookAssets } from "./storybookAssets";
+import {
+  STORYBOOK_ASSET_PROOF,
+  type StorybookObjectDefinition,
+} from "./storybookObjectProof";
 import {
   isEditablePart,
   type ActorDefinition,
@@ -136,6 +141,12 @@ interface ContactObject {
   destroyVisual: () => void;
 }
 
+interface StorybookObject {
+  body: Phaser.GameObjects.Rectangle;
+  definition: StorybookObjectDefinition;
+  sprite: Phaser.GameObjects.Image;
+}
+
 type MatterRectangle = Phaser.GameObjects.Rectangle &
   Phaser.Physics.Matter.Components.Gravity &
   Phaser.Physics.Matter.Components.Transform &
@@ -206,6 +217,7 @@ export class PrototypeScene extends Phaser.Scene {
     EditableComponent | EditableBall | AutonomousActor
   >();
   private readonly ramps = new Map<string, EditableRamp>();
+  private readonly storybookObjects = new Map<string, StorybookObject>();
   private runSnapshot?: SceneRunSnapshot;
   private simulationAccumulatorMs = 0;
   private simulationRunning = false;
@@ -234,13 +246,19 @@ export class PrototypeScene extends Phaser.Scene {
       returnsTrayPart: "ball" | "bird" | "block" | "ramp" | null,
     ) => void,
     private readonly onEditFeedback: (message: string) => void,
+    private readonly showStorybookAssetProof = false,
   ) {
     super("prototype");
+  }
+
+  preload(): void {
+    preloadStorybookAssets(this.load);
   }
 
   create(): void {
     this.drawWorkshop();
     this.createLevelObjects();
+    if (this.showStorybookAssetProof) this.createStorybookProofObjects();
     this.matter.world.autoUpdate = false;
     this.matter.world.on(
       "collisionstart",
@@ -310,6 +328,41 @@ export class PrototypeScene extends Phaser.Scene {
       this.rotateSelectedRamp(1);
     });
     this.matter.world.pause();
+  }
+
+  private createStorybookProofObjects(): void {
+    for (const definition of STORYBOOK_ASSET_PROOF) {
+      this.createStorybookObject(definition);
+    }
+  }
+
+  /**
+   * Rendering uses the registered sprite while Matter uses only the explicit
+   * `body` rectangle from content data. The sprite's trimmed bounds are never
+   * consulted when creating physics.
+   */
+  private createStorybookObject(definition: StorybookObjectDefinition): void {
+    const asset = getStorybookAsset(definition.part);
+    const sprite = this.add
+      .image(definition.render.x, definition.render.y, asset.textureKey)
+      .setDisplaySize(definition.render.width, definition.render.height)
+      .setDepth(3);
+    const body = this.add
+      .rectangle(
+        definition.body.x,
+        definition.body.y,
+        definition.body.width,
+        definition.body.height,
+        0x000000,
+        0,
+      )
+      .setVisible(false);
+    this.matter.add.gameObject(body, {
+      isSensor: true,
+      isStatic: true,
+      label: `storybook:${definition.id}`,
+    });
+    this.storybookObjects.set(definition.id, { body, definition, sprite });
   }
 
   setSimulationRunning(running: boolean): void {

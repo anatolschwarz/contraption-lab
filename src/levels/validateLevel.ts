@@ -15,7 +15,8 @@ import type {
   RampDefinition,
   RectangleDefinition,
 } from "./levelTypes";
-import { CONTACT_TAGS, PUZZLE_DIFFICULTIES } from "./levelTypes";
+import { PUZZLE_DIFFICULTIES } from "./levelTypes";
+import { isContactTag, isInventoryPartKey } from "./partRegistry";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -67,18 +68,13 @@ const isBlock = (value: unknown): value is BlockDefinition =>
 
 const isInventory = (value: unknown): value is InventoryDefinition =>
   isRecord(value) &&
-  isFiniteNumber(value.ball) &&
-  Number.isInteger(value.ball) &&
-  value.ball >= 0 &&
-  isFiniteNumber(value.bird) &&
-  Number.isInteger(value.bird) &&
-  value.bird >= 0 &&
-  isFiniteNumber(value.block) &&
-  Number.isInteger(value.block) &&
-  value.block >= 0 &&
-  isFiniteNumber(value.ramp) &&
-  Number.isInteger(value.ramp) &&
-  value.ramp >= 0;
+  Object.entries(value).every(
+    ([key, count]) =>
+      isInventoryPartKey(key) &&
+      isFiniteNumber(count) &&
+      Number.isInteger(count) &&
+      count >= 0,
+  );
 
 const isTimeLimitSeconds = (value: unknown): value is number =>
   isFiniteNumber(value) && value > 0;
@@ -159,9 +155,6 @@ function validateActors(value: unknown): ActorDefinition[] {
   }
   return actors;
 }
-
-const isContactTag = (value: unknown): value is ContactTag =>
-  typeof value === "string" && CONTACT_TAGS.includes(value as ContactTag);
 
 function validateContactParticipantSelector(
   value: unknown,
@@ -344,7 +337,7 @@ export function validateLevel(value: unknown): LevelDefinition {
   }
   if (!isInventory(inventory)) {
     throw new Error(
-      "Level inventory must define non-negative integer ball, bird, block, and ramp counts.",
+      "Level inventory must contain only registered parts with non-negative integer counts.",
     );
   }
   const validatedContactRules = validateContactRules(contactRules);
@@ -357,7 +350,7 @@ export function validateLevel(value: unknown): LevelDefinition {
   const unplacedPlayerBirds = validatedActors.filter(
     (actor) => actor.ownership === "player" && actor.initiallyPlaced === false,
   );
-  if (inventory.bird !== unplacedPlayerBirds.length) {
+  if ((inventory.bird ?? 0) !== unplacedPlayerBirds.length) {
     throw new Error(
       "Bird inventory must equal the number of initially unplaced player-owned Birds.",
     );
@@ -378,7 +371,7 @@ export function validateLevel(value: unknown): LevelDefinition {
   const unplacedPlayerBalls = balls.filter(
     (ball) => ball.ownership === "player" && ball.initiallyPlaced === false,
   );
-  if (inventory.ball !== unplacedPlayerBalls.length) {
+  if ((inventory.ball ?? 0) !== unplacedPlayerBalls.length) {
     throw new Error(
       "Ball inventory must equal the number of initially unplaced player-owned Balls.",
     );

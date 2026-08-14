@@ -120,8 +120,17 @@ describe("validateLevel", () => {
     expect(() =>
       validateLevel({ ...rawLevel, inventory: { block: 1, ramp: 0.5 } }),
     ).toThrow(/inventory.*non-negative integer/i);
+    expect(
+      validateLevel({ ...rawLevel, inventory: { block: 1 } }).inventory,
+    ).toEqual({ block: 1 });
+  });
+
+  it("rejects unknown sparse inventory keys", () => {
     expect(() =>
-      validateLevel({ ...rawLevel, inventory: { block: 1 } }),
+      validateLevel({
+        ...rawLevel,
+        inventory: { block: 1, unknown: 0 },
+      }),
     ).toThrow(/inventory/i);
   });
 

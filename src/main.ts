@@ -53,6 +53,9 @@ let runtime: PuzzleRuntime = createPuzzleRuntime(activePuzzle);
 let state: GameState = runtime.gameState;
 let game: Phaser.Game | undefined;
 let scene: PrototypeScene | undefined;
+const showStorybookAssetProof = new URLSearchParams(window.location.search).has(
+  "storybookAssetProof",
+);
 
 declare global {
   interface Window {
@@ -244,6 +247,7 @@ function createGame(): void {
         returnsTrayPart,
       }),
     (message) => controls.setEditFeedback(message),
+    showStorybookAssetProof,
   );
 
   game = new Phaser.Game({

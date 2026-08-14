@@ -4561,3 +4561,211 @@ FINAL RESPONSE MUST INCLUDE
 
 Then print the same complete final response in the Codex terminal and STOP.
 Do not commit or push contraption-lab.
+
+---
+
+Implement Phase 2 milestone #29 — Storybook asset pipeline.
+
+Repository:
+~/code/contraption-lab
+
+Expected starting HEAD:
+f37b74a Implement dynamic toppling Blocks
+
+Coworking session:
+s-20260814-0920-a29c
+
+WORKFLOW
+- Do NOT commit or push contraption-lab.
+- Normal prom-resp review flow.
+- You are authorized to make all in-scope local edits and run the listed local
+  validations without asking for approval.
+- Do not repeatedly ask approval for normal repository reads/writes/tests.
+- Preserve unrelated local changes/untracked files.
+- In particular, docs/ROADMAP.md may contain the owner's local "German Shoutout"
+  backlog edit. Do not modify or include that change in the #29 patch.
+- Also preserve:
+  docs/reviews/
+  s-20260812-1003-c7d4-response.md
+
+Read first:
+- AGENTS.md
+- docs/PHASE2_RECONCILIATION.md
+- docs/design/phase2/reference-art/assets-manifest.json
+- docs/design/phase2/sunny-attic-art-bible-v0.4.md
+- relevant current rendering, schema, validation, inventory, contact-tag,
+  headless and scene-construction code.
+
+GOAL
+
+Establish the production Sunny Attic Storybook asset/rendering pipeline without
+cementing the old POC Ball/Ramp/Block taxonomy into future Chapter-1 content.
+
+Do NOT redesign the whole gameplay model. #26 already provides generic
+behavioral mechanics. Keep existing physics/gameplay abstractions where useful.
+
+REQUIREMENTS
+
+1. Rendering vs physics
+- Storybook assets are visual/content identity only.
+- Matter geometry remains explicit deterministic gameplay geometry.
+- Sprite dimensions/transparent bounds must never silently define collision bodies.
+- Existing Phaser primitives remain usable fallback/debug rendering.
+
+2. Production-facing asset structure
+Create the smallest general asset/rendering structure that allows Chapter-1
+objects to use approved Sunny Attic assets without requiring a new hard-coded
+createX rendering path for every named object.
+
+Do not build a giant generic framework.
+
+3. Proof objects
+Prove the new structure with exactly these two Chapter-1 objects:
+- mattress
+- teapot
+
+Use their approved reference-art assets.
+
+Neither currently has an existing production createX path, so the proof must
+exercise the new structure rather than wrapping an old POC renderer.
+
+Do NOT implement their Chapter-1 gameplay mechanics or levels yet.
+
+Cat is explicitly OUT of #29; its visual/body orientation coupling belongs with
+L5 (#34).
+
+4. Inventory taxonomy
+Replace the current POC-shaped named inventory model:
+{ ball, bird, block, ramp }
+
+with the smallest keyed/registry-compatible representation needed so future
+Chapter-1 objects are not forced into those four names.
+
+Migrate the existing five puzzle JSON definitions as required.
+
+Preserve their existing semantics exactly.
+
+5. Contact/object tag safety
+Generalize closed POC-only tag/type assumptions only where #29 requires it.
+
+Do NOT replace compile-time safety with arbitrary unchecked strings.
+
+Keep one authoritative registry/set capable of providing:
+- compile-time valid tag/key types where practical;
+- runtime validation of level JSON / registry lookup;
+- clear rejection of unknown values.
+
+Avoid a large plugin/registry framework.
+
+6. Existing gameplay compatibility
+#29 is primarily content/rendering/schema infrastructure.
+
+Before changing code, capture the relevant headless baseline from f37b74a.
+
+After implementation, existing reference/headless runs must preserve:
+- same solved/unsolved verdict;
+- same tick count.
+
+This includes #28 dynamic/toppling Block behavior.
+
+Do not over-pin internal Matter traces/event implementation unless an existing
+test already requires them.
+
+7. Existing levels
+Do not redesign the five existing puzzles.
+Only perform mechanical schema migration required by #29.
+
+8. Assets
+Use the already-approved Sunny Attic archive as source material.
+Runtime copies/processing are allowed where the build needs them, but:
+- keep provenance clear;
+- do not alter the approved reference originals;
+- do not regenerate artwork;
+- do not couple physics bodies to sprite silhouettes.
+
+9. Scope exclusions
+Do NOT:
+- implement Chapter-1 levels #30–#35;
+- implement Cat mechanics;
+- implement mattress bounce gameplay;
+- implement teapot redirect gameplay;
+- add dependencies;
+- broadly refactor unrelated gameplay;
+- clean/delete unrelated local files;
+- commit or push contraption-lab.
+
+CALM VALIDATION PROCESS
+
+During implementation:
+- run only focused unit/tests relevant to files being changed;
+- use targeted checks while iterating;
+- do not repeatedly run the full suite.
+
+Before handoff, run ONCE:
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run build
+- git diff --check
+
+Formatting:
+- run formatting/checks only on files changed by #29, or report known unrelated
+  repository warnings without trying to fix them.
+
+Browser verification:
+- run only focused Playwright coverage for the #29 rendering/asset proof.
+- Do NOT run the full Playwright suite unless the focused test exposes a
+  plausible broad regression that requires it.
+
+Baseline:
+- capture pre-change relevant headless verdict + tick-count results from f37b74a;
+- report the before/after comparison in the handoff.
+- do not create a permanent baseline artifact unless technically necessary.
+
+PROM-RESP HANDOFF
+
+Write:
+~/code/prom-resp/s-20260814-0920-a29c-response.md
+
+Generate:
+~/code/prom-resp/s-20260814-0920-a29c-diff.patch
+
+The diff must contain ONLY #29 changes.
+Explicitly exclude unrelated local modifications/untracked files.
+
+Then in ~/code/prom-resp:
+- stage only those two handoff artifacts;
+- commit them;
+- pull --rebase origin main if required;
+- push origin main.
+
+This prom-resp commit/pull/push is explicitly authorized by the owner.
+Ask for approval only if the environment itself requires escalation; do not add
+extra confirmation steps.
+
+FINAL RESPONSE MUST REPORT
+- concise architecture implemented
+- proof that mattress + teapot use the new asset structure
+- inventory migration performed
+- tag/type safety decision
+- rendering/physics separation
+- baseline vs after headless verdict + tick counts
+- focused Playwright result
+- final validation results
+- git diff --check result
+- files changed
+- unrelated local files preserved/excluded
+- contraption-lab NOT committed/pushed
+- prom-resp commit/push result
+
+Append this operational prompt to docs/CODEX_PROMPTS.md.
+
+Before handoff, inspect the patch for:
+- syntax errors
+- formatting errors
+- truncation/cutoff
+- accidental empty files/lines
+- unrelated changes
+- scope creep
+
+Then stop.

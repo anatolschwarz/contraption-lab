@@ -1,3 +1,11 @@
+import type {
+  ContactTag,
+  InventoryDefinition as RegistryInventoryDefinition,
+} from "./partRegistry";
+
+export { CONTACT_TAGS } from "./partRegistry";
+export type { CompleteInventoryDefinition, ContactTag } from "./partRegistry";
+
 export interface Point {
   x: number;
   y: number;
@@ -41,26 +49,10 @@ export interface BallDefinition extends Point {
   ownership: PartOwnership;
 }
 
-export interface InventoryDefinition {
-  ball: number;
-  bird: number;
-  block: number;
-  ramp: number;
-}
+export type InventoryDefinition = RegistryInventoryDefinition;
 
 export const PUZZLE_DIFFICULTIES = ["Basic", "Medium", "Hard"] as const;
 export type PuzzleDifficulty = (typeof PUZZLE_DIFFICULTIES)[number];
-
-export const CONTACT_TAGS = [
-  "ball",
-  "goal",
-  "floor",
-  "ramp",
-  "block",
-  "bird",
-] as const;
-
-export type ContactTag = (typeof CONTACT_TAGS)[number];
 
 export interface ContactParticipantByRole {
   type: "contact";
