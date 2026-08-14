@@ -19,7 +19,20 @@ export interface RampDefinition extends LevelPartDefinition {
   rotation: number;
 }
 
-export type BlockDefinition = LevelPartDefinition;
+export interface BlockDefinition extends LevelPartDefinition {
+  /**
+   * When true, the Block participates as a Matter dynamic rigid body that can
+   * rotate/topple and transfer motion. Omitted or false keeps the historical
+   * static Block behavior, so existing levels are unchanged.
+   */
+  dynamic?: boolean;
+  /**
+   * Initial rotation in radians (same convention as {@link RampDefinition}).
+   * Omitted means an upright, axis-aligned Block (0). This is explicit
+   * gameplay geometry and is independent of any artwork silhouette.
+   */
+  rotation?: number;
+}
 
 export interface BallDefinition extends Point {
   id: string;

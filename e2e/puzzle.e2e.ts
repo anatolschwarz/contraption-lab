@@ -1600,6 +1600,264 @@ test("Rerun restores fresh Run-start Ball physics and Reset restores JSON", asyn
   expectNoConsoleErrors(app);
 });
 
+test("normalizes dynamic Blocks through Edit before runtime Rerun", async ({
+  page,
+}) => {
+  const app = await startApp(page);
+  const initialStaticBlock = await page.evaluate(() => {
+    const scene =
+      window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+        blocks: Map<
+          string,
+          {
+            shape: {
+              body?: { isStatic: boolean };
+              x: number;
+              y: number;
+            };
+          }
+        >;
+        createBlock: (definition: {
+          dynamic: boolean;
+          height: number;
+          id: string;
+          ownership: "fixed";
+          rotation: number;
+          width: number;
+          x: number;
+          y: number;
+        }) => void;
+      };
+    if (!scene) throw new Error("Prototype scene test hook is unavailable.");
+    scene.createBlock({
+      dynamic: true,
+      height: 80,
+      id: "runtime-dynamic-block",
+      ownership: "fixed",
+      rotation: 0.2,
+      width: 32,
+      x: 420,
+      y: 220,
+    });
+    const guideBlock = scene.blocks.get("guide-block");
+    if (!guideBlock?.shape.body)
+      throw new Error("Static Block is unavailable.");
+    return {
+      isStatic: guideBlock.shape.body.isStatic,
+      x: guideBlock.shape.x,
+      y: guideBlock.shape.y,
+    };
+  });
+  expect(initialStaticBlock).toEqual({ isStatic: true, x: 850, y: 150 });
+
+  await app.simulation.click();
+  await expect(app.mode).toHaveText("Mode: Running");
+  const movingBlock = await page.evaluate(() => {
+    const scene =
+      window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+        blocks: Map<
+          string,
+          {
+            shape: {
+              body?: {
+                angularVelocity: number;
+                velocity: { x: number; y: number };
+              };
+              setAngularVelocity: (velocity: number) => void;
+              setVelocity: (x: number, y: number) => void;
+              x: number;
+              y: number;
+            };
+          }
+        >;
+        matter: { world: { step: (delta: number) => void } };
+      };
+    const block = scene?.blocks.get("runtime-dynamic-block");
+    if (!block?.shape.body) throw new Error("Dynamic Block is unavailable.");
+    block.shape.setVelocity(8, -3);
+    block.shape.setAngularVelocity(0.15);
+    scene.matter.world.step(1000 / 60);
+    return {
+      angularVelocity: block.shape.body.angularVelocity,
+      velocity: { ...block.shape.body.velocity },
+      x: block.shape.x,
+      y: block.shape.y,
+    };
+  });
+  expect(
+    Math.hypot(movingBlock.velocity.x, movingBlock.velocity.y),
+  ).toBeGreaterThan(0);
+  expect(movingBlock.angularVelocity).not.toBe(0);
+
+  await page.getByRole("button", { name: "Edit" }).click();
+  await expect(app.mode).toHaveText("Mode: Edit");
+  const editRestState = await page.evaluate(() => {
+    const scene =
+      window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+        blocks: Map<
+          string,
+          {
+            shape: {
+              body?: {
+                angularVelocity: number;
+                velocity: { x: number; y: number };
+              };
+            };
+          }
+        >;
+      };
+    const block = scene?.blocks.get("runtime-dynamic-block");
+    if (!block?.shape.body) throw new Error("Dynamic Block is unavailable.");
+    return {
+      angularVelocity: block.shape.body.angularVelocity,
+      velocity: { ...block.shape.body.velocity },
+    };
+  });
+  expect(editRestState).toEqual({
+    angularVelocity: 0,
+    velocity: { x: 0, y: 0 },
+  });
+
+  await app.simulation.click();
+  await expect(app.mode).toHaveText("Mode: Running");
+  const rerunSnapshot = await page.evaluate(() => {
+    const scene =
+      window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+        blocks: Map<
+          string,
+          {
+            shape: {
+              setAngularVelocity: (velocity: number) => void;
+              setVelocity: (x: number, y: number) => void;
+            };
+          }
+        >;
+        matter: { world: { step: (delta: number) => void } };
+        runSnapshot?: {
+          parts: Array<{
+            componentType: "block";
+            definition: { id: string; rotation: number; x: number; y: number };
+          }>;
+        };
+      };
+    const block = scene?.blocks.get("runtime-dynamic-block");
+    const snapshot = scene?.runSnapshot?.parts.find(
+      (part) =>
+        part.componentType === "block" &&
+        part.definition.id === "runtime-dynamic-block",
+    );
+    if (!block || !snapshot) throw new Error("Run snapshot is unavailable.");
+    block.shape.setVelocity(-6, 5);
+    block.shape.setAngularVelocity(-0.12);
+    scene.matter.world.step(1000 / 60);
+    return snapshot.definition;
+  });
+
+  await page.evaluate(() => {
+    const scene =
+      window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+        blocks: Map<
+          string,
+          {
+            shape: {
+              body?: {
+                angularVelocity: number;
+                velocity: { x: number; y: number };
+              };
+              rotation: number;
+              x: number;
+              y: number;
+            };
+          }
+        >;
+        rerunFromSnapshot: () => boolean;
+      };
+    if (!scene) throw new Error("Prototype scene test hook is unavailable.");
+    const originalRerun = scene.rerunFromSnapshot;
+    scene.rerunFromSnapshot = () => {
+      const restored = originalRerun.call(scene);
+      const block = scene.blocks.get("runtime-dynamic-block");
+      if (!block?.shape.body)
+        throw new Error("Restored Dynamic Block is unavailable.");
+      (
+        window as typeof window & {
+          __dynamicBlockRerunTrace?: {
+            angularVelocity: number;
+            rotation: number;
+            velocity: { x: number; y: number };
+            x: number;
+            y: number;
+          };
+        }
+      ).__dynamicBlockRerunTrace = {
+        angularVelocity: block.shape.body.angularVelocity,
+        rotation: block.shape.rotation,
+        velocity: { ...block.shape.body.velocity },
+        x: block.shape.x,
+        y: block.shape.y,
+      };
+      return restored;
+    };
+  });
+  await page.getByRole("button", { name: "Rerun" }).click();
+  const restoredRunStart = await page.evaluate(() => {
+    const trace = (
+      window as typeof window & {
+        __dynamicBlockRerunTrace?: {
+          angularVelocity: number;
+          rotation: number;
+          velocity: { x: number; y: number };
+          x: number;
+          y: number;
+        };
+      }
+    ).__dynamicBlockRerunTrace;
+    if (!trace) throw new Error("Rerun trace is unavailable.");
+    return trace;
+  });
+  expect(restoredRunStart).toEqual({
+    angularVelocity: 0,
+    rotation: rerunSnapshot.rotation,
+    velocity: { x: 0, y: 0 },
+    x: rerunSnapshot.x,
+    y: rerunSnapshot.y,
+  });
+
+  await page.getByRole("button", { name: "Reset" }).click();
+  await expect(app.mode).toHaveText("Mode: Edit");
+  const resetState = await page.evaluate(() => {
+    const scene =
+      window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+        blocks: Map<
+          string,
+          {
+            shape: {
+              body?: { isStatic: boolean };
+              x: number;
+              y: number;
+            };
+          }
+        >;
+      };
+    const guideBlock = scene?.blocks.get("guide-block");
+    if (!guideBlock?.shape.body)
+      throw new Error("Reset static Block is unavailable.");
+    return {
+      dynamicBlockPresent: scene.blocks.has("runtime-dynamic-block"),
+      guideBlock: {
+        isStatic: guideBlock.shape.body.isStatic,
+        x: guideBlock.shape.x,
+        y: guideBlock.shape.y,
+      },
+    };
+  });
+  expect(resetState).toEqual({
+    dynamicBlockPresent: false,
+    guideBlock: initialStaticBlock,
+  });
+  expectNoConsoleErrors(app);
+});
+
 test("rejects overlapping player-part edits", async ({ page }) => {
   const app = await startApp(page);
 

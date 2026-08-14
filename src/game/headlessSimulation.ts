@@ -27,6 +27,7 @@ interface MatterVector {
 interface MatterBody {
   readonly position: MatterVector;
   readonly velocity: MatterVector;
+  readonly angle: number;
   ignoreGravity: boolean;
 }
 
@@ -124,15 +125,31 @@ export type SimulationEvent =
   | { type: "goal"; tick: number; ballId: string }
   | { type: "max-ticks"; tick: number };
 
+export interface SimulationBodyState {
+  id: string;
+  tag: ContactTag;
+  x: number;
+  y: number;
+  angle: number;
+}
+
 export interface SimulationResult {
   solved: boolean;
   ticks: number;
   events: readonly SimulationEvent[];
+  /**
+   * Terminal transform of every body still present at the end of the run, in
+   * registration order. Lets headless verification assert dynamic outcomes such
+   * as a Block's toppling angle or motion transferred to a neighbour, and makes
+   * deterministic replay checkable via a single structural comparison.
+   */
+  bodies: readonly SimulationBodyState[];
 }
 
 interface RegisteredBody extends ContactParticipant {
   body: MatterBody;
   id: string;
+  tag: ContactTag;
 }
 
 interface SimulatedActor {
@@ -283,8 +300,11 @@ export function simulate(
       block.y,
       block.width,
       block.height,
-      { isStatic: true, label: `block:${block.id}` },
+      { isStatic: block.dynamic !== true, label: `block:${block.id}` },
     );
+    if (block.rotation !== undefined) {
+      Matter.Body.setAngle(body, block.rotation);
+    }
     add(body);
     register(body, "block", block.id);
   }
@@ -375,5 +395,17 @@ export function simulate(
   }
 
   if (!solved) events.push({ type: "max-ticks", tick });
-  return { solved, ticks: tick, events };
+
+  const bodyStates: SimulationBodyState[] = [];
+  for (const registered of bodies.values()) {
+    bodyStates.push({
+      id: registered.id,
+      tag: registered.tag,
+      x: registered.body.position.x,
+      y: registered.body.position.y,
+      angle: registered.body.angle,
+    });
+  }
+
+  return { solved, ticks: tick, events, bodies: bodyStates };
 }

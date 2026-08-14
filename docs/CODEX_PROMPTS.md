@@ -4402,3 +4402,162 @@ Final response must report:
 - git status --short
 
 Do not commit or push contraption-lab.
+
+Implement Phase 2 milestone #28 — Dynamic/toppling Block capability.
+
+Repository:
+~/code/contraption-lab
+
+Expected starting main HEAD:
+a5a0589 Add Sunny Attic reference art archive (39 assets)
+
+Coworking session token:
+s-20260813-2348-b28a
+
+IMPORTANT WORKFLOW:
+- Do NOT commit or push contraption-lab.
+- Implement, test, then hand off through prom-resp for ChatGPT review.
+- Preserve all pre-existing unrelated untracked files unchanged.
+- Current known unrelated untracked paths include:
+  - docs/reviews/
+  - s-20260812-1003-c7d4-response.md
+- Do NOT include those pre-existing paths in the #28 review patch.
+- Append this operational prompt to docs/CODEX_PROMPTS.md according to the existing prompt-log convention.
+
+Read first:
+- AGENTS.md
+- docs/PHASE2_RECONCILIATION.md
+- docs/PROJECT_STATE.md
+- relevant existing Block schema/runtime/rendering/headless/reset/rerun/inventory code and tests
+
+GOAL
+
+Implement the smallest architecture-consistent capability that gives Block-derived
+Painted Blocks deterministic dynamic/toppling behavior.
+
+#28 acceptance requirement:
+
+“their ownership, inventory, Reset, Rerun, and headless behavior are specified
+and verified deterministically.”
+
+REQUIREMENTS
+
+1. Preserve existing Block behavior by default.
+   Existing levels must not change behavior merely because #28 exists.
+
+2. Add a declarative Block-level capability for dynamic/toppling behavior.
+   Follow the existing JSON/schema/validation architecture.
+   Do not add Painted-Block-specific or character-specific branches.
+
+3. A dynamic Block must:
+   - participate as a Matter dynamic rigid body;
+   - rotate/topple naturally from deterministic collisions;
+   - transfer motion to other dynamic Blocks;
+   - use explicit deterministic gameplay geometry independent of artwork.
+
+4. Preserve existing ownership/inventory semantics.
+   Fixed and player-owned Blocks must continue to behave correctly according
+   to the existing ownership model.
+
+5. Reset semantics:
+   Reset must restore the level's JSON-defined initial state, including
+   position, rotation and relevant dynamic-body state.
+
+6. Rerun semantics:
+   Rerun must restore the exact run-start layout/state, including dynamic
+   Block position, rotation, linear velocity and angular velocity as required
+   for deterministic replay.
+
+7. Headless parity:
+   The headless simulation must support the same dynamic/toppling semantics
+   as rendered gameplay.
+
+8. Add focused tests proving:
+   - schema/validation behavior;
+   - old/static Block behavior remains unchanged;
+   - a deterministic Block toppling/chain interaction;
+   - deterministic repeat runs;
+   - Reset behavior;
+   - Rerun behavior;
+   - ownership/inventory behavior where relevant;
+   - headless toppling behavior.
+
+9. Do NOT:
+   - integrate Sunny Attic sprites (#29);
+   - change Chapter-1 levels (#30–#35);
+   - add dependencies;
+   - perform broad refactors;
+   - introduce object-specific hacks;
+   - couple sprite silhouettes to Matter bodies.
+
+10. If the existing architecture suggests a materially simpler implementation
+    than the wording above, use it only if it satisfies #28 acceptance and
+    explain the choice in the handoff.
+
+VALIDATION
+
+Run:
+
+npm run typecheck
+npm run lint
+npm test
+npm run format:check
+npm run build
+
+Because this changes rendered Matter behavior, also run the relevant Playwright
+regression coverage. Prefer:
+
+npx playwright test --workers=1
+
+If that cannot run, report the exact reason. Do not silently skip it.
+
+Before handoff:
+- inspect git diff carefully;
+- run git diff --check;
+- verify no accidental art, generated files, dependency changes or unrelated
+  pre-existing untracked files are included;
+- check syntax, formatting, truncation, erroneous empty files/lines, and
+  accidental scope expansion.
+
+PROM-RESP HANDOFF
+
+Write the complete final response to:
+
+~/code/prom-resp/s-20260813-2348-b28a-response.md
+
+Generate:
+
+~/code/prom-resp/s-20260813-2348-b28a-diff.patch
+
+The patch must represent ONLY the #28 changes made in this task, including
+tracked changes and any new files created for #28, while excluding the
+pre-existing unrelated untracked paths listed above.
+
+Do not add a make-diff.sh helper.
+
+Then in ~/code/prom-resp:
+
+1. stage both artifacts;
+2. commit them;
+3. pull --rebase origin main;
+4. push origin main;
+5. request approval if required.
+
+Claim delivery success only after that push succeeds.
+
+FINAL RESPONSE MUST INCLUDE
+
+- concise implementation summary
+- files changed
+- schema/API decision made
+- deterministic behavior implemented
+- tests added
+- exact validation results
+- Playwright result
+- git diff --check result
+- confirmation that existing unrelated untracked files were untouched
+- confirmation that contraption-lab was NOT committed or pushed
+- prom-resp commit/push result
+
+Then print the same complete final response in the Codex terminal and STOP.
+Do not commit or push contraption-lab.

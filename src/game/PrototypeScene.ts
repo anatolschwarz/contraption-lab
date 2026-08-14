@@ -329,6 +329,7 @@ export class PrototypeScene extends Phaser.Scene {
       this.matter.world.step(SIMULATION_STEP_MS);
       this.updateActorVisuals();
       this.updateBallHighlights();
+      this.updateDynamicBlockVisuals();
 
       if (!this.simulationRunning) return;
       if (this.level.timeLimitSeconds !== undefined) {
@@ -367,8 +368,10 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   setEditSelection(enabled: boolean, selectedComponentId: string | null): void {
+    const enteringEdit = enabled && !this.editInteractionEnabled;
     this.editInteractionEnabled = enabled;
     this.selectedComponentId = selectedComponentId;
+    if (enteringEdit) this.normalizeDynamicBlocksForEdit();
     if (!enabled) this.lastComponentClick = undefined;
     this.updateSelectionDisplay();
   }
@@ -395,6 +398,11 @@ export class PrototypeScene extends Phaser.Scene {
   ): void {
     for (const block of this.blocks.values()) {
       if (!block.editable) continue;
+      // A dynamic Block's live position is owned by the physics body once a run
+      // starts; only re-apply the stored edit transform while editing.
+      if (block.definition.dynamic === true && !this.editInteractionEnabled) {
+        continue;
+      }
       const position =
         transforms[block.definition.id]?.position ?? block.definition;
       this.updateBlockPosition(
@@ -535,6 +543,11 @@ export class PrototypeScene extends Phaser.Scene {
             ...block.definition,
             x: block.shape.x,
             y: block.shape.y,
+            // Capture the live rotation (like ramps) so Rerun reproduces the
+            // exact run-start angle of a dynamic Block that was left toppled by
+            // a prior run before re-entering edit. Static Blocks keep their
+            // definition rotation here, so their behavior is unchanged.
+            rotation: block.shape.rotation,
           },
           fromTray: block.fromTray,
         })),
@@ -832,6 +845,8 @@ export class PrototypeScene extends Phaser.Scene {
 
   private createBlock(definition: BlockDefinition, fromTray = false): void {
     const editable = isEditablePart(definition, fromTray);
+    const isDynamic = definition.dynamic === true;
+    const rotation = definition.rotation ?? 0;
     const highlightColor = editable
       ? WOOD_HIGHLIGHT_COLOR
       : FIXED_HIGHLIGHT_COLOR;
@@ -858,6 +873,7 @@ export class PrototypeScene extends Phaser.Scene {
         4,
         editable ? BLOCK_STROKE_COLOR : FIXED_BLOCK_STROKE_COLOR,
       )
+      .setRotation(rotation)
       .setDepth(1);
     const highlight = this.add
       .rectangle(
@@ -870,9 +886,11 @@ export class PrototypeScene extends Phaser.Scene {
       )
       .setDepth(2);
     this.matter.add.gameObject(shape, {
-      isStatic: true,
+      isStatic: !isDynamic,
       label: `block:${definition.id}`,
     });
+    const body = shape.body as MatterJS.BodyType | undefined;
+    if (body) this.matter.body.setAngle(body, rotation);
 
     const selectionText = this.add
       .text(definition.x, definition.y - 34, "BLOCK SELECTED", {
@@ -916,7 +934,7 @@ export class PrototypeScene extends Phaser.Scene {
       shape,
       selectionText,
     };
-    this.updateBlockSurface(block, definition);
+    this.updateBlockSurface(block, definition, rotation);
     this.blocks.set(definition.id, block);
     this.editableComponents.set(definition.id, block);
     this.registerContactObject(shape, "block", definition.id, () =>
@@ -1673,6 +1691,30 @@ export class PrototypeScene extends Phaser.Scene {
     for (const ball of this.balls.values()) this.updateBallHighlight(ball);
   }
 
+  private updateDynamicBlockVisuals(): void {
+    for (const block of this.blocks.values()) {
+      if (block.definition.dynamic !== true) continue;
+      const { x, y, rotation } = block.shape;
+      this.updateBlockSurface(block, { x, y }, rotation);
+      block.selectionText.setPosition(x, y - 34);
+    }
+  }
+
+  /**
+   * Edit mode is a rest-state boundary for dynamic Blocks. Their transforms
+   * remain editable, but a subsequent Run always starts without residual
+   * linear or angular motion from the previous simulation.
+   */
+  private normalizeDynamicBlocksForEdit(): void {
+    for (const block of this.blocks.values()) {
+      if (block.definition.dynamic !== true) continue;
+      const body = block.shape.body as MatterJS.BodyType | undefined;
+      if (!body) continue;
+      this.matter.body.setVelocity(body, { x: 0, y: 0 });
+      this.matter.body.setAngularVelocity(body, 0);
+    }
+  }
+
   private updateBallHighlight(ball: EditableBall): void {
     ball.shadow.setPosition(
       ball.shape.x + ball.definition.radius * 0.14,
@@ -1705,12 +1747,23 @@ export class PrototypeScene extends Phaser.Scene {
   private updateBlockSurface(
     block: EditableBlock,
     position: { x: number; y: number },
+    rotation = 0,
   ): void {
-    block.shadow.setPosition(position.x + 3, position.y + 4);
-    block.highlight.setPosition(
-      position.x,
-      position.y - block.definition.height * 0.32,
-    );
+    const sine = Math.sin(rotation);
+    const cosine = Math.cos(rotation);
+    const highlightOffset = block.definition.height * 0.32;
+    block.shadow
+      .setPosition(
+        position.x + 3 * cosine - 4 * sine,
+        position.y + 3 * sine + 4 * cosine,
+      )
+      .setRotation(rotation);
+    block.highlight
+      .setPosition(
+        position.x + highlightOffset * sine,
+        position.y - highlightOffset * cosine,
+      )
+      .setRotation(rotation);
   }
 
   private drawGoalCup(goal: LevelDefinition["goal"]): void {

@@ -61,7 +61,9 @@ const isBlock = (value: unknown): value is BlockDefinition =>
   isRectangle(value) &&
   typeof value.id === "string" &&
   value.id.trim() !== "" &&
-  (value.ownership === "fixed" || value.ownership === "player");
+  (value.ownership === "fixed" || value.ownership === "player") &&
+  (value.dynamic === undefined || typeof value.dynamic === "boolean") &&
+  (value.rotation === undefined || isFiniteNumber(value.rotation));
 
 const isInventory = (value: unknown): value is InventoryDefinition =>
   isRecord(value) &&
