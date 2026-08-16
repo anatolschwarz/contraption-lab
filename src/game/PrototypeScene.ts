@@ -8,6 +8,7 @@ import {
 } from "./autonomousActors";
 import {
   addContactVectors,
+  canCaptureGoal,
   executeContactRules,
   redirectVelocity,
   type ContactParticipant,
@@ -35,12 +36,14 @@ import {
   type LevelDefinition,
   type MattressDefinition,
   type RampDefinition,
+  type TeapotDefinition,
 } from "../levels/levelTypes";
 import { getStorybookAssetId } from "../levels/partRegistry";
 import {
   TRAY_BLOCK_ID_PREFIX,
   TRAY_MATTRESS_ID_PREFIX,
   TRAY_RAMP_ID_PREFIX,
+  TRAY_TEAPOT_ID_PREFIX,
 } from "../state/gameState";
 import type {
   BallTransform,
@@ -151,6 +154,14 @@ interface EditableMattress {
   selectionText: Phaser.GameObjects.Text;
   sprite?: Phaser.GameObjects.Image;
 }
+interface EditableTeapot {
+  definition: TeapotDefinition;
+  editable: boolean;
+  fromTray: boolean;
+  shape: Phaser.GameObjects.Rectangle;
+  selectionText: Phaser.GameObjects.Text;
+  sprite?: Phaser.GameObjects.Image;
+}
 
 interface EditableComponent {
   editable: boolean;
@@ -206,9 +217,17 @@ interface MattressPartSnapshot {
   definition: MattressDefinition;
   fromTray: boolean;
 }
+interface TeapotPartSnapshot {
+  componentType: "teapot";
+  definition: TeapotDefinition;
+  fromTray: boolean;
+}
 
 type PlayerPartSnapshot =
-  RampPartSnapshot | BlockPartSnapshot | MattressPartSnapshot;
+  | RampPartSnapshot
+  | BlockPartSnapshot
+  | MattressPartSnapshot
+  | TeapotPartSnapshot;
 
 interface BallPartSnapshot {
   definition: BallDefinition;
@@ -231,7 +250,7 @@ export class PrototypeScene extends Phaser.Scene {
   private readonly balls = new Map<string, EditableBall>();
   private drag?: {
     componentId: string;
-    componentType: "ball" | "bird" | "ramp" | "block" | "mattress";
+    componentType: "ball" | "bird" | "ramp" | "block" | "mattress" | "teapot";
     offset: Phaser.Math.Vector2;
     pointerStart: Phaser.Math.Vector2;
   };
@@ -240,6 +259,7 @@ export class PrototypeScene extends Phaser.Scene {
   private lastComponentClick?: CompletedClick;
   private readonly blocks = new Map<string, EditableBlock>();
   private readonly mattresses = new Map<string, EditableMattress>();
+  private readonly teapots = new Map<string, EditableTeapot>();
   private readonly actors = new Map<string, AutonomousActor>();
   private readonly contactObjects = new Map<MatterJS.BodyType, ContactObject>();
   private readonly editableComponents = new Map<
@@ -276,7 +296,8 @@ export class PrototypeScene extends Phaser.Scene {
     ) => void,
     private readonly onComponentRemove: (
       componentId: string,
-      returnsTrayPart: "ball" | "bird" | "block" | "ramp" | "mattress" | null,
+      returnsTrayPart:
+        "ball" | "bird" | "block" | "ramp" | "mattress" | "teapot" | null,
     ) => void,
     private readonly onEditFeedback: (message: string) => void,
     private readonly showStorybookAssetProof = false,
@@ -292,6 +313,7 @@ export class PrototypeScene extends Phaser.Scene {
           presentation.ball.asset,
           ...(presentation.ramp ? [presentation.ramp.asset] : []),
           ...(presentation.mattress ? [presentation.mattress.asset] : []),
+          ...(presentation.teapot ? [presentation.teapot.asset] : []),
           presentation.goal.asset,
           presentation.goal.solvedAsset,
           ...(presentation.goal.sparkle
@@ -313,11 +335,15 @@ export class PrototypeScene extends Phaser.Scene {
     this.matter.world.autoUpdate = false;
     this.matter.world.on(
       "collisionstart",
-      (
-        _event: Phaser.Physics.Matter.Events.CollisionStartEvent,
-        bodyA: MatterJS.BodyType,
-        bodyB: MatterJS.BodyType,
-      ) => this.handleContact(bodyA, bodyB),
+      (event: Phaser.Physics.Matter.Events.CollisionStartEvent) => {
+        // Phaser's convenient bodyA/bodyB event arguments describe only the
+        // final pair in this tick. Rules must see every pair, just as the
+        // headless Matter runner does; a ball can enter a Teapot sensor in the
+        // same tick that it contacts the tabletop geometry.
+        for (const pair of event.pairs) {
+          this.handleContact(pair.bodyA, pair.bodyB);
+        }
+      },
     );
     this.input.on(Phaser.Input.Events.POINTER_DOWN, () => {
       if (!this.editInteractionEnabled) return;
@@ -356,6 +382,8 @@ export class PrototypeScene extends Phaser.Scene {
           this.updateBlockPosition(this.drag.componentId, x, y, true);
         } else if (this.drag.componentType === "mattress") {
           this.updateMattressPosition(this.drag.componentId, x, y, true);
+        } else if (this.drag.componentType === "teapot") {
+          this.updateTeapotPosition(this.drag.componentId, x, y);
         } else if (this.drag.componentType === "bird") {
           this.updateActorPosition(this.drag.componentId, x, y, true);
         } else {
@@ -652,6 +680,17 @@ export class PrototypeScene extends Phaser.Scene {
     return id;
   }
 
+  spawnTrayTeapot(availableCount: number): string | null {
+    if (!this.editInteractionEnabled || availableCount <= 0) return null;
+    const tray = this.level.trayTeapot;
+    if (!tray) return null;
+    const id = this.getNextTrayTeapotId();
+    const definition: TeapotDefinition = { ...tray, ...tray.spawn, id };
+    this.createTeapot(definition, true);
+    this.onEditFeedback("");
+    return id;
+  }
+
   captureRunLayout(): void {
     this.runSnapshot = {
       parts: [
@@ -690,6 +729,15 @@ export class PrototypeScene extends Phaser.Scene {
             fromTray: mattress.fromTray,
           }),
         ),
+        ...[...this.teapots.values()].map((teapot): TeapotPartSnapshot => ({
+          componentType: "teapot",
+          definition: {
+            ...teapot.definition,
+            x: teapot.shape.x,
+            y: teapot.shape.y,
+          },
+          fromTray: teapot.fromTray,
+        })),
       ],
       actors: [...this.actors.values()].map((actor): ActorSnapshot => ({
         definition: {
@@ -1290,8 +1338,101 @@ export class PrototypeScene extends Phaser.Scene {
     );
   }
 
+  /** The explicit sensor rectangle is gameplay geometry; the sprite is visual only. */
+  private createTeapot(definition: TeapotDefinition, fromTray = false): void {
+    const presentation = this.level.storybookPresentation?.teapot;
+    const sprite = presentation
+      ? this.add
+          .image(
+            definition.x,
+            definition.y,
+            getStorybookAssetById(presentation.asset).textureKey,
+          )
+          .setDisplaySize(presentation.width, presentation.height)
+          .setDepth(3)
+      : undefined;
+    const shape = this.add
+      .rectangle(
+        definition.x,
+        definition.y,
+        definition.width,
+        definition.height,
+        0xa96d64,
+        presentation ? 0 : 0.9,
+      )
+      .setStrokeStyle(4, 0x593c58)
+      .setDepth(1);
+    this.matter.add.gameObject(shape, {
+      isStatic: true,
+      label: `teapot:${definition.id}`,
+    });
+    if (presentation) shape.setVisible(false);
+    const selectionText = this.add
+      .text(definition.x, definition.y - definition.height / 2 - 18, "TEAPOT", {
+        color: "#593c58",
+        fontFamily: "Arial, sans-serif",
+        fontSize: "14px",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(4)
+      .setVisible(false);
+    shape.on(
+      Phaser.Input.Events.POINTER_DOWN,
+      (
+        pointer: Phaser.Input.Pointer,
+        _x: number,
+        _y: number,
+        event: Phaser.Types.Input.EventData,
+      ) =>
+        this.handleComponentPointerDown(
+          "teapot",
+          definition.id,
+          shape,
+          pointer,
+          event,
+        ),
+    );
+    sprite
+      ?.setInteractive({ useHandCursor: true })
+      .on(
+        Phaser.Input.Events.POINTER_DOWN,
+        (
+          pointer: Phaser.Input.Pointer,
+          _x: number,
+          _y: number,
+          event: Phaser.Types.Input.EventData,
+        ) =>
+          this.handleComponentPointerDown(
+            "teapot",
+            definition.id,
+            shape,
+            pointer,
+            event,
+          ),
+      );
+    this.prepareComponentInput(
+      shape,
+      new Phaser.Geom.Rectangle(0, 0, definition.width, definition.height),
+      Phaser.Geom.Rectangle.Contains,
+    );
+    const teapot: EditableTeapot = {
+      definition,
+      editable: isEditablePart(definition, fromTray),
+      fromTray,
+      shape,
+      selectionText,
+      sprite,
+    };
+    this.teapots.set(definition.id, teapot);
+    this.editableComponents.set(definition.id, teapot);
+    this.registerContactObject(shape, "teapot", definition.id, () =>
+      this.destroyTeapot(definition.id),
+    );
+  }
+
   private handleComponentPointerDown(
-    componentType: "ball" | "bird" | "ramp" | "block" | "mattress",
+    componentType: "ball" | "bird" | "ramp" | "block" | "mattress" | "teapot",
     componentId: string,
     shape: Phaser.GameObjects.Shape,
     pointer: Phaser.Input.Pointer,
@@ -1348,7 +1489,7 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private removeComponent(
-    componentType: "ball" | "bird" | "ramp" | "block" | "mattress",
+    componentType: "ball" | "bird" | "ramp" | "block" | "mattress" | "teapot",
     componentId: string,
   ): void {
     if (componentType === "ball") {
@@ -1393,6 +1534,14 @@ export class PrototypeScene extends Phaser.Scene {
       this.onEditFeedback("");
       return;
     }
+    if (componentType === "teapot") {
+      const teapot = this.teapots.get(componentId);
+      if (!teapot || !teapot.editable) return;
+      this.destroyTeapot(componentId);
+      this.onComponentRemove(componentId, "teapot");
+      this.onEditFeedback("");
+      return;
+    }
     const block = this.blocks.get(componentId);
     if (!block || !block.editable) return;
     this.unregisterContactObject(block.shape);
@@ -1418,6 +1567,7 @@ export class PrototypeScene extends Phaser.Scene {
       this.createBlock(block);
     }
     for (const mattress of this.level.mattresses) this.createMattress(mattress);
+    for (const teapot of this.level.teapots) this.createTeapot(teapot);
   }
 
   private restoreBalls(snapshot: readonly BallPartSnapshot[]): void {
@@ -1559,8 +1709,10 @@ export class PrototypeScene extends Phaser.Scene {
         this.createRamp(part.definition, part.fromTray);
       } else if (part.componentType === "block") {
         this.createBlock(part.definition, part.fromTray);
-      } else {
+      } else if (part.componentType === "mattress") {
         this.createMattress(part.definition, part.fromTray);
+      } else {
+        this.createTeapot(part.definition, part.fromTray);
       }
     }
   }
@@ -1588,9 +1740,16 @@ export class PrototypeScene extends Phaser.Scene {
       mattress.selectionText.destroy();
       mattress.sprite?.destroy();
     }
+    for (const teapot of this.teapots.values()) {
+      this.unregisterContactObject(teapot.shape);
+      teapot.shape.destroy();
+      teapot.selectionText.destroy();
+      teapot.sprite?.destroy();
+    }
     this.ramps.clear();
     this.blocks.clear();
     this.mattresses.clear();
+    this.teapots.clear();
     this.editableComponents.clear();
   }
 
@@ -1635,8 +1794,13 @@ export class PrototypeScene extends Phaser.Scene {
       this.toContactParticipant(second, bodyB),
     );
     if (
-      (first.tag === "ball" && second.tag === "goal") ||
-      (first.tag === "goal" && second.tag === "ball")
+      ball &&
+      (first.tag === "goal" || second.tag === "goal") &&
+      canCaptureGoal(
+        ball.body.velocity,
+        this.level.goal.maxEntryHorizontalSpeed,
+        this.level.goal.minEntryVerticalSpeed,
+      )
     ) {
       this.showSuccess();
       this.onSuccess();
@@ -1676,18 +1840,24 @@ export class PrototypeScene extends Phaser.Scene {
     destroyVisual: () => void,
   ): void {
     if (gameObject.body) {
-      this.contactObjects.set(gameObject.body as MatterJS.BodyType, {
-        id,
-        tag,
-        destroyVisual,
-      });
+      const contactObject = { id, tag, destroyVisual };
+      for (const body of this.getContactBodies(gameObject)) {
+        this.contactObjects.set(body, contactObject);
+      }
     }
   }
 
   private unregisterContactObject(gameObject: MatterGameObject): void {
-    if (gameObject.body) {
-      this.contactObjects.delete(gameObject.body as MatterJS.BodyType);
+    for (const body of this.getContactBodies(gameObject)) {
+      this.contactObjects.delete(body);
     }
+  }
+
+  /** Matter events can report a compound body's child rather than its root. */
+  private getContactBodies(gameObject: MatterGameObject): MatterJS.BodyType[] {
+    const body = gameObject.body as MatterJS.BodyType | undefined;
+    if (!body) return [];
+    return body.parts.length > 1 ? [...body.parts] : [body];
   }
 
   private destroyBall(componentId: string): void {
@@ -1760,6 +1930,12 @@ export class PrototypeScene extends Phaser.Scene {
     let index = 1;
     while (this.blocks.has(`${TRAY_BLOCK_ID_PREFIX}${index}`)) index += 1;
     return `${TRAY_BLOCK_ID_PREFIX}${index}`;
+  }
+
+  private getNextTrayTeapotId(): string {
+    let index = 1;
+    while (this.teapots.has(`${TRAY_TEAPOT_ID_PREFIX}${index}`)) index += 1;
+    return `${TRAY_TEAPOT_ID_PREFIX}${index}`;
   }
 
   private updateRampTransform(
@@ -2064,6 +2240,23 @@ export class PrototypeScene extends Phaser.Scene {
     mattress.selectionText.setPosition(position.x, position.y - 34);
   }
 
+  private updateTeapotPosition(id: string, x: number, y: number): void {
+    const teapot = this.teapots.get(id);
+    if (!teapot || !teapot.editable) return;
+    const position = clampRampPosition(
+      { x, y },
+      { ...teapot.definition, rotation: 0 },
+    );
+    teapot.shape.setPosition(position.x, position.y);
+    const body = teapot.shape.body as MatterJS.BodyType | undefined;
+    if (body) this.matter.body.setPosition(body, position);
+    teapot.sprite?.setPosition(position.x, position.y);
+    teapot.selectionText.setPosition(
+      position.x,
+      position.y - teapot.definition.height / 2 - 18,
+    );
+  }
+
   private destroyMattress(id: string): void {
     const mattress = this.mattresses.get(id);
     if (!mattress) return;
@@ -2074,6 +2267,17 @@ export class PrototypeScene extends Phaser.Scene {
     mattress.selectionText.destroy();
     mattress.sprite?.destroy();
     this.mattresses.delete(id);
+    this.editableComponents.delete(id);
+  }
+
+  private destroyTeapot(id: string): void {
+    const teapot = this.teapots.get(id);
+    if (!teapot) return;
+    this.unregisterContactObject(teapot.shape);
+    teapot.shape.destroy();
+    teapot.selectionText.destroy();
+    teapot.sprite?.destroy();
+    this.teapots.delete(id);
     this.editableComponents.delete(id);
   }
 
@@ -2104,6 +2308,8 @@ export class PrototypeScene extends Phaser.Scene {
     }
     for (const [mattressId, mattress] of this.mattresses)
       this.updateComponentSelection(mattressId, mattress, 0x593c58);
+    for (const [teapotId, teapot] of this.teapots)
+      this.updateComponentSelection(teapotId, teapot, 0x593c58);
     for (const ball of this.balls.values()) {
       this.updateComponentSelection(
         ball.definition.id,
@@ -2123,7 +2329,11 @@ export class PrototypeScene extends Phaser.Scene {
   private updateComponentSelection(
     componentId: string,
     component:
-      EditableComponent | EditableBall | AutonomousActor | EditableMattress,
+      | EditableComponent
+      | EditableBall
+      | AutonomousActor
+      | EditableMattress
+      | EditableTeapot,
     strokeColor: number,
   ): void {
     const selected =
@@ -2276,7 +2486,7 @@ export class PrototypeScene extends Phaser.Scene {
 
   /** Visual-only reactions: no state or Matter body changes occur here. */
   private playStorybookPoke(
-    target: "ball" | "bird" | "ramp" | "block" | "mattress" | "goal",
+    target: "ball" | "bird" | "ramp" | "block" | "mattress" | "teapot" | "goal",
     componentId?: string,
   ): void {
     if (!this.level.storybookPresentation) return;
@@ -2285,9 +2495,11 @@ export class PrototypeScene extends Phaser.Scene {
         ? this.balls.get(componentId)?.sprite
         : target === "mattress" && componentId
           ? this.mattresses.get(componentId)?.sprite
-          : target === "goal"
-            ? this.storybookGoal
-            : undefined;
+          : target === "teapot" && componentId
+            ? this.teapots.get(componentId)?.sprite
+            : target === "goal"
+              ? this.storybookGoal
+              : undefined;
     if (visual) {
       this.tweens.add({
         targets: visual,

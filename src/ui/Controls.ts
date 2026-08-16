@@ -1,4 +1,5 @@
 import type { LevelDefinition, PuzzleDifficulty } from "../levels/levelTypes";
+import type { InventoryPartKey } from "../levels/partRegistry";
 import type { PuzzleProgress } from "../state/progression";
 import type { ParentSettings } from "../state/parentSettings";
 import type {
@@ -79,6 +80,10 @@ export class Controls {
   private readonly trayMattressLabel = requireElement<HTMLSpanElement>(
     "tray-mattress-label",
   );
+  private readonly trayTeapotButton =
+    requireElement<HTMLButtonElement>("tray-teapot-button");
+  private readonly trayTeapotLabel =
+    requireElement<HTMLSpanElement>("tray-teapot-label");
   private readonly partsPalette = requireElement<HTMLElement>("parts-palette");
   private readonly partsPaletteToggle = requireElement<HTMLButtonElement>(
     "parts-palette-toggle",
@@ -96,9 +101,10 @@ export class Controls {
     "timer-failure-checkbox",
   );
   private puzzleViewKey?: string;
+  private nextHeldPlacementId = 1;
 
   constructor(
-    onAction: (action: GameAction) => void,
+    private readonly onAction: (action: GameAction) => void,
     private readonly onPuzzleSelect: (puzzleId: string) => void,
     private readonly onSetUnlockAll: (unlockAll: boolean) => void,
     private readonly onSetParentSetting: (
@@ -113,30 +119,29 @@ export class Controls {
       reset: requireElement("reset-button"),
     };
 
-    this.buttons.edit.addEventListener("click", () => onAction("edit"));
+    this.buttons.edit.addEventListener("click", () => this.onAction("edit"));
     this.buttons.simulation.addEventListener("click", () =>
-      onAction("toggle-simulation"),
+      this.onAction("toggle-simulation"),
     );
-    this.buttons.reset.addEventListener("click", () => onAction("reset"));
-    this.rerunButton.addEventListener("click", () => onAction("rerun"));
+    this.buttons.reset.addEventListener("click", () => this.onAction("reset"));
+    this.rerunButton.addEventListener("click", () => this.onAction("rerun"));
     this.trayBlockButton.addEventListener("click", () =>
-      onAction({ type: "spawn-tray-block", componentId: "" }),
+      this.beginHeldPlacement("block"),
     );
     this.trayBallButton.addEventListener("click", () =>
-      onAction({
-        type: "spawn-tray-ball",
-        componentId: "",
-        transform: { position: { x: 0, y: 0 } },
-      }),
+      this.beginHeldPlacement("ball"),
     );
     this.trayBirdButton.addEventListener("click", () =>
-      onAction({ type: "spawn-tray-bird", componentId: "" }),
+      this.beginHeldPlacement("bird"),
     );
     this.trayRampButton.addEventListener("click", () =>
-      onAction({ type: "spawn-tray-ramp", componentId: "" }),
+      this.beginHeldPlacement("ramp"),
     );
     this.trayMattressButton.addEventListener("click", () =>
-      onAction({ type: "spawn-tray-mattress", componentId: "" }),
+      this.beginHeldPlacement("mattress"),
+    );
+    this.trayTeapotButton.addEventListener("click", () =>
+      this.beginHeldPlacement("teapot"),
     );
     this.partsPaletteToggle.addEventListener("click", () => {
       this.setPartsPaletteCollapsed(!this.partsPalette.hidden);
@@ -208,6 +213,13 @@ export class Controls {
       state.trayMattressCount,
       state,
     );
+    this.renderPaletteItem(
+      this.trayTeapotButton,
+      this.trayTeapotLabel,
+      "Teapot",
+      state.trayTeapotCount,
+      state,
+    );
     this.partsPaletteToggle.disabled = state.mode !== "edit" || state.succeeded;
     this.rerunButton.disabled = state.mode === "edit" || !state.runSnapshot;
     this.renderTimer(state, view.parentSettings.timerFailureMode);
@@ -251,6 +263,17 @@ export class Controls {
   setEditFeedback(message: string): void {
     this.editFeedback.textContent = message;
     this.editFeedback.hidden = message.length === 0;
+  }
+
+  private beginHeldPlacement(part: InventoryPartKey): void {
+    this.onAction({
+      type: "begin-held-placement",
+      placement: {
+        part,
+        id: `held-${part}-${this.nextHeldPlacementId++}`,
+        transform: { position: { x: 0, y: 0 }, rotation: 0 },
+      },
+    });
   }
 
   private renderPaletteItem(

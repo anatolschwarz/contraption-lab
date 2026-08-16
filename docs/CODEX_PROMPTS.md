@@ -4592,6 +4592,293 @@ Ensure response + diff reflect the FINAL working tree.
 
 Then STOP.
 
+Continue Phase 2 #32 from the CURRENT working tree.
+
+Session token:
+s-20260815-1658-l32a
+
+DO NOT FIX ANYTHING.
+
+Manual browser testing after the previous correction still shows the same defect:
+
+When Run starts in Tea Time, the VISIBLE marble does NOT fall downward as expected.
+
+This contradicts the previous diagnostic trace, which reported the Matter body falling vertically for ticks 1–5.
+
+Your task is ONLY to reproduce and explain this contradiction in the actual browser UI.
+
+Use the real Tea Time browser scene and inspect BOTH:
+
+1. the Matter body's position/velocity;
+2. the rendered marble sprite/display object's position.
+
+Immediately after Run, record several frames/ticks with:
+
+- Matter body x/y
+- Matter body vx/vy
+- rendered marble x/y
+- whether sprite and body remain aligned
+- first collision/contact
+- any code that overwrites or resynchronizes the rendered marble position
+
+Also verify that you are testing the same built-in Tea Time level and same runtime path the user sees at:
+
+http://localhost:5173/
+
+Do not infer success from the headless simulator.
+
+The required output is a clear answer to:
+
+Why does the visible browser marble fail to fall even though the previous Matter trace said the body falls?
+
+If the visible marble actually does fall in your reproduction, provide concrete browser evidence showing its rendered y-position changing downward over time.
+
+Do not modify gameplay code, geometry, tests, or reference solutions.
+
+Do not commit or push Contraption Lab.
+
+Update:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+Handoff using exactly:
+
+~/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to:
+
+docs/CODEX_PROMPTS.md
+
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
+
+# Codex correction prompt — #32 initial marble fall
+
+Continue Phase 2 #32 from the CURRENT working tree.
+
+Session token:
+`s-20260815-1658-l32a`
+
+The previous diagnostic successfully reproduced the defect:
+
+* marble starts at `(250, 235)` with zero velocity;
+* it initially intersects `tabletop-left-geometry`;
+* Matter resolves that penetration and gives it unintended rightward motion;
+* therefore the marble moves right instead of initially falling under gravity.
+
+FIX THIS DEFECT ONLY.
+
+Required behavior:
+
+* At Run start, the marble must NOT overlap/intersect any tabletop or other physics body.
+* Initial marble velocity remains zero.
+* The marble must initially fall under gravity.
+* It must not acquire rightward motion before a legitimate physical contact causes it.
+
+Make the smallest geometry/initial-position correction necessary.
+
+Do NOT:
+
+* modify the Teapot redirect/contact behavior;
+* modify cup behavior;
+* redesign L3;
+* add an L3-specific gameplay branch;
+* mask the issue with an artificial velocity/force.
+
+Verify in the actual Phaser/Matter browser runtime with the same kind of trace used for diagnosis.
+
+Report:
+
+* initial position/velocity;
+* first several relevant position/velocity samples;
+* first physical contact;
+* evidence that the marble initially falls rather than moves right.
+
+Update affected reference-solution geometry/tests only if strictly required by this correction.
+
+Run only the targeted checks necessary for this fix plus:
+
+* focused `e2e/teaTime.e2e.ts` as relevant
+* `npm run typecheck`
+* `npm run lint`
+* `git diff --check`
+
+Do not run the full unit suite for this isolated correction unless a broader regression requires it.
+
+Do not commit or push Contraption Lab.
+
+Preserve unrelated/owner work.
+
+Update:
+
+* `s-20260815-1658-l32a-response.md`
+* `s-20260815-1658-l32a-diff.patch`
+
+Handoff using exactly:
+
+`~/code/prom-resp/push-response.sh s-20260815-1658-l32a`
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to:
+
+`docs/CODEX_PROMPTS.md`
+
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
+
+# Codex diagnostic prompt — #32 marble moves right
+
+Continue Phase 2 #32 from the CURRENT working tree.
+
+Session token:
+`s-20260815-1658-l32a`
+
+DO NOT FIX ANYTHING.
+
+We are isolating one observed browser behavior only:
+
+In Tea Time, when Run starts, the marble should initially fall under gravity.
+
+Instead, manual testing shows the marble moving to the RIGHT toward the cup.
+
+Your task is ONLY to reproduce, identify, and verify whether this behavior actually occurs in the Phaser/Matter browser runtime.
+
+Do not modify:
+
+* gameplay code
+* level geometry
+* physics behavior
+* tests
+* reference solutions
+
+Do not attempt a correction.
+
+Use browser/runtime diagnostics to observe the marble immediately after Run.
+
+Report concrete evidence, including:
+
+* marble starting position
+* marble starting velocity
+* position/velocity over the first relevant ticks/frames
+* whether X increases before any Teapot/contact redirect
+* whether the marble is falling primarily under gravity or receiving horizontal motion
+* the source of any initial/rightward velocity if you can identify it by inspection
+
+The goal is simply to answer:
+
+**Can you reproduce and verify that the Tea Time marble moves right when it should initially fall?**
+
+If yes, state clearly that the defect is reproduced and show the evidence.
+
+If no, state clearly that you could not reproduce it and report exactly what you observed.
+
+Do not fix anything after identifying the cause.
+
+Do not commit or push Contraption Lab.
+
+Update:
+
+* `s-20260815-1658-l32a-response.md`
+* `s-20260815-1658-l32a-diff.patch`
+
+Handoff using exactly:
+
+`~/code/prom-resp/push-response.sh s-20260815-1658-l32a`
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to:
+
+`docs/CODEX_PROMPTS.md`
+
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
+
+# Codex correction prompt — #32 browser physics failure
+
+Continue Phase 2 milestone #32 from the CURRENT working tree.
+
+Session token:
+`s-20260815-1658-l32a`
+
+Manual browser testing still FAILS.
+
+Observed behavior:
+
+1. The marble should fall/roll according to gravity and level geometry, but instead it moves horizontally toward the cup by itself.
+
+2. When the Teapot is placed directly in the marble's path, the marble passes through it instead of triggering the Teapot redirect.
+
+This means the actual Phaser/Matter runtime behavior does not match the intended L3 mechanics and may not match the headless behavior.
+
+Diagnose and fix the ACTUAL browser physics/contact path.
+
+Check specifically:
+
+* marble initial velocity / forces / body setup;
+* whether any unintended horizontal velocity or redirect is applied before Teapot contact;
+* Teapot Matter body creation;
+* Teapot sensor/collision geometry;
+* collision categories/masks if relevant;
+* Teapot contact tags/metadata;
+* collision-start/contact dispatch;
+* declarative redirect-rule matching;
+* browser execution of the same redirect semantics used by headless simulation.
+
+Do NOT hide the problem by changing the E2E path, moving the cup, or adding an L3-specific gameplay branch.
+
+Required behavior:
+
+1. Without a Teapot intercepting its path, the marble must NOT magically travel to/solve the cup.
+
+2. With a Teapot correctly placed in the marble path:
+
+   * a real Matter contact must occur;
+   * the generic Teapot redirect rule must execute;
+   * the marble must exit in the authored spout direction;
+   * the redirected marble must reach the under-table cup.
+
+3. Browser and headless behavior must remain deterministic and semantically equivalent.
+
+Add/adjust focused tests so they prove those behaviors through the real runtime path.
+
+Run:
+
+* targeted affected Vitest
+* focused `e2e/teaTime.e2e.ts`
+* `npm run typecheck`
+* `npm run lint`
+* `npm test`
+* `npm run build`
+* `git diff --check`
+
+Do not run full Playwright unless a broader integration issue requires it.
+
+Do not reopen #30/#31.
+
+Preserve unrelated/owner work.
+
+Do not commit or push Contraption Lab.
+
+Update:
+
+* `s-20260815-1658-l32a-response.md`
+* `s-20260815-1658-l32a-diff.patch`
+
+Handoff using exactly:
+
+`~/code/prom-resp/push-response.sh s-20260815-1658-l32a`
+
+Ensure response + diff represent the FINAL working tree.
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to:
+
+`docs/CODEX_PROMPTS.md`
+
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
+
 Start Phase 2 milestone #31 — Chapter 1 L2 “Boing”.
 
 Continue from the current Contraption Lab working tree.
@@ -5482,3 +5769,935 @@ Use exactly:
 `~/code/prom-resp/push-response.sh s-20260815-0041-l31a`
 
 IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to `docs/CODEX_PROMPTS.md`. Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+# Codex prompt — Phase 2 #32 L3 “Tea Time”
+
+Start Phase 2 milestone #32 — Chapter 1 L3 “Tea Time”.
+
+Repository:
+`~/code/contraption-lab`
+
+Current accepted/pushed baseline:
+`2ec980ac7e38ad13283d92748999573c8a07527a`
+
+Session token:
+`s-20260815-1658-l32a`
+
+Do not reopen or polish #30/#31.
+
+Read and follow:
+
+* `AGENTS.md`
+* `docs/PHASE2_RECONCILIATION.md`
+* `docs/PROJECT_STATE.md`
+* `docs/ROADMAP.md`
+* `docs/design/phase2/sunny-attic-design-v0.1.md`
+* `docs/design/phase2/sunny-attic-art-bible-v0.4.md`
+
+Implement L3 “Tea Time” according to the approved card:
+
+* tea-party corner / doll table setting
+* cup under the table
+* Teapot is the new part
+* inventory: Teapot + one Plank
+* marble travels along the tabletop
+* intended route: Plank guides marble into Teapot lid → marble exits the spout down-left → reaches cup
+* distinct STAR route: solve with **no Plank**
+
+Architecture requirements:
+
+1. Implement Teapot redirection as a small reusable deterministic mechanic.
+
+   * no L3/level-id gameplay branch
+   * explicit gameplay geometry/direction
+   * sprite dimensions must not define Matter geometry
+   * browser and headless simulation must use equivalent semantics
+
+2. Preserve fixed-step determinism and existing levels.
+
+3. Reset/Rerun must correctly restore Teapot and Plank state.
+
+4. Encode and headlessly verify TWO named reference solutions:
+
+   * normal Plank route
+   * materially different no-Plank star route
+
+5. Use the existing Storybook asset pipeline.
+
+   * approved originals untouched
+   * runtime part/fx transparent
+   * environment opaque
+
+6. Extend schema/referenceSolutions only as necessary.
+
+Add focused tests for:
+
+* generic Teapot redirection
+* any schema/validation changes
+* deterministic normal reference route
+* deterministic no-Plank reference route
+* inventory + Reset/Rerun
+* L3 catalog/progression
+* focused browser placement/solve path
+
+During implementation run targeted tests.
+
+Before handoff run:
+
+* `npm run storybook-assets:check`
+* `npm run typecheck`
+* `npm run lint`
+* `npm test`
+* focused L3 Playwright
+* `npm run build`
+* `git diff --check`
+
+Do not run full Playwright unless a broad integration issue requires it.
+
+Do not commit or push Contraption Lab.
+
+Preserve unrelated/untracked work and owner edits, including `docs/ROADMAP.md`, unless #32 specifically requires an intentional change.
+
+Create/update:
+
+* `s-20260815-1658-l32a-response.md`
+* `s-20260815-1658-l32a-diff.patch`
+
+Handoff using exactly:
+
+`~/code/prom-resp/push-response.sh s-20260815-1658-l32a`
+
+Ensure both handoff artifacts represent the FINAL working tree.
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to:
+
+`docs/CODEX_PROMPTS.md`
+
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
+
+# Codex correction prompt — Phase 2 #32 L3 “Tea Time”
+
+Continue Phase 2 milestone #32 from the CURRENT working tree.
+
+Session token:
+`s-20260815-1658-l32a`
+
+Manual visual testing found a real L3 layout defect.
+
+Observed in browser:
+
+* the teacup is beside/left of the table instead of UNDER the table;
+* the marble can move toward the cup without requiring the intended Teapot redirection path;
+* the current scene therefore does not enforce the approved L3 puzzle structure.
+
+Fix #32 without redesigning the Teapot mechanic.
+
+Required correction:
+
+1. Make the visible/runtime L3 layout match the approved card:
+
+   * doll table remains central;
+   * teacup is under the table;
+   * marble path is along/above the tabletop;
+   * cup is not directly reachable from the marble's normal path;
+   * intended route requires:
+     Plank -> Teapot lid -> Teapot redirect -> cup under table.
+
+2. Preserve the existing generic deterministic Teapot redirect architecture if it is correct.
+
+   * no level-id gameplay branch;
+   * browser/headless semantics remain equivalent;
+   * Storybook sprite dimensions must not define Matter geometry.
+
+3. Recalculate/update L3 level geometry and reference solutions as necessary.
+
+4. BOTH named reference solutions must still solve deterministically:
+
+   * normal Plank route;
+   * distinct no-Plank star route.
+     The no-Plank star route must still use the Teapot and must remain materially different from the normal route.
+
+5. Update focused tests only as required by the corrected geometry.
+
+6. Focused browser test must prove the actual intended path:
+
+   * L3 selected;
+   * cup is under the table;
+   * Plank + Teapot placement;
+   * Run;
+   * marble enters Teapot;
+   * redirect sends it toward the under-table cup;
+   * success;
+   * Rerun/Reset remain correct.
+
+Run:
+
+* targeted affected Vitest
+* `npm run typecheck`
+* `npm run lint`
+* `npm test`
+* focused `e2e/teaTime.e2e.ts`
+* `npm run build`
+* `git diff --check`
+
+Do not run full Playwright unless required by a broader regression.
+
+Do not reopen or modify #30/#31.
+
+Preserve unrelated/owner work.
+
+Do not commit or push Contraption Lab.
+
+Update:
+
+* `s-20260815-1658-l32a-response.md`
+* `s-20260815-1658-l32a-diff.patch`
+
+Handoff using exactly:
+
+`~/code/prom-resp/push-response.sh s-20260815-1658-l32a`
+
+Ensure response + diff represent the FINAL working tree.
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to:
+
+`docs/CODEX_PROMPTS.md`
+
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
+
+# Codex diagnostic prompt — #32 tabletop physics vs visible art
+
+Continue Phase 2 #32 from the CURRENT working tree.
+
+Session token:
+s-20260815-1658-l32a
+
+DO NOT FIX ANYTHING.
+
+Manual inspection of the actual Tea Time browser scene shows:
+
+- the marble is visibly far LEFT of the table;
+- it is not visually above the tabletop;
+- nevertheless previous diagnostics report its first collision as:
+  `block:tabletop-left-geometry ↔ ball:tea-marble`
+
+This strongly suggests the Matter tabletop collision body extends into empty visible space to the left of the rendered table.
+
+Diagnose ONLY this visible-art / physics-geometry mismatch.
+
+In the actual Tea Time browser scene, report:
+
+1. Visible table bounds in canvas coordinates:
+   - left
+   - right
+   - top
+   - bottom
+
+2. `tabletop-left-geometry` Matter body:
+   - center x/y
+   - width/height
+   - rotation
+   - calculated world-space bounds/corners
+
+3. Marble:
+   - center x/y
+   - radius
+
+4. Determine whether the marble is geometrically above/intersecting the Matter tabletop while visually being left of the rendered tabletop.
+
+5. Explain why the Matter body occupies that visible empty region, if confirmed.
+
+Do not modify:
+- level geometry
+- sprite placement
+- physics
+- tests
+- reference solutions
+
+Do not fix anything.
+
+Do not commit or push Contraption Lab.
+
+Update:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+Handoff using exactly:
+
+~/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to:
+
+docs/CODEX_PROMPTS.md
+
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
+
+# Codex correction prompt — #32 align tabletop physics to visible table
+
+Continue Phase 2 #32 from the CURRENT working tree.
+
+Session token:
+s-20260815-1658-l32a
+
+The previous diagnostic confirmed the defect:
+
+- visible table left edge is approximately x=308;
+- `tabletop-left-geometry` extends left to approximately x=205;
+- its collision surface also sits far above the visible tabletop;
+- the marble therefore collides with invisible geometry while visibly far left of the table.
+
+FIX THIS DEFECT ONLY.
+
+Required correction:
+
+1. Re-author the Tea Time tabletop Matter geometry so it matches the ACTUAL visible tabletop in `corner_L3_v1.png`.
+
+2. Measure the visible tabletop surface in 960×540 canvas coordinates.
+   Do not guess from the existing incorrect geometry.
+
+3. The corrected collision geometry must:
+   - cover the visible tabletop where physical support is expected;
+   - not extend materially into empty space left of the rendered table;
+   - not sit materially above the visible tabletop;
+   - preserve the visible tabletop angle/shape closely enough that marble motion visually matches the artwork.
+
+4. Keep the marble starting position unchanged unless the corrected geometry itself proves that position is invalid.
+
+5. Do NOT:
+   - change Teapot redirect/contact behavior;
+   - change cup behavior;
+   - add artificial velocity/forces;
+   - add an L3-specific gameplay branch;
+   - modify #30/#31;
+   - redesign the level.
+
+6. Verify in the ACTUAL Phaser/Matter browser runtime:
+
+   Before reaching the visible table:
+   - marble falls freely under gravity;
+   - no tabletop collision occurs;
+   - vx remains zero except for legitimate physical effects.
+
+   At the visible tabletop:
+   - first tabletop collision occurs at a visually corresponding location;
+   - marble/body/sprite remain aligned;
+   - subsequent roll/contact visually follows the rendered table.
+
+7. Report concrete before/after geometry:
+   - visible tabletop bounds/surface coordinates;
+   - corrected Matter body coordinates/dimensions/rotation or vertices;
+   - marble position at first tabletop contact.
+
+8. Update L3 reference-solution geometry/tests only where strictly necessary because of the corrected tabletop geometry.
+
+Run:
+- targeted Tea Time Vitest
+- focused browser verification for the tabletop/fall behavior
+- `npm run typecheck`
+- `npm run lint`
+- `git diff --check`
+
+Do not run the full Playwright suite unless required by a broader regression.
+
+Do not commit or push Contraption Lab.
+
+Preserve unrelated/owner work.
+
+Update:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+Handoff using exactly:
+
+~/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+Ensure response + diff represent the FINAL working tree.
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to:
+
+docs/CODEX_PROMPTS.md
+
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
+
+# Codex diagnostic — audit #32 prompt logging
+
+Audit `docs/CODEX_PROMPTS.md` for Phase 2 milestone #32.
+
+This is primarily a READ-ONLY diagnostic.
+
+Goal:
+Determine whether the operational prompts used during #32 were actually appended to `docs/CODEX_PROMPTS.md`.
+
+Inspect the CURRENT LOCAL WORKING TREE, not only committed `main`.
+
+Search `docs/CODEX_PROMPTS.md` for all #32 / Tea Time prompts, including prompts identifiable by these topics/phrases:
+
+- initial Phase 2 #32 / Tea Time implementation
+- Teapot redirect/contact corrections
+- browser Matter `collisionstart` handling / generic Ball–Teapot contact
+- marble unexpectedly moving right
+- fixing only the initial marble fall
+- Matter body vs rendered sprite alignment diagnosis
+- invisible tabletop geometry diagnosis
+- `tabletop-left-geometry`
+- latest correction:
+  `# Codex correction prompt — #32 align tabletop physics to visible table`
+
+For each expected #32 prompt, report:
+
+1. PRESENT or MISSING
+2. exact heading / first distinctive line if present
+3. line number or approximate location in `docs/CODEX_PROMPTS.md`
+4. whether it is marked VERBATIM, RECONSTRUCTED, or otherwise
+5. whether the full prompt appears present or only a partial/reference entry
+
+Also report:
+
+- all #32-related prompt blocks actually found, in chronological/file order;
+- any duplicate #32 prompts;
+- whether `docs/CODEX_PROMPTS.md` currently has uncommitted changes;
+- `git diff -- docs/CODEX_PROMPTS.md`;
+- `git status --short docs/CODEX_PROMPTS.md`.
+
+Do NOT:
+- reconstruct missing prompts;
+- add missing historical prompts;
+- modify game code;
+- modify any existing `docs/CODEX_PROMPTS.md` content except for the mandatory append described below;
+- commit or push Contraption Lab.
+
+IMPORTANT:
+The only permitted working-tree change is appending THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to:
+
+docs/CODEX_PROMPTS.md
+
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+After appending this audit prompt, distinguish clearly between:
+- pre-existing #32 prompt-log contents;
+- this newly appended audit prompt.
+
+Create:
+
+s-20260816-0740-l32audit-response.md
+s-20260816-0740-l32audit-diff.patch
+
+The response must contain the complete audit findings.
+
+Handoff using exactly:
+
+/home/anatolschwartz/code/prom-resp/push-response.sh s-20260816-0740-l32audit
+
+Then STOP.
+
+Continue Phase 2 #32 from the CURRENT working tree.
+
+Change only the Tea Time marble initial position:
+- keep x = 400
+- change y = 300 to y = 180
+
+Do not change tabletop, Teapot, cup, physics, or reference routes yet.
+
+Verify in the real Phaser/Matter browser:
+- marble starts at (400,180);
+- falls vertically when unobstructed;
+- sprite/body remain aligned.
+
+Do not commit/push Contraption Lab.
+
+Update the existing #32 response/diff artifacts.
+
+Handoff using exactly:
+/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
+
+Then STOP.
+
+Continue Phase 2 #32 from the CURRENT working tree.
+
+Session token:
+s-20260815-1658-l32a
+
+The previous run claimed a partial held-placement state implementation, but the handoff diff did not contain it and required tests/prompt logging were incomplete.
+
+Complete and verify ONLY slice 1:
+
+STATE/ACTION PRIMITIVES + UNIT TESTS.
+
+First inspect the CURRENT working tree. Preserve any correct partial implementation already present; do not duplicate or rewrite it unnecessarily.
+
+Scope:
+- src/state/gameState.ts and directly related state/type definitions if required
+- focused state unit tests
+- docs/CODEX_PROMPTS.md only for mandatory prompt logging
+
+Do NOT modify:
+- Controls.ts
+- main.ts
+- PrototypeScene.ts
+- rendering/input
+- Matter/contact logic
+- Reset/puzzle lifecycle wiring
+- E2E/browser behavior
+- Tea Time level data
+- #30/#31
+
+Required state behavior:
+
+1. GameState has generic `heldPlacement` containing:
+   - part type
+   - provisional id
+   - provisional transform: position + rotation
+
+Default: no held placement.
+
+2. Actions/reducer support:
+- begin-held-placement
+- update-held-placement
+- commit-held-placement
+- cancel-held-placement
+
+3. Semantics:
+- begin requires available inventory
+- begin does NOT decrement inventory
+- update modifies provisional transform only
+- cancel clears heldPlacement and preserves inventory
+- commit requires active heldPlacement
+- commit decrements matching inventory exactly once
+- commit selects the provisional id
+- commit clears heldPlacement
+- repeated commit with no heldPlacement is inert
+- insufficient inventory cannot begin held placement
+
+No runtime/render/Matter objects in this slice.
+
+Required focused unit tests:
+- default heldPlacement empty
+- begin preserves inventory
+- begin rejected with insufficient inventory
+- transform update works
+- cancel preserves inventory
+- commit decrements exactly once
+- commit selects provisional id
+- commit clears heldPlacement
+- repeated commit cannot double-decrement
+
+Run:
+- focused relevant unit tests
+- npm run typecheck
+- npm run lint
+- git diff --check
+
+No browser/manual testing is required for this state-only slice.
+
+Do not commit or push Contraption Lab.
+
+IMPORTANT HANDOFF CORRECTION:
+The previous response and patch were inconsistent. This run must regenerate the handoff artifacts from the CURRENT working tree so that the patch actually contains every implementation/test change reported in the response.
+
+Create/update:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+Before handoff, verify:
+- the response names the actual changed implementation/test files;
+- the diff patch contains those exact changes;
+- no claimed implementation change is absent from the patch;
+- tests/check results are reported accurately;
+- no accidental unrelated changes were added.
+
+The response must clearly separate:
+- implementation
+- automated tests/checks
+- diff/artifact verification
+- unresolved issues
+- next integration boundary
+
+Handoff using exactly:
+/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
+
+Continue Phase 2 #32 from the CURRENT working tree.
+
+Session token:
+s-20260815-1658-l32a
+
+Implement ONLY held-placement slice 2:
+
+WIRE INVENTORY ACTIONS INTO begin-held-placement.
+
+Current slice 1 is complete and must be preserved.
+
+Required behavior:
+- Parts inventory click must start `begin-held-placement`.
+- Remove/bypass the current immediate scene `spawnTray*` call for this path.
+- Do NOT decrement inventory on inventory click.
+- Do NOT create/register runtime, render, Matter, or contact objects yet.
+- Do NOT implement provisional rendering, pointer-following, Q/E held rotation, commit click, cancel input, or lifecycle cleanup in this slice.
+- Existing normal placed-part behavior must remain unchanged.
+
+Expected scope:
+- `src/ui/Controls.ts`
+- `src/main.ts`
+- directly related action/type plumbing only if required
+- focused tests
+
+Tests must prove:
+- inventory click dispatches begin-held-placement;
+- inventory count remains unchanged;
+- no immediate normal spawn path executes;
+- existing unrelated controls remain unaffected.
+
+Run:
+- focused relevant tests
+- npm run typecheck
+- npm run lint
+- git diff --check
+
+No browser/manual testing required for this wiring-only slice.
+
+Do not commit or push Contraption Lab.
+
+Create/update:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+Verify response and patch contain the exact implementation/test changes reported.
+
+Handoff using exactly:
+/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
+Do not paraphrase, reconstruct, summarize, or omit any part.
+
+Then STOP.
+
+Continue Phase 2 #32.
+
+Work ONLY in:
+/home/anatolschwartz/code/contraption-lab
+
+Before editing verify:
+- current branch is `phase2-32-tea-time`
+- do NOT modify `/home/anatolschwartz/code/contraption-lab-main`
+
+Session token:
+s-20260815-1658-l32a
+
+Close ONLY the remaining slice-2 automated-test gap.
+
+Add focused automated coverage proving the `src/main.ts` held-placement routing:
+
+- `begin-held-placement` performs the state transition;
+- inventory remains unchanged;
+- none of the existing `scene.spawnTray*` methods are called;
+- handling returns before any `spawn-tray-*` path.
+
+Preserve existing slice-1 and slice-2 production behavior.
+
+Do NOT implement slice 3 yet.
+Do NOT change Tea Time physics/level data, provisional rendering, pointer following, Q/E held rotation, commit/cancel input, reset/lifecycle wiring, #30, or #31.
+
+Run:
+- focused relevant tests
+- npm run typecheck
+- npm run lint
+- git diff --check
+
+Do not commit or push Contraption Lab.
+
+Create/update:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+Verify the response and patch contain the exact changes reported.
+
+Handoff using exactly:
+/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
+
+Continue Phase 2 #32.
+
+Work ONLY in:
+/home/anatolschwartz/code/contraption-lab
+
+Verify:
+- branch = phase2-32-tea-time
+- do NOT modify /home/anatolschwartz/code/contraption-lab-main
+
+Session token:
+s-20260815-1658-l32a
+
+Close ONLY the remaining slice-2 regression-test gap.
+
+The current tests exercise mainActionRouting.ts but do NOT prove that src/main.ts itself returns before the spawnTray* branches.
+
+Add focused automated coverage that executes the actual main.ts action-routing path and proves:
+
+- begin-held-placement transitions state;
+- inventory remains unchanged;
+- every scene.spawnTray* spy remains untouched;
+- removing/breaking the early return in main.ts would make this test fail.
+
+A minimal test seam/refactor is allowed only if necessary to make the actual main.ts routing testable.
+Do not change observable production behavior.
+
+Do NOT implement slice 3 or change Tea Time physics, held rendering/input, commit/cancel wiring, lifecycle/reset behavior, #30, or #31.
+
+Run:
+- focused relevant tests
+- npm run typecheck
+- npm run lint
+- git diff --check
+
+Do not commit or push Contraption Lab.
+
+Create/update:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+Verify response and patch match exactly.
+
+Handoff using exactly:
+/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
+Do not paraphrase, reconstruct, summarize, or omit any part.
+
+Then STOP.
+
+Prepare the Phase 2 #32 checkpoint on the CURRENT working tree.
+
+Work ONLY in:
+/home/anatolschwartz/code/contraption-lab
+
+Verify:
+- branch is `phase2-32-tea-time`
+- do NOT modify `/home/anatolschwartz/code/contraption-lab-main`
+
+Goal:
+Identify and stage ALL current changes that belong to Phase 2 #32 / Tea Time, including the already-reviewed held-placement slice 1/2 work and earlier #32 implementation work.
+
+Do NOT stage unrelated/pre-existing files.
+
+Explicitly exclude unless inspection proves they are genuinely #32:
+- README.md
+- README.md.bak
+- docs/ROADMAP.md.bak
+- docs/reviews/
+- s-20260812-1003-c7d4-response.md
+
+Do not discard, revert, stash, move, or modify excluded files.
+
+Include docs/CODEX_PROMPTS.md because it contains the required #32 operational prompt history.
+
+Before staging, inspect every currently modified/untracked file and classify it as:
+- #32 checkpoint
+- unrelated/excluded
+- ambiguous
+
+If ambiguous, DO NOT stage it.
+
+Stage only the #32 checkpoint files.
+
+Then run:
+- git diff --cached --check
+- git diff --cached --name-status
+- git status --short
+
+Do NOT commit.
+Do NOT push.
+
+Create/update:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+The response must list:
+1. every staged file;
+2. every excluded/ambiguous file and why;
+3. staged diff-check result;
+4. current branch.
+
+The diff artifact must represent the staged checkpoint content being proposed.
+
+Handoff using exactly:
+/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md BEFORE generating/staging the final checkpoint diff.
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
+
+Continue Phase 2 #32 checkpoint correction.
+
+Work ONLY in:
+/home/anatolschwartz/code/contraption-lab
+
+Verify:
+- branch = phase2-32-tea-time
+- do NOT modify /home/anatolschwartz/code/contraption-lab-main
+
+Session token:
+s-20260815-1658-l32a
+
+The staged checkpoint review found TWO concrete problems. Fix ONLY these problems plus any directly required test updates.
+
+1. Parts layout regression
+
+Current staged style puts Parts in a desktop right-side column (`grid-column: 2`).
+
+That layout was rejected.
+
+Required layout:
+- game/canvas remains at its existing size/position;
+- Edit/Run/etc controls remain directly below/adjacent as currently intended;
+- Parts panel is BELOW the controls row;
+- opening/closing Parts must NOT resize, distort, or horizontally shift the game canvas;
+- do not restore the rejected side-column layout.
+
+Apply this generically, not Tea Time-specific.
+
+2. Stale Tea Time E2E
+
+`e2e/teaTime.e2e.ts` still assumes inventory clicks immediately spawn parts.
+
+Update it for the current held-placement architecture:
+- inventory click starts held placement;
+- do not expect immediate committed/runtime placement;
+- do not decrement inventory until commit exists in a later slice;
+- keep the test limited to behavior currently implemented.
+
+Also correct stale geometry lookup:
+- current Tea Time level uses `tabletop-left-geometry`;
+- remove/update any stale `tabletop-center-geometry` expectation.
+
+Do NOT implement slice 3 yet:
+- no provisional cursor rendering;
+- no held pointer movement;
+- no Q/E held rotation;
+- no commit/cancel interaction;
+- no held-placement lifecycle wiring.
+
+Do NOT change Tea Time physics/contact behavior unless required solely to make the corrected existing assertions accurate.
+
+Checkpoint/staging requirements:
+- preserve all already-reviewed #32 staged files;
+- do NOT stage unrelated files;
+- keep these excluded:
+  - README.md
+  - README.md.bak
+  - docs/ROADMAP.md.bak
+  - docs/reviews/
+  - s-20260812-1003-c7d4-response.md
+- stage the corrected #32 files after editing.
+
+Run:
+- focused relevant unit tests
+- focused Tea Time Playwright/E2E test(s) that are valid for the CURRENT slice
+- npm run typecheck
+- npm run lint
+- git diff --cached --check
+
+Use bounded browser timeouts and cleanly close browser/context/process handles.
+
+Do NOT commit.
+Do NOT push Contraption Lab.
+
+Regenerate:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+The diff artifact must represent the CURRENT staged checkpoint (`git diff --cached --binary`).
+
+Response must clearly report:
+- layout correction;
+- E2E correction;
+- exact tests/checks run and results;
+- staged file list;
+- any unresolved issue;
+- confirmation that excluded files remain unstaged.
+
+Handoff using exactly:
+/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
+
+Finalize the already-reviewed Phase 2 #32 local checkpoint.
+
+Work ONLY in:
+/home/anatolschwartz/code/contraption-lab
+
+Verify:
+- current branch is `phase2-32-tea-time`
+- do NOT modify `/home/anatolschwartz/code/contraption-lab-main`
+
+Session token:
+s-20260815-1658-l32a
+
+The staged #32 checkpoint was already reviewed and approved.
+
+Before doing anything:
+1. verify there is currently a non-empty staged index;
+2. verify the staged files still match the approved #32 checkpoint set;
+3. verify unrelated/excluded files remain unstaged.
+
+If the staged index is empty or materially differs from the approved checkpoint, STOP and report the discrepancy. Do not reconstruct or restage it automatically.
+
+Keep excluded:
+- README.md
+- README.md.bak
+- docs/ROADMAP.md.bak
+- docs/reviews/
+- s-20260812-1003-c7d4-response.md
+
+Append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md and stage only that required prompt-log update in addition to the already-approved staged checkpoint.
+
+Run:
+- git diff --cached --check
+- git diff --cached --name-status
+
+Then create ONE LOCAL commit:
+
+wip: checkpoint Tea Time #32 before held placement slice 3
+
+Do NOT push Contraption Lab.
+
+After commit:
+- report commit SHA;
+- run git status --short;
+- confirm excluded/unrelated files remain;
+- confirm the approved #32 staged changes are committed.
+
+Create/update:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+The diff artifact must contain the CHECKPOINT COMMIT diff itself, not an empty post-commit working-tree diff.
+
+Handoff using exactly:
+/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.

@@ -88,6 +88,26 @@
           id="game-container"
           aria-label="Physics puzzle play area"
         ></section>
+        <nav
+          class="controls simulation-toolbar"
+          aria-label="Simulation controls"
+        >
+          <button id="edit-button" type="button">
+            <span class="control-icon" aria-hidden="true">✋</span> Edit
+          </button>
+          <button id="simulation-button" type="button">
+            <span class="control-icon" aria-hidden="true">▶</span> Run
+          </button>
+          <button id="rerun-button" type="button" disabled>
+            <span class="control-icon" aria-hidden="true">↻</span> Rerun
+          </button>
+          <button id="reset-button" type="button">
+            <span class="control-icon" aria-hidden="true">↺</span> Reset
+          </button>
+          <button id="next-puzzle-button" type="button" hidden>
+            Next Puzzle
+          </button>
+        </nav>
         <aside
           id="parts-palette"
           class="parts-palette"
@@ -148,28 +168,20 @@
                   >Mattress</span
                 >
               </button>
+              <button id="tray-teapot-button" type="button" aria-label="Teapot">
+                <span
+                  class="part-preview part-preview--block"
+                  aria-hidden="true"
+                ></span>
+                <span id="tray-teapot-label" class="part-palette-label"
+                  >Teapot</span
+                >
+              </button>
             </div>
           </div>
         </aside>
       </section>
       <p id="edit-feedback" class="edit-feedback" aria-live="polite" hidden></p>
-      <nav class="controls simulation-toolbar" aria-label="Simulation controls">
-        <button id="edit-button" type="button">
-          <span class="control-icon" aria-hidden="true">✋</span> Edit
-        </button>
-        <button id="simulation-button" type="button">
-          <span class="control-icon" aria-hidden="true">▶</span> Run
-        </button>
-        <button id="rerun-button" type="button" disabled>
-          <span class="control-icon" aria-hidden="true">↻</span> Rerun
-        </button>
-        <button id="reset-button" type="button">
-          <span class="control-icon" aria-hidden="true">↺</span> Reset
-        </button>
-        <button id="next-puzzle-button" type="button" hidden>
-          Next Puzzle
-        </button>
-      </nav>
       <p
         class="hint"
         aria-label="Guide the ball to the goal"

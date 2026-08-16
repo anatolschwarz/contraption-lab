@@ -12,7 +12,9 @@ const level = validateLevel(rawBoing);
 
 describe("Boing", () => {
   it("is the seventh Basic catalog level with one Spring mattress", () => {
-    expect(builtInPuzzles.at(-1)).toMatchObject({
+    expect(
+      builtInPuzzles.find((puzzle) => puzzle.id === level.id),
+    ).toMatchObject({
       id: "boing-007",
       order: 7,
       difficulty: "Basic",

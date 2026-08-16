@@ -7,6 +7,7 @@ import {
 } from "./autonomousActors";
 import {
   addContactVectors,
+  canCaptureGoal,
   executeContactRules,
   redirectVelocity,
   type ContactParticipant,
@@ -99,6 +100,7 @@ export interface SimulationRampPlacement {
 export interface SimulationPlacements {
   ramps?: readonly SimulationRampPlacement[];
   mattresses?: readonly import("../levels/levelTypes").MattressDefinition[];
+  teapots?: readonly import("../levels/levelTypes").TeapotDefinition[];
 }
 
 export interface SimulationOptions {
@@ -113,7 +115,11 @@ export function simulateReferenceSolution(
 ): SimulationResult {
   return simulate(
     level,
-    { ramps: solution.ramps, mattresses: solution.mattresses },
+    {
+      ramps: solution.ramps,
+      mattresses: solution.mattresses,
+      teapots: solution.teapots,
+    },
     options,
   );
 }
@@ -347,6 +353,17 @@ export function simulate(
     add(body);
     register(body, "mattress", mattress.id);
   }
+  for (const teapot of [...level.teapots, ...(placements.teapots ?? [])]) {
+    const body = Matter.Bodies.rectangle(
+      teapot.x,
+      teapot.y,
+      teapot.width,
+      teapot.height,
+      { isStatic: true, label: `teapot:${teapot.id}` },
+    );
+    add(body);
+    register(body, "teapot", teapot.id);
+  }
 
   for (const ball of level.balls) {
     if (ball.initiallyPlaced === false) continue;
@@ -422,7 +439,15 @@ export function simulate(
             ? second
             : undefined;
       const goalContact = first.tag === "goal" || second.tag === "goal";
-      if (goalBall && goalContact) {
+      if (
+        goalBall &&
+        goalContact &&
+        canCaptureGoal(
+          goalBall.body.velocity,
+          level.goal.maxEntryHorizontalSpeed,
+          level.goal.minEntryVerticalSpeed,
+        )
+      ) {
         solved = true;
         events.push({ type: "goal", tick, ballId: goalBall.id });
       }

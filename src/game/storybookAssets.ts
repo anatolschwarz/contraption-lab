@@ -1,6 +1,7 @@
 import type Phaser from "phaser";
 import cornerL1Url from "../assets/storybook/corner_L1_v1.png";
 import cornerL2Url from "../assets/storybook/corner_L2_v1.png";
+import cornerL3Url from "../assets/storybook/corner_L3_v1.png";
 import marbleUrl from "../assets/storybook/marble_v1.png";
 import mattressIdleUrl from "../assets/storybook/mattress_idle_v1.png";
 import plankUrl from "../assets/storybook/plank_v1.png";
@@ -42,6 +43,11 @@ export const STORYBOOK_ASSETS: Record<StorybookAssetId, StorybookAsset> = {
     source: "docs/design/phase2/reference-art/environment/corner_L2_v1.png",
     textureKey: "storybook-corner-l2",
     url: cornerL2Url,
+  },
+  corner_l3: {
+    source: "docs/design/phase2/reference-art/environment/corner_L3_v1.png",
+    textureKey: "storybook-corner-l3",
+    url: cornerL3Url,
   },
   marble: {
     source: "docs/design/phase2/reference-art/part/marble_v1.png",

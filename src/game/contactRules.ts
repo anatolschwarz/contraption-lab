@@ -10,6 +10,18 @@ export interface ContactVector {
   y: number;
 }
 
+export function canCaptureGoal(
+  velocity: Readonly<ContactVector>,
+  maxEntryHorizontalSpeed: number | undefined,
+  minEntryVerticalSpeed: number | undefined,
+): boolean {
+  return (
+    (maxEntryHorizontalSpeed === undefined ||
+      Math.abs(velocity.x) <= maxEntryHorizontalSpeed) &&
+    (minEntryVerticalSpeed === undefined || velocity.y >= minEntryVerticalSpeed)
+  );
+}
+
 export function addContactVectors(
   velocity: Readonly<ContactVector>,
   impulse: Readonly<ContactVector>,

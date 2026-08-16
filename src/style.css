@@ -588,20 +588,3 @@ button:disabled {
     margin-left: 0;
   }
 }
-
-@media (min-width: 1320px) {
-  .play-area {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 190px;
-    align-items: start;
-    gap: 12px;
-  }
-
-  .play-area--palette-collapsed {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .parts-palette {
-    margin-top: 0;
-  }
-}

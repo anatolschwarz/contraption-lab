@@ -35,6 +35,7 @@ import {
   updateBlockTransform,
   updateRampTransform,
 } from "./state/gameState";
+import { routeHeldPlacementAction } from "./mainActionRouting";
 import { Controls, type PlayScreenView } from "./ui/Controls";
 
 function getLocalStorage(): StorageAdapter | undefined {
@@ -61,6 +62,7 @@ declare global {
   interface Window {
     __contraptionLabTest?: {
       getPrototypeScene: () => PrototypeScene | undefined;
+      getGameState: () => Readonly<GameState>;
     };
   }
 }
@@ -68,6 +70,7 @@ declare global {
 if (import.meta.env.DEV) {
   window.__contraptionLabTest = {
     getPrototypeScene: () => scene,
+    getGameState: () => state,
   };
 }
 
@@ -117,6 +120,8 @@ function applyState(): void {
 }
 
 function handleAction(action: GameAction): void {
+  if (routeHeldPlacementAction(state, action, replaceGameState, applyState))
+    return;
   if (typeof action === "object" && action.type === "spawn-tray-block") {
     const componentId = scene?.spawnTrayBlock(state.trayBlockCount);
     if (!componentId) return;
@@ -129,6 +134,11 @@ function handleAction(action: GameAction): void {
   }
   if (typeof action === "object" && action.type === "spawn-tray-mattress") {
     const componentId = scene?.spawnTrayMattress(state.trayMattressCount);
+    if (!componentId) return;
+    action = { ...action, componentId };
+  }
+  if (typeof action === "object" && action.type === "spawn-tray-teapot") {
+    const componentId = scene?.spawnTrayTeapot(state.trayTeapotCount);
     if (!componentId) return;
     action = { ...action, componentId };
   }

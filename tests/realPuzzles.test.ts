@@ -86,9 +86,9 @@ describe("the first real puzzle pair", () => {
     expect(getBuiltInPuzzlePosition(downTheRamp.id)).toBe(4);
     expect(getBuiltInPuzzlePosition(bridgeTheGap.id)).toBe(5);
     expect(builtInPuzzles.slice(-3).map((puzzle) => puzzle.id)).toEqual([
-      bridgeTheGap.id,
       "good-morning-marble-006",
       "boing-007",
+      "tea-time-008",
     ]);
   });
 

@@ -8,6 +8,7 @@ import type {
   ContactParticipantSelector,
   ContactRule,
   ContactTag,
+  GoalDefinition,
   InventoryDefinition,
   LevelDefinition,
   MattressDefinition,
@@ -19,6 +20,8 @@ import type {
   ReferenceSolution,
   RectangleDefinition,
   StorybookPresentation,
+  TeapotDefinition,
+  TrayTeapotDefinition,
   TrayRampDefinition,
   TrayMattressDefinition,
 } from "./levelTypes";
@@ -46,6 +49,19 @@ function isRectangle(value: unknown): value is RectangleDefinition {
     value.width > 0 &&
     isFiniteNumber(value.height) &&
     value.height > 0
+  );
+}
+
+function isGoal(value: unknown): value is GoalDefinition {
+  if (!isRectangle(value)) return false;
+  const goal = value as GoalDefinition;
+  return (
+    (goal.maxEntryHorizontalSpeed === undefined ||
+      (isFiniteNumber(goal.maxEntryHorizontalSpeed) &&
+        goal.maxEntryHorizontalSpeed >= 0)) &&
+    (goal.minEntryVerticalSpeed === undefined ||
+      (isFiniteNumber(goal.minEntryVerticalSpeed) &&
+        goal.minEntryVerticalSpeed >= 0))
   );
 }
 
@@ -88,6 +104,16 @@ const isTrayMattress = (value: unknown): value is TrayMattressDefinition =>
   isRecord(value) &&
   isMattress({ ...value, id: "tray" }) &&
   isPoint(value.spawn);
+
+const isTeapot = (value: unknown): value is TeapotDefinition =>
+  isRecord(value) &&
+  isRectangle(value) &&
+  typeof value.id === "string" &&
+  value.id.trim() !== "" &&
+  (value.ownership === "fixed" || value.ownership === "player");
+
+const isTrayTeapot = (value: unknown): value is TrayTeapotDefinition =>
+  isRecord(value) && isTeapot({ ...value, id: "tray" }) && isPoint(value.spawn);
 
 const isMattressSnapTarget = (value: unknown): value is MattressSnapTarget =>
   isRecord(value) &&
@@ -132,7 +158,14 @@ const isStorybookPresentation = (
     !isStorybookRenderDefinition(value.mattress)
   )
     return false;
-  if (value.ramp === undefined && value.mattress === undefined) return false;
+  if (value.teapot !== undefined && !isStorybookRenderDefinition(value.teapot))
+    return false;
+  if (
+    value.ramp === undefined &&
+    value.mattress === undefined &&
+    value.teapot === undefined
+  )
+    return false;
   return (
     value.goal.sparkle === undefined ||
     isStorybookRenderDefinition(value.goal.sparkle)
@@ -153,8 +186,16 @@ function validateReferenceSolutions(value: unknown): ReferenceSolution[] {
       (solution.mattresses !== undefined &&
         (!Array.isArray(solution.mattresses) ||
           !solution.mattresses.every(isMattress))) ||
-      (solution.ramps === undefined && solution.mattresses === undefined) ||
-      (solution.ramps?.length ?? 0) + (solution.mattresses?.length ?? 0) === 0
+      (solution.teapots !== undefined &&
+        (!Array.isArray(solution.teapots) ||
+          !solution.teapots.every(isTeapot))) ||
+      (solution.ramps === undefined &&
+        solution.mattresses === undefined &&
+        solution.teapots === undefined) ||
+      (solution.ramps?.length ?? 0) +
+        (solution.mattresses?.length ?? 0) +
+        (solution.teapots?.length ?? 0) ===
+        0
     ) {
       throw new Error(
         `Level reference solution ${index} must contain at least one placement.`,
@@ -178,10 +219,20 @@ function validateReferenceSolutions(value: unknown): ReferenceSolution[] {
         `Level reference solution ${index} Mattress placement ids must be unique.`,
       );
     }
+    if (
+      solution.teapots &&
+      new Set(solution.teapots.map((teapot) => teapot.id)).size !==
+        solution.teapots.length
+    ) {
+      throw new Error(
+        `Level reference solution ${index} Teapot placement ids must be unique.`,
+      );
+    }
     return {
       id: solution.id,
       ...(solution.ramps ? { ramps: solution.ramps } : {}),
       ...(solution.mattresses ? { mattresses: solution.mattresses } : {}),
+      ...(solution.teapots ? { teapots: solution.teapots } : {}),
     };
   });
   if (
@@ -445,6 +496,7 @@ export function validateLevel(value: unknown): LevelDefinition {
     inventory,
     trayRamp,
     trayMattress,
+    trayTeapot,
     rampSnapTargets,
     mattressSnapTargets,
     storybookPresentation,
@@ -454,6 +506,7 @@ export function validateLevel(value: unknown): LevelDefinition {
     balls,
     ramps,
     mattresses,
+    teapots,
     blocks,
     floor,
     goal,
@@ -487,6 +540,8 @@ export function validateLevel(value: unknown): LevelDefinition {
   }
   if (trayMattress !== undefined && !isTrayMattress(trayMattress))
     throw new Error("Level trayMattress must be valid.");
+  if (trayTeapot !== undefined && !isTrayTeapot(trayTeapot))
+    throw new Error("Level trayTeapot must be valid.");
   if (
     rampSnapTargets !== undefined &&
     (!Array.isArray(rampSnapTargets) ||
@@ -572,17 +627,31 @@ export function validateLevel(value: unknown): LevelDefinition {
   if (new Set(blocks.map((block) => block.id)).size !== blocks.length) {
     throw new Error("Level block ids must be unique.");
   }
+  const validatedTeapots = teapots === undefined ? [] : teapots;
+  if (!Array.isArray(validatedTeapots) || !validatedTeapots.every(isTeapot)) {
+    throw new Error(
+      "Level teapots must be an array of valid Teapot definitions.",
+    );
+  }
+  if (
+    new Set(validatedTeapots.map((teapot) => teapot.id)).size !==
+    validatedTeapots.length
+  ) {
+    throw new Error("Level Teapot ids must be unique.");
+  }
   if (
     new Set([
       ...balls.map((ball) => ball.id),
       ...validatedActors.map((actor) => actor.id),
       ...ramps.map((ramp) => ramp.id),
       ...validatedMattresses.map((mattress) => mattress.id),
+      ...validatedTeapots.map((teapot) => teapot.id),
       ...blocks.map((block) => block.id),
     ]).size !==
     ramps.length +
       validatedMattresses.length +
       blocks.length +
+      validatedTeapots.length +
       balls.length +
       validatedActors.length
   ) {
@@ -591,7 +660,7 @@ export function validateLevel(value: unknown): LevelDefinition {
   if (!isRectangle(floor)) {
     throw new Error("Level floor must be a valid rectangle.");
   }
-  if (!isRectangle(goal)) {
+  if (!isGoal(goal)) {
     throw new Error("Level goal must be a valid rectangle.");
   }
   if (!isPoint(gravity)) {
@@ -608,6 +677,7 @@ export function validateLevel(value: unknown): LevelDefinition {
     inventory,
     ...(trayRamp === undefined ? {} : { trayRamp }),
     ...(trayMattress === undefined ? {} : { trayMattress }),
+    ...(trayTeapot === undefined ? {} : { trayTeapot }),
     ...(rampSnapTargets === undefined ? {} : { rampSnapTargets }),
     ...(mattressSnapTargets === undefined ? {} : { mattressSnapTargets }),
     ...(storybookPresentation === undefined ? {} : { storybookPresentation }),
@@ -619,6 +689,7 @@ export function validateLevel(value: unknown): LevelDefinition {
     balls,
     ramps,
     mattresses: validatedMattresses,
+    teapots: validatedTeapots,
     blocks,
     floor,
     goal,

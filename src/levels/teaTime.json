@@ -1,0 +1,140 @@
+{
+  "id": "tea-time-008",
+  "levelName": "Tea Time",
+  "title": "Tea Time",
+  "difficulty": "Basic",
+  "order": 8,
+  "inventory": { "ramp": 1, "teapot": 1 },
+  "trayRamp": {
+    "x": 0,
+    "y": 0,
+    "width": 230,
+    "height": 24,
+    "rotation": 0,
+    "ownership": "player",
+    "spawn": { "x": 520, "y": 180 }
+  },
+  "rampSnapTargets": [
+    { "x": 490, "y": 307, "rotation": 0.17, "tolerance": 145 }
+  ],
+  "trayTeapot": {
+    "x": 0,
+    "y": 0,
+    "width": 80,
+    "height": 100,
+    "ownership": "player",
+    "spawn": { "x": 650, "y": 340 }
+  },
+  "storybookPresentation": {
+    "environment": { "asset": "corner_l3", "width": 960, "height": 540 },
+    "ball": { "asset": "marble", "width": 56, "height": 56 },
+    "ramp": { "asset": "plank", "width": 230, "height": 52 },
+    "teapot": { "asset": "teapot_idle", "width": 164, "height": 124 },
+    "goal": {
+      "asset": "teacup_empty",
+      "solvedAsset": "teacup_goal",
+      "width": 112,
+      "height": 112,
+      "sparkle": { "asset": "sparkle", "width": 86, "height": 86 }
+    }
+  },
+  "referenceSolutions": [
+    {
+      "id": "normal-plank-pour-through",
+      "ramps": [
+        {
+          "id": "l3-plank",
+          "x": 490,
+          "y": 307,
+          "width": 230,
+          "height": 24,
+          "rotation": 0.17,
+          "ownership": "player"
+        }
+      ],
+      "teapots": [
+        {
+          "id": "l3-teapot",
+          "x": 650,
+          "y": 340,
+          "width": 80,
+          "height": 100,
+          "ownership": "player"
+        }
+      ]
+    },
+    {
+      "id": "star-no-plank-direct-roll",
+      "teapots": [
+        {
+          "id": "l3-teapot",
+          "x": 650,
+          "y": 340,
+          "width": 80,
+          "height": 100,
+          "ownership": "player"
+        }
+      ]
+    }
+  ],
+  "contactRules": [
+    {
+      "contacts": ["ball", "teapot"],
+      "action": {
+        "type": "redirect",
+        "target": { "type": "contact", "index": 0 },
+        "direction": { "x": -0.08, "y": 1 }
+      }
+    }
+  ],
+  "actors": [],
+  "balls": [
+    {
+      "id": "tea-marble",
+      "x": 400,
+      "y": 180,
+      "radius": 18,
+      "ownership": "fixed"
+    }
+  ],
+  "ramps": [],
+  "mattresses": [],
+  "teapots": [],
+  "blocks": [
+    {
+      "id": "tabletop-left-geometry",
+      "x": 483,
+      "y": 378,
+      "width": 350,
+      "height": 36,
+      "rotation": 0.01,
+      "ownership": "fixed"
+    },
+    {
+      "id": "table-leg-left-geometry",
+      "x": 320,
+      "y": 430,
+      "width": 38,
+      "height": 150,
+      "ownership": "fixed"
+    },
+    {
+      "id": "table-leg-right-geometry",
+      "x": 680,
+      "y": 430,
+      "width": 38,
+      "height": 250,
+      "ownership": "fixed"
+    }
+  ],
+  "floor": { "x": 480, "y": 530, "width": 960, "height": 20 },
+  "goal": {
+    "x": 590,
+    "y": 445,
+    "width": 92,
+    "height": 92,
+    "maxEntryHorizontalSpeed": 1,
+    "minEntryVerticalSpeed": 1
+  },
+  "gravity": { "x": 0, "y": 1 }
+}

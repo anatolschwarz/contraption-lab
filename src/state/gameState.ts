@@ -3,7 +3,10 @@ import type {
   InventoryDefinition,
   Point,
 } from "../levels/levelTypes";
-import { createEmptyInventory } from "../levels/partRegistry";
+import {
+  createEmptyInventory,
+  type InventoryPartKey,
+} from "../levels/partRegistry";
 
 export type GameMode = "edit" | "running" | "paused" | "failed";
 export const TRAY_BLOCK_ID = "tray-block-1";
@@ -11,6 +14,7 @@ export const TRAY_BALL_ID_PREFIX = "tray-ball-";
 export const TRAY_BLOCK_ID_PREFIX = "tray-block-";
 export const TRAY_RAMP_ID_PREFIX = "tray-ramp-";
 export const TRAY_MATTRESS_ID_PREFIX = "tray-mattress-";
+export const TRAY_TEAPOT_ID_PREFIX = "tray-teapot-";
 
 export interface RampTransform {
   position: Point;
@@ -25,6 +29,26 @@ export interface BallTransform {
   position: Point;
 }
 
+export interface HeldPlacement {
+  part: InventoryPartKey;
+  id: string;
+  transform: RampTransform;
+}
+
+export interface BeginHeldPlacementAction {
+  type: "begin-held-placement";
+  placement: HeldPlacement;
+}
+
+export interface UpdateHeldPlacementAction {
+  type: "update-held-placement";
+  transform: RampTransform;
+}
+
+export interface CommitHeldPlacementAction {
+  type: "commit-held-placement";
+}
+
 export interface RunSnapshot {
   rampTransforms: Record<string, RampTransform>;
   blockTransforms: Record<string, BlockTransform>;
@@ -34,6 +58,7 @@ export interface RunSnapshot {
   trayBlockCount: number;
   trayRampCount: number;
   trayMattressCount: number;
+  trayTeapotCount: number;
 }
 
 export interface SelectComponentAction {
@@ -65,11 +90,16 @@ export interface SpawnTrayMattressAction {
   type: "spawn-tray-mattress";
   componentId: string;
 }
+export interface SpawnTrayTeapotAction {
+  type: "spawn-tray-teapot";
+  componentId: string;
+}
 
 export interface RemoveComponentAction {
   type: "remove-component";
   componentId: string;
-  returnsTrayPart: "ball" | "bird" | "block" | "ramp" | "mattress" | null;
+  returnsTrayPart:
+    "ball" | "bird" | "block" | "ramp" | "mattress" | "teapot" | null;
 }
 
 export interface AdvanceTimeAction {
@@ -91,6 +121,11 @@ export type GameAction =
   | SpawnTrayBirdAction
   | SpawnTrayRampAction
   | SpawnTrayMattressAction
+  | SpawnTrayTeapotAction
+  | BeginHeldPlacementAction
+  | UpdateHeldPlacementAction
+  | CommitHeldPlacementAction
+  | { type: "cancel-held-placement" }
   | RemoveComponentAction
   | AdvanceTimeAction;
 
@@ -105,11 +140,13 @@ export interface GameState {
   blockTransforms: Record<string, BlockTransform>;
   ballTransforms: Record<string, BallTransform>;
   selectedComponentId: string | null;
+  heldPlacement: HeldPlacement | null;
   trayBallCount: number;
   trayBirdCount: number;
   trayBlockCount: number;
   trayRampCount: number;
   trayMattressCount: number;
+  trayTeapotCount: number;
   runSnapshot?: RunSnapshot;
 }
 
@@ -140,11 +177,13 @@ export function createInitialGameState(
     blockTransforms: {},
     ballTransforms: { ...normalizedBallTransforms },
     selectedComponentId: null,
+    heldPlacement: null,
     trayBallCount: normalizedInventory.ball,
     trayBirdCount: normalizedInventory.bird,
     trayBlockCount: normalizedInventory.block,
     trayRampCount: normalizedInventory.ramp,
     trayMattressCount: normalizedInventory.mattress,
+    trayTeapotCount: normalizedInventory.teapot,
   };
 }
 
@@ -186,6 +225,7 @@ function createRunSnapshot(state: Readonly<GameState>): RunSnapshot {
     trayBlockCount: state.trayBlockCount,
     trayRampCount: state.trayRampCount,
     trayMattressCount: state.trayMattressCount,
+    trayTeapotCount: state.trayTeapotCount,
   };
 }
 
@@ -202,8 +242,37 @@ function cloneRunSnapshot(
       trayBlockCount: snapshot.trayBlockCount,
       trayRampCount: snapshot.trayRampCount,
       trayMattressCount: snapshot.trayMattressCount,
+      trayTeapotCount: snapshot.trayTeapotCount,
     }
   );
+}
+
+type TrayCountKey =
+  | "trayBallCount"
+  | "trayBirdCount"
+  | "trayBlockCount"
+  | "trayRampCount"
+  | "trayMattressCount"
+  | "trayTeapotCount";
+
+const trayCountKeyByPart: Record<InventoryPartKey, TrayCountKey> = {
+  ball: "trayBallCount",
+  bird: "trayBirdCount",
+  block: "trayBlockCount",
+  ramp: "trayRampCount",
+  mattress: "trayMattressCount",
+  teapot: "trayTeapotCount",
+};
+
+function cloneHeldPlacement(placement: Readonly<HeldPlacement>): HeldPlacement {
+  return {
+    part: placement.part,
+    id: placement.id,
+    transform: {
+      position: { ...placement.transform.position },
+      rotation: placement.transform.rotation,
+    },
+  };
 }
 
 export function transitionGameState(
@@ -228,11 +297,13 @@ export function transitionGameState(
       blockTransforms: { ...state.runSnapshot.blockTransforms },
       ballTransforms: { ...state.runSnapshot.ballTransforms },
       selectedComponentId: null,
+      heldPlacement: null,
       trayBallCount: state.runSnapshot.trayBallCount,
       trayBirdCount: state.runSnapshot.trayBirdCount,
       trayBlockCount: state.runSnapshot.trayBlockCount,
       trayRampCount: state.runSnapshot.trayRampCount,
       trayMattressCount: state.runSnapshot.trayMattressCount,
+      trayTeapotCount: state.runSnapshot.trayTeapotCount,
       runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }
@@ -271,11 +342,13 @@ export function transitionGameState(
       blockTransforms: { ...state.blockTransforms },
       ballTransforms: { ...state.ballTransforms },
       selectedComponentId: null,
+      heldPlacement: null,
       trayBallCount: state.trayBallCount,
       trayBirdCount: state.trayBirdCount,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
       trayMattressCount: state.trayMattressCount,
+      trayTeapotCount: state.trayTeapotCount,
       runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }
@@ -284,6 +357,49 @@ export function transitionGameState(
       ...state,
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
+    };
+  }
+  if (typeof action === "object" && action.type === "begin-held-placement") {
+    const trayCountKey = trayCountKeyByPart[action.placement.part];
+    return state.mode === "edit" &&
+      state.heldPlacement === null &&
+      state[trayCountKey] > 0
+      ? {
+          ...state,
+          heldPlacement: cloneHeldPlacement(action.placement),
+        }
+      : state;
+  }
+  if (typeof action === "object" && action.type === "update-held-placement") {
+    return state.heldPlacement
+      ? {
+          ...state,
+          heldPlacement: {
+            ...state.heldPlacement,
+            transform: {
+              position: { ...action.transform.position },
+              rotation: action.transform.rotation,
+            },
+          },
+        }
+      : state;
+  }
+  if (typeof action === "object" && action.type === "cancel-held-placement") {
+    return state.heldPlacement ? { ...state, heldPlacement: null } : state;
+  }
+  if (typeof action === "object" && action.type === "commit-held-placement") {
+    if (!state.heldPlacement) {
+      return state;
+    }
+    const trayCountKey = trayCountKeyByPart[state.heldPlacement.part];
+    if (state[trayCountKey] <= 0) {
+      return state;
+    }
+    return {
+      ...state,
+      [trayCountKey]: state[trayCountKey] - 1,
+      selectedComponentId: state.heldPlacement.id,
+      heldPlacement: null,
     };
   }
   if (typeof action === "object" && action.type === "select-component") {
@@ -354,6 +470,15 @@ export function transitionGameState(
         }
       : { ...state };
   }
+  if (typeof action === "object" && action.type === "spawn-tray-teapot") {
+    return state.mode === "edit" && state.trayTeapotCount > 0
+      ? {
+          ...state,
+          selectedComponentId: action.componentId,
+          trayTeapotCount: state.trayTeapotCount - 1,
+        }
+      : { ...state };
+  }
   if (typeof action === "object" && action.type === "remove-component") {
     if (state.mode !== "edit") {
       return {
@@ -405,6 +530,10 @@ export function transitionGameState(
         action.returnsTrayPart === "mattress"
           ? state.trayMattressCount + 1
           : state.trayMattressCount,
+      trayTeapotCount:
+        action.returnsTrayPart === "teapot"
+          ? state.trayTeapotCount + 1
+          : state.trayTeapotCount,
     };
   }
   if (action === "deselect" && state.mode === "edit") {
@@ -421,11 +550,13 @@ export function transitionGameState(
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
+      heldPlacement: null,
       trayBallCount: state.trayBallCount,
       trayBirdCount: state.trayBirdCount,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
       trayMattressCount: state.trayMattressCount,
+      trayTeapotCount: state.trayTeapotCount,
       runSnapshot: createRunSnapshot(state),
     };
   }
@@ -440,11 +571,13 @@ export function transitionGameState(
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
+      heldPlacement: null,
       trayBallCount: state.trayBallCount,
       trayBirdCount: state.trayBirdCount,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
       trayMattressCount: state.trayMattressCount,
+      trayTeapotCount: state.trayTeapotCount,
       runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }
@@ -459,11 +592,13 @@ export function transitionGameState(
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
+      heldPlacement: null,
       trayBallCount: state.trayBallCount,
       trayBirdCount: state.trayBirdCount,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
       trayMattressCount: state.trayMattressCount,
+      trayTeapotCount: state.trayTeapotCount,
       runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }
@@ -478,11 +613,13 @@ export function transitionGameState(
       rampTransforms: { ...state.rampTransforms },
       blockTransforms: { ...state.blockTransforms },
       selectedComponentId: null,
+      heldPlacement: null,
       trayBallCount: state.trayBallCount,
       trayBirdCount: state.trayBirdCount,
       trayBlockCount: state.trayBlockCount,
       trayRampCount: state.trayRampCount,
       trayMattressCount: state.trayMattressCount,
+      trayTeapotCount: state.trayTeapotCount,
       runSnapshot: cloneRunSnapshot(state.runSnapshot),
     };
   }

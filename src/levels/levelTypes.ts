@@ -17,6 +17,12 @@ export interface RectangleDefinition extends Point {
   height: number;
 }
 
+/** A goal can require a near-vertical entry into its catch area. */
+export interface GoalDefinition extends RectangleDefinition {
+  maxEntryHorizontalSpeed?: number;
+  minEntryVerticalSpeed?: number;
+}
+
 export type PartOwnership = "fixed" | "player";
 
 export interface LevelPartDefinition extends RectangleDefinition {
@@ -39,6 +45,13 @@ export interface MattressDefinition extends LevelPartDefinition {
 }
 
 export interface TrayMattressDefinition extends Omit<MattressDefinition, "id"> {
+  spawn: Point;
+}
+
+/** A sensor body whose declarative contact rule sends a Ball out its spout. */
+export type TeapotDefinition = LevelPartDefinition;
+
+export interface TrayTeapotDefinition extends Omit<TeapotDefinition, "id"> {
   spawn: Point;
 }
 
@@ -161,6 +174,7 @@ export interface StorybookPresentation {
   ball: StorybookRenderDefinition;
   ramp?: StorybookRenderDefinition;
   mattress?: StorybookRenderDefinition;
+  teapot?: StorybookRenderDefinition;
   goal: StorybookRenderDefinition & {
     solvedAsset: StorybookAssetId;
     sparkle?: StorybookRenderDefinition;
@@ -177,6 +191,7 @@ export interface ReferenceSolution {
   id: string;
   ramps?: ReferenceRampPlacement[];
   mattresses?: MattressDefinition[];
+  teapots?: TeapotDefinition[];
 }
 
 export function isPlayerPart(
@@ -202,6 +217,7 @@ export interface LevelDefinition {
   inventory: InventoryDefinition;
   trayRamp?: TrayRampDefinition;
   trayMattress?: TrayMattressDefinition;
+  trayTeapot?: TrayTeapotDefinition;
   rampSnapTargets?: RampSnapTarget[];
   mattressSnapTargets?: MattressSnapTarget[];
   storybookPresentation?: StorybookPresentation;
@@ -211,8 +227,9 @@ export interface LevelDefinition {
   balls: BallDefinition[];
   ramps: RampDefinition[];
   mattresses: MattressDefinition[];
+  teapots: TeapotDefinition[];
   blocks: BlockDefinition[];
   floor: RectangleDefinition;
-  goal: RectangleDefinition;
+  goal: GoalDefinition;
   gravity: Point;
 }

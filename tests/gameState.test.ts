@@ -31,6 +31,110 @@ const initialInventory = {
 const initialGameState = createInitialGameState(initialInventory);
 
 describe("game-state transitions", () => {
+  it("starts without a held placement", () => {
+    expect(createInitialGameState({ ramp: 1 }).heldPlacement).toBeNull();
+  });
+
+  it("begins a held placement without consuming inventory", () => {
+    const initial = createInitialGameState({ ramp: 1 });
+    const held = transitionGameState(initial, {
+      type: "begin-held-placement",
+      placement: {
+        part: "ramp",
+        id: "tray-ramp-1",
+        transform: { position: { x: 400, y: 180 }, rotation: 0 },
+      },
+    });
+
+    expect(held.trayRampCount).toBe(1);
+    expect(held.selectedComponentId).toBeNull();
+    expect(held.heldPlacement).toEqual({
+      part: "ramp",
+      id: "tray-ramp-1",
+      transform: { position: { x: 400, y: 180 }, rotation: 0 },
+    });
+  });
+
+  it("does not begin a held placement without matching inventory", () => {
+    const initial = createInitialGameState({ ramp: 0 });
+    const attempted = transitionGameState(initial, {
+      type: "begin-held-placement",
+      placement: {
+        part: "ramp",
+        id: "tray-ramp-1",
+        transform: { position: { x: 400, y: 180 }, rotation: 0 },
+      },
+    });
+
+    expect(attempted).toBe(initial);
+    expect(attempted.heldPlacement).toBeNull();
+  });
+
+  it("updates only the held placement transform", () => {
+    const held = transitionGameState(createInitialGameState({ ramp: 1 }), {
+      type: "begin-held-placement",
+      placement: {
+        part: "ramp",
+        id: "tray-ramp-1",
+        transform: { position: { x: 400, y: 180 }, rotation: 0 },
+      },
+    });
+    const updated = transitionGameState(held, {
+      type: "update-held-placement",
+      transform: { position: { x: 460, y: 240 }, rotation: 0.35 },
+    });
+
+    expect(held.heldPlacement?.transform).toEqual({
+      position: { x: 400, y: 180 },
+      rotation: 0,
+    });
+    expect(updated.heldPlacement?.transform).toEqual({
+      position: { x: 460, y: 240 },
+      rotation: 0.35,
+    });
+    expect(updated.trayRampCount).toBe(1);
+  });
+
+  it("cancels a held placement without consuming inventory", () => {
+    const held = transitionGameState(createInitialGameState({ ramp: 1 }), {
+      type: "begin-held-placement",
+      placement: {
+        part: "ramp",
+        id: "tray-ramp-1",
+        transform: { position: { x: 400, y: 180 }, rotation: 0 },
+      },
+    });
+    const cancelled = transitionGameState(held, {
+      type: "cancel-held-placement",
+    });
+
+    expect(cancelled.heldPlacement).toBeNull();
+    expect(cancelled.trayRampCount).toBe(1);
+  });
+
+  it("commits a held placement once and selects its provisional id", () => {
+    const held = transitionGameState(createInitialGameState({ ramp: 1 }), {
+      type: "begin-held-placement",
+      placement: {
+        part: "ramp",
+        id: "tray-ramp-1",
+        transform: { position: { x: 400, y: 180 }, rotation: 0 },
+      },
+    });
+    const committed = transitionGameState(held, {
+      type: "commit-held-placement",
+    });
+    const repeatedCommit = transitionGameState(committed, {
+      type: "commit-held-placement",
+    });
+
+    expect(committed.trayRampCount).toBe(0);
+    expect(committed.selectedComponentId).toBe("tray-ramp-1");
+    expect(committed.heldPlacement).toBeNull();
+    expect(repeatedCommit).toBe(committed);
+    expect(repeatedCommit.trayRampCount).toBe(0);
+  });
+
   it("tracks a player ball through placement, removal, rerun, and reset", () => {
     const balls = {
       "fixed-ball": { position: { x: 215, y: 135 } },
@@ -108,11 +212,13 @@ describe("game-state transitions", () => {
       blockTransforms: {},
       ballTransforms: {},
       selectedComponentId: null,
+      heldPlacement: null,
       trayBallCount: 0,
       trayBirdCount: 0,
       trayBlockCount: 1,
       trayRampCount: 0,
       trayMattressCount: 0,
+      trayTeapotCount: 0,
     });
     expect(getEnabledControls(initialGameState)).toEqual({
       edit: false,
@@ -377,6 +483,7 @@ describe("game-state transitions", () => {
       trayBlockCount: 1,
       trayRampCount: 0,
       trayMattressCount: 0,
+      trayTeapotCount: 0,
     });
     expect(rerun).toMatchObject({
       mode: "running",
@@ -464,11 +571,13 @@ describe("game-state transitions", () => {
       blockTransforms: {},
       ballTransforms: {},
       selectedComponentId: null,
+      heldPlacement: null,
       trayBallCount: 0,
       trayBirdCount: 0,
       trayBlockCount: 1,
       trayRampCount: 0,
       trayMattressCount: 0,
+      trayTeapotCount: 0,
       runSnapshot: {
         rampTransforms: {},
         blockTransforms: {},
@@ -478,6 +587,7 @@ describe("game-state transitions", () => {
         trayBlockCount: 1,
         trayRampCount: 0,
         trayMattressCount: 0,
+        trayTeapotCount: 0,
       },
     });
     expect(getEnabledControls(success)).toEqual({
@@ -610,11 +720,13 @@ describe("reset behavior", () => {
       blockTransforms: { [TRAY_BLOCK_ID]: blockTransform },
       ballTransforms: {},
       selectedComponentId: TRAY_BLOCK_ID,
+      heldPlacement: null,
       trayBallCount: 0,
       trayBirdCount: 0,
       trayBlockCount: 0,
       trayRampCount: 0,
       trayMattressCount: 0,
+      trayTeapotCount: 0,
     };
     const firstReset = transitionGameState(changed, "reset");
     const secondReset = transitionGameState(firstReset, "reset");

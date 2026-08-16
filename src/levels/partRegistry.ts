@@ -9,6 +9,7 @@ export const STORYBOOK_ASSET_IDS = [
   "teapot_idle",
   "corner_l1",
   "corner_l2",
+  "corner_l3",
   "marble",
   "plank",
   "teacup_empty",
