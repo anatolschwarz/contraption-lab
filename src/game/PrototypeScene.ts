@@ -48,6 +48,7 @@ import {
 import type {
   BallTransform,
   BlockTransform,
+  HeldPlacement,
   RampTransform,
 } from "../state/gameState";
 import {
@@ -268,6 +269,8 @@ export class PrototypeScene extends Phaser.Scene {
   >();
   private readonly ramps = new Map<string, EditableRamp>();
   private readonly storybookObjects = new Map<string, StorybookObject>();
+  private activeHeldPlacement: HeldPlacement | null = null;
+  private heldPlacementVisual?: Phaser.GameObjects.Container;
   private runSnapshot?: SceneRunSnapshot;
   private simulationAccumulatorMs = 0;
   private simulationRunning = false;
@@ -293,6 +296,9 @@ export class PrototypeScene extends Phaser.Scene {
     private readonly onBallTransformChange: (
       ballId: string,
       transform: BallTransform,
+    ) => void,
+    private readonly onHeldPlacementTransformChange: (
+      transform: RampTransform,
     ) => void,
     private readonly onComponentRemove: (
       componentId: string,
@@ -346,15 +352,21 @@ export class PrototypeScene extends Phaser.Scene {
       },
     );
     this.input.on(Phaser.Input.Events.POINTER_DOWN, () => {
-      if (!this.editInteractionEnabled) return;
+      if (!this.editInteractionEnabled || this.activeHeldPlacement) return;
       this.onSelectionChange(null);
     });
     this.input.on(
       Phaser.Input.Events.POINTER_MOVE,
       (pointer: Phaser.Input.Pointer) => {
-        if (!this.editInteractionEnabled || !this.drag || !pointer.isDown) {
+        if (!this.editInteractionEnabled) return;
+        if (this.activeHeldPlacement) {
+          this.onHeldPlacementTransformChange({
+            position: { x: pointer.worldX, y: pointer.worldY },
+            rotation: this.activeHeldPlacement.transform.rotation,
+          });
           return;
         }
+        if (!this.drag || !pointer.isDown) return;
         if (
           !this.dragMoved &&
           isClickMovementWithinTolerance(this.drag.pointerStart, {
@@ -510,6 +522,38 @@ export class PrototypeScene extends Phaser.Scene {
     this.updateSelectionDisplay();
   }
 
+  setHeldPlacement(placement: HeldPlacement | null): void {
+    const replacesVisual =
+      this.activeHeldPlacement?.id !== placement?.id ||
+      this.activeHeldPlacement?.part !== placement?.part;
+    this.activeHeldPlacement = placement
+      ? {
+          ...placement,
+          transform: {
+            position: { ...placement.transform.position },
+            rotation: placement.transform.rotation,
+          },
+        }
+      : null;
+
+    if (!placement) {
+      this.heldPlacementVisual?.destroy(true);
+      this.heldPlacementVisual = undefined;
+      return;
+    }
+
+    if (replacesVisual) {
+      this.heldPlacementVisual?.destroy(true);
+      this.heldPlacementVisual = this.createHeldPlacementVisual(placement);
+    }
+    this.heldPlacementVisual
+      ?.setPosition(
+        placement.transform.position.x,
+        placement.transform.position.y,
+      )
+      .setRotation(placement.transform.rotation);
+  }
+
   setRampTransforms(transforms: Readonly<Record<string, RampTransform>>): void {
     for (const ramp of this.ramps.values()) {
       if (!ramp.editable) continue;
@@ -546,6 +590,108 @@ export class PrototypeScene extends Phaser.Scene {
         false,
       );
     }
+  }
+
+  private createHeldPlacementVisual(
+    placement: Readonly<HeldPlacement>,
+  ): Phaser.GameObjects.Container {
+    const presentation = this.level.storybookPresentation;
+    const render =
+      placement.part === "ball"
+        ? presentation?.ball
+        : placement.part === "ramp"
+          ? presentation?.ramp
+          : placement.part === "mattress"
+            ? presentation?.mattress
+            : placement.part === "teapot"
+              ? presentation?.teapot
+              : undefined;
+    const children: Phaser.GameObjects.GameObject[] = [];
+
+    if (render) {
+      children.push(
+        this.add
+          .image(0, 0, getStorybookAssetById(render.asset).textureKey)
+          .setDisplaySize(render.width, render.height),
+      );
+    } else if (placement.part === "ball") {
+      const radius =
+        this.level.balls.find((ball) => ball.ownership === "player")?.radius ??
+        18;
+      children.push(
+        this.add
+          .circle(0, 0, radius, BALL_FILL_COLOR)
+          .setStrokeStyle(4, BALL_STROKE_COLOR),
+        this.add.circle(
+          -radius * 0.32,
+          -radius * 0.34,
+          Math.max(3, radius * 0.22),
+          BALL_HIGHLIGHT_COLOR,
+          0.9,
+        ),
+      );
+    } else if (placement.part === "bird") {
+      children.push(
+        this.add.ellipse(-3, 1, 30, 18, BIRD_BODY_COLOR),
+        this.add.ellipse(-7, -2, 13, 8, BIRD_HIGHLIGHT_COLOR, 0.82),
+        this.add.circle(11, -7, 9, BIRD_BODY_COLOR),
+        this.add.triangle(22, -6, -4, -5, 7, 0, -4, 5, BIRD_BEAK_COLOR),
+      );
+    } else {
+      const geometry = this.getHeldPlacementGeometry(placement.part);
+      children.push(
+        this.add
+          .rectangle(0, 0, geometry.width, geometry.height, geometry.fill)
+          .setStrokeStyle(4, geometry.stroke),
+      );
+    }
+
+    return this.add
+      .container(0, 0, children)
+      .setName(`held-placement:${placement.id}`)
+      .setAlpha(0.72)
+      .setDepth(5);
+  }
+
+  private getHeldPlacementGeometry(part: HeldPlacement["part"]): {
+    width: number;
+    height: number;
+    fill: number;
+    stroke: number;
+  } {
+    if (part === "ramp") {
+      const ramp = this.level.trayRamp ?? TRAY_RAMP_DEFINITION;
+      return {
+        width: ramp.width,
+        height: ramp.height,
+        fill: RAMP_FILL_COLOR,
+        stroke: RAMP_STROKE_COLOR,
+      };
+    }
+    if (part === "mattress") {
+      const mattress = this.level.trayMattress;
+      return {
+        width: mattress?.width ?? 180,
+        height: mattress?.height ?? 44,
+        fill: 0x9d6a94,
+        stroke: 0x593c58,
+      };
+    }
+    if (part === "teapot") {
+      const teapot = this.level.trayTeapot;
+      return {
+        width: teapot?.width ?? 80,
+        height: teapot?.height ?? 64,
+        fill: 0xa96d64,
+        stroke: 0x593c58,
+      };
+    }
+    return {
+      width: TRAY_BLOCK_DEFINITION.width,
+      height: TRAY_BLOCK_DEFINITION.height,
+      fill: BLOCK_FILL_COLOR,
+      stroke: BLOCK_STROKE_COLOR,
+    };
   }
 
   spawnTrayBall(

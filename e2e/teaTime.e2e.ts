@@ -121,6 +121,146 @@ test("opens Parts below the controls and starts held Teapot placement", async ({
     });
 });
 
+test("renders and moves a held Ramp preview without runtime registration", async ({
+  page,
+}) => {
+  test.setTimeout(45_000);
+  await openTeaTime(page);
+  const parts = page.locator("#parts-palette");
+  if (!(await parts.isVisible()))
+    await page.locator("#parts-palette-toggle").click();
+  const canvas = page.locator("#game-container canvas");
+  const canvasBox = await canvas.boundingBox();
+  if (!canvasBox) throw new Error("Tea Time canvas has no bounds.");
+
+  const before = await page.evaluate(() => {
+    const scene =
+      window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+        contactObjects: Map<unknown, unknown>;
+        matter: { world: { engine: { world: { bodies: unknown[] } } } };
+      };
+    return {
+      contactCount: scene.contactObjects.size,
+      matterBodyCount: scene.matter.world.engine.world.bodies.length,
+    };
+  });
+
+  await page.locator("#tray-ramp-button").click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const state = window.__contraptionLabTest?.getGameState();
+        const scene =
+          window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+            contactObjects: Map<unknown, unknown>;
+            heldPlacementVisual?: { x: number; y: number };
+            matter: { world: { engine: { world: { bodies: unknown[] } } } };
+            ramps: Map<string, unknown>;
+            children: { list: Array<{ name: string }> };
+          };
+        return {
+          contactCount: scene.contactObjects.size,
+          heldPlacement: state?.heldPlacement,
+          matterBodyCount: scene.matter.world.engine.world.bodies.length,
+          previewCount: scene.children.list.filter((child) =>
+            child.name.startsWith("held-placement:"),
+          ).length,
+          previewPosition: scene.heldPlacementVisual
+            ? { x: scene.heldPlacementVisual.x, y: scene.heldPlacementVisual.y }
+            : null,
+          runtimeRampCount: scene.ramps.size,
+          trayRampCount: state?.trayRampCount,
+        };
+      }),
+    )
+    .toMatchObject({
+      contactCount: before.contactCount,
+      heldPlacement: { part: "ramp" },
+      matterBodyCount: before.matterBodyCount,
+      previewCount: 1,
+      runtimeRampCount: 0,
+      trayRampCount: 1,
+    });
+
+  const target = { x: 540, y: 300 };
+  const canvasCoordinateTolerance = 1;
+  await canvas.hover({
+    position: {
+      x: (target.x / 960) * canvasBox.width,
+      y: (target.y / 540) * canvasBox.height,
+    },
+  });
+  await expect
+    .poll(() =>
+      page.evaluate((tolerance) => {
+        const state = window.__contraptionLabTest?.getGameState();
+        const heldPosition = state?.heldPlacement?.transform.position;
+        const scene =
+          window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+            heldPlacementVisual?: { x: number; y: number };
+            children: { list: Array<{ name: string }> };
+          };
+        return {
+          heldMatchesPreview:
+            heldPosition !== undefined &&
+            scene.heldPlacementVisual !== undefined &&
+            Math.abs(heldPosition.x - scene.heldPlacementVisual.x) <= 0.01 &&
+            Math.abs(heldPosition.y - scene.heldPlacementVisual.y) <= 0.01,
+          heldWithinTargetTolerance:
+            heldPosition !== undefined &&
+            Math.abs(heldPosition.x - 540) <= tolerance &&
+            Math.abs(heldPosition.y - 300) <= tolerance,
+          previewCount: scene.children.list.filter((child) =>
+            child.name.startsWith("held-placement:"),
+          ).length,
+          previewWithinTargetTolerance:
+            scene.heldPlacementVisual !== undefined &&
+            Math.abs(scene.heldPlacementVisual.x - 540) <= tolerance &&
+            Math.abs(scene.heldPlacementVisual.y - 300) <= tolerance,
+          trayRampCount: state?.trayRampCount,
+        };
+      }, canvasCoordinateTolerance),
+    )
+    .toEqual({
+      heldMatchesPreview: true,
+      heldWithinTargetTolerance: true,
+      previewCount: 1,
+      previewWithinTargetTolerance: true,
+      trayRampCount: 1,
+    });
+
+  await page.evaluate(() =>
+    window.__contraptionLabTest?.dispatchAction({
+      type: "cancel-held-placement",
+    }),
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const state = window.__contraptionLabTest?.getGameState();
+        const scene =
+          window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+            children: { list: Array<{ name: string }> };
+            ramps: Map<string, unknown>;
+          };
+        return {
+          heldPlacement: state?.heldPlacement,
+          previewCount: scene.children.list.filter((child) =>
+            child.name.startsWith("held-placement:"),
+          ).length,
+          runtimeRampCount: scene.ramps.size,
+          trayRampCount: state?.trayRampCount,
+        };
+      }),
+    )
+    .toEqual({
+      heldPlacement: null,
+      previewCount: 0,
+      runtimeRampCount: 0,
+      trayRampCount: 1,
+    });
+});
+
 test("does not send the marble to the cup without a Teapot contact", async ({
   page,
 }) => {

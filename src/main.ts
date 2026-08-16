@@ -61,6 +61,7 @@ const showStorybookAssetProof = new URLSearchParams(window.location.search).has(
 declare global {
   interface Window {
     __contraptionLabTest?: {
+      dispatchAction: (action: GameAction) => void;
       getPrototypeScene: () => PrototypeScene | undefined;
       getGameState: () => Readonly<GameState>;
     };
@@ -69,6 +70,7 @@ declare global {
 
 if (import.meta.env.DEV) {
   window.__contraptionLabTest = {
+    dispatchAction: (action) => handleAction(action),
     getPrototypeScene: () => scene,
     getGameState: () => state,
   };
@@ -115,6 +117,7 @@ function applyState(): void {
     state.mode === "edit" && !state.succeeded,
     state.selectedComponentId,
   );
+  scene?.setHeldPlacement(state.heldPlacement);
   scene?.setRampTransforms(state.rampTransforms);
   scene?.setBlockTransforms(state.blockTransforms);
 }
@@ -255,6 +258,7 @@ function createGame(): void {
       replaceGameState(updateBallTransform(state, ballId, transform));
       applyState();
     },
+    (transform) => handleAction({ type: "update-held-placement", transform }),
     (componentId, returnsTrayPart) =>
       handleAction({
         type: "remove-component",

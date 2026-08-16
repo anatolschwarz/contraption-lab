@@ -6701,3 +6701,226 @@ IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_P
 Do not paraphrase, reconstruct, summarize, or omit any part of it.
 
 Then STOP.
+
+Continue Phase 2 #32 from checkpoint:
+
+f19d69890e8170f986c992b6c21b169308a244d2
+
+Work ONLY in:
+/home/anatolschwartz/code/contraption-lab
+
+Verify:
+- branch = phase2-32-tea-time
+- checkpoint above is an ancestor of HEAD
+- do NOT modify /home/anatolschwartz/code/contraption-lab-main
+
+Session token:
+s-20260815-1658-l32a
+
+Implement ONLY held-placement slice 3:
+
+PROVISIONAL VISUAL + POINTER FOLLOWING.
+
+Required behavior:
+
+1. When heldPlacement is active:
+- render exactly one provisional visual for that part;
+- use the normal part artwork/visual representation where practical;
+- do NOT create the final runtime part;
+- do NOT create a Matter body;
+- do NOT register contacts/collisions.
+
+2. Pointer movement:
+- updates heldPlacement position through `update-held-placement`;
+- provisional visual follows the held transform;
+- overlapping/invalid positions remain held;
+- do not reject or cancel because the cursor is currently over an invalid location.
+
+3. State/inventory:
+- inventory remains unchanged;
+- heldPlacement remains active;
+- existing committed-part selection/drag behavior remains unchanged.
+
+4. Cleanup:
+- state re-renders must not create duplicate provisional visuals;
+- when heldPlacement becomes null, destroy/remove the provisional visual cleanly.
+
+Apply GENERICALLY to all applicable inventory-placeable parts.
+Use Tea Time Ramp/Teapot only as regression cases.
+
+Do NOT implement yet:
+- click-to-commit;
+- Escape/right-click cancel;
+- Q/E held rotation;
+- final runtime/Matter creation;
+- broad Reset/puzzle-switch lifecycle changes;
+- Tea Time reference-route/physics fixes;
+- Parts layout changes;
+- Teapot opacity;
+- unrelated collision/reset fixes.
+
+Automated verification:
+
+Focused tests:
+- heldPlacement creates exactly one provisional visual;
+- pointer movement updates held position;
+- provisional visual follows;
+- inventory does not decrement;
+- no spawnTray*/runtime creation;
+- no Matter/contact registration;
+- clearing heldPlacement removes the provisional visual.
+
+Browser regression:
+- enter Edit mode;
+- open Parts;
+- click Ramp;
+- provisional Ramp becomes visible;
+- move pointer;
+- provisional Ramp follows;
+- inventory remains 1;
+- no committed/runtime Ramp is created.
+
+Use bounded browser timeouts and cleanly close browser/context/process handles.
+
+Run:
+- focused relevant tests
+- focused Playwright regression
+- npm run typecheck
+- npm run lint
+- git diff --check
+
+Do not commit or push Contraption Lab.
+
+Create/update:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+Response must separate:
+- implementation
+- automated tests
+- browser verification
+- unresolved issues
+- manual verification requirement, if any
+
+Handoff using exactly:
+/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
+
+Continue Phase 2 #32.
+
+Work ONLY in:
+/home/anatolschwartz/code/contraption-lab
+
+Verify:
+- branch = phase2-32-tea-time
+- do NOT modify /home/anatolschwartz/code/contraption-lab-main
+
+Session token:
+s-20260815-1658-l32a
+
+Fix ONLY the failing Slice 3 Playwright assertion.
+
+Observed real browser result:
+- requested pointer target: (540, 300)
+- heldPosition: (539.8830409356725, 299.81667394151026)
+- previewPosition: (539.8830409356725, 299.81667394151026)
+- previewCount: 1
+- trayRampCount: 1
+
+The production behavior is correct. The E2E incorrectly requires exact integer canvas coordinates.
+
+Required test correction:
+- do NOT change production code;
+- replace exact target coordinate equality with a small explicit tolerance suitable for DOM/canvas coordinate conversion (<= 1px);
+- still assert heldPosition and previewPosition match each other closely;
+- preserve assertions that previewCount = 1 and inventory remains unchanged;
+- do not weaken unrelated assertions.
+
+Run:
+npx playwright test e2e/teaTime.e2e.ts --grep "renders and moves a held Ramp preview without runtime registration" --reporter=line
+
+Also run:
+- npm run typecheck
+- npm run lint
+- git diff --check
+
+Do NOT implement Slice 4 yet.
+Do NOT commit or push Contraption Lab.
+
+Create/update:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+Response must report the exact assertion change and exact test results.
+
+Handoff using exactly:
+/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
+
+Finalize the reviewed Phase 2 #32 Slice 3 checkpoint.
+
+Work ONLY in:
+/home/anatolschwartz/code/contraption-lab
+
+Verify:
+- branch = phase2-32-tea-time
+- checkpoint f19d69890e8170f986c992b6c21b169308a244d2 is an ancestor of HEAD
+- do NOT modify /home/anatolschwartz/code/contraption-lab-main
+
+Session token:
+s-20260815-1658-l32a
+
+Slice 3 has been reviewed and verified:
+- focused Playwright rerun PASS: 1 test, 20.6s
+- typecheck/lint/git diff --check PASS
+- actual diff reviewed PASS
+
+Commit ONLY the reviewed Slice 3 changes:
+- docs/CODEX_PROMPTS.md
+- e2e/teaTime.e2e.ts
+- src/game/PrototypeScene.ts
+- src/main.ts
+- tests/mainRoutingIntegration.test.ts
+
+Do NOT stage unrelated/pre-existing files.
+
+Before commit:
+- append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md
+- stage that prompt-log update
+- run git diff --cached --check
+- run git diff --cached --name-status
+- verify no unrelated files are staged
+
+Create ONE LOCAL commit with message:
+
+wip: checkpoint held placement slice 3
+
+Do NOT push Contraption Lab.
+
+After commit:
+- report commit SHA
+- run git status --short
+- confirm unrelated files remain uncommitted
+- confirm /home/anatolschwartz/code/contraption-lab-main remains untouched
+
+Create/update:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+The diff artifact must contain the checkpoint commit diff itself, not an empty post-commit working-tree diff.
+
+Handoff using exactly:
+/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.

@@ -13,6 +13,7 @@ const mainTest = vi.hoisted(() => ({
     resetLevel: vi.fn(),
     setBlockTransforms: vi.fn(),
     setEditSelection: vi.fn(),
+    setHeldPlacement: vi.fn(),
     setRampTransforms: vi.fn(),
     setSimulationRunning: vi.fn(),
     spawnTrayBall: vi.fn(),
@@ -98,6 +99,11 @@ describe("main.ts held-placement routing", () => {
         id: "held-ramp-main-test",
       },
       trayRampCount: 4,
+    });
+    expect(mainTest.scene.setHeldPlacement).toHaveBeenCalledWith({
+      part: "ramp",
+      id: "held-ramp-main-test",
+      transform: { position: { x: 0, y: 0 }, rotation: 0 },
     });
     expect(mainTest.scene.spawnTrayBall).not.toHaveBeenCalled();
     expect(mainTest.scene.spawnTrayBird).not.toHaveBeenCalled();
