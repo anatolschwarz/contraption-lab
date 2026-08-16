@@ -7,8 +7,16 @@ const mainTest = vi.hoisted(() => ({
     setEditFeedback: vi.fn(),
   },
   onAction: undefined as ((action: unknown) => void) | undefined,
+  onHeldPlacementCommit: undefined as
+    | ((placement: {
+        id: string;
+        part: string;
+        transform: { position: { x: number; y: number }; rotation: number };
+      }) => boolean)
+    | undefined,
   scene: {
     captureRunLayout: vi.fn(),
+    commitHeldPlacement: vi.fn(() => true),
     rerunFromSnapshot: vi.fn(),
     resetLevel: vi.fn(),
     setBlockTransforms: vi.fn(),
@@ -35,7 +43,9 @@ vi.mock("phaser", () => ({
 
 vi.mock("../src/game/PrototypeScene", () => ({
   PrototypeScene: class {
-    constructor() {
+    constructor(...args: unknown[]) {
+      mainTest.onHeldPlacementCommit =
+        args[8] as typeof mainTest.onHeldPlacementCommit;
       return mainTest.scene;
     }
   },
@@ -111,5 +121,28 @@ describe("main.ts held-placement routing", () => {
     expect(mainTest.scene.spawnTrayMattress).not.toHaveBeenCalled();
     expect(mainTest.scene.spawnTrayRamp).not.toHaveBeenCalled();
     expect(mainTest.scene.spawnTrayTeapot).not.toHaveBeenCalled();
+
+    const placement = {
+      part: "ramp",
+      id: "held-ramp-main-test",
+      transform: { position: { x: 540, y: 300 }, rotation: 0 },
+    };
+    mainTest.scene.commitHeldPlacement.mockReturnValueOnce(false);
+    expect(mainTest.onHeldPlacementCommit?.(placement)).toBe(false);
+    const invalidState = mainTest.controls.render.mock.calls.at(-1)?.[0];
+    expect(invalidState).toMatchObject({
+      heldPlacement: { id: "held-ramp-main-test" },
+      trayRampCount: 4,
+    });
+    expect(mainTest.onHeldPlacementCommit?.(placement)).toBe(true);
+    const committedState = mainTest.controls.render.mock.calls.at(-1)?.[0];
+    expect(mainTest.scene.commitHeldPlacement).toHaveBeenCalledWith(placement);
+    expect(committedState).toMatchObject({
+      heldPlacement: null,
+      selectedComponentId: "held-ramp-main-test",
+      trayRampCount: 3,
+    });
+    expect(mainTest.onHeldPlacementCommit?.(placement)).toBe(false);
+    expect(mainTest.scene.commitHeldPlacement).toHaveBeenCalledTimes(2);
   });
 });

@@ -259,6 +259,23 @@ function createGame(): void {
       applyState();
     },
     (transform) => handleAction({ type: "update-held-placement", transform }),
+    (placement) => {
+      if (
+        state.heldPlacement?.id !== placement.id ||
+        state.heldPlacement.part !== placement.part
+      ) {
+        return false;
+      }
+      const committedState = transitionGameState(state, {
+        type: "commit-held-placement",
+      });
+      if (committedState === state || !scene?.commitHeldPlacement(placement)) {
+        return false;
+      }
+      replaceGameState(committedState);
+      applyState();
+      return true;
+    },
     (componentId, returnsTrayPart) =>
       handleAction({
         type: "remove-component",

@@ -121,7 +121,7 @@ test("opens Parts below the controls and starts held Teapot placement", async ({
     });
 });
 
-test("renders and moves a held Ramp preview without runtime registration", async ({
+test("keeps an invalid held Ramp and commits a valid Ramp with normal registration", async ({
   page,
 }) => {
   test.setTimeout(45_000);
@@ -182,7 +182,7 @@ test("renders and moves a held Ramp preview without runtime registration", async
       trayRampCount: 1,
     });
 
-  const target = { x: 540, y: 300 };
+  const target = { x: 400, y: 180 };
   const canvasCoordinateTolerance = 1;
   await canvas.hover({
     position: {
@@ -192,34 +192,37 @@ test("renders and moves a held Ramp preview without runtime registration", async
   });
   await expect
     .poll(() =>
-      page.evaluate((tolerance) => {
-        const state = window.__contraptionLabTest?.getGameState();
-        const heldPosition = state?.heldPlacement?.transform.position;
-        const scene =
-          window.__contraptionLabTest?.getPrototypeScene() as unknown as {
-            heldPlacementVisual?: { x: number; y: number };
-            children: { list: Array<{ name: string }> };
+      page.evaluate(
+        ({ target, tolerance }) => {
+          const state = window.__contraptionLabTest?.getGameState();
+          const heldPosition = state?.heldPlacement?.transform.position;
+          const scene =
+            window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+              heldPlacementVisual?: { x: number; y: number };
+              children: { list: Array<{ name: string }> };
+            };
+          return {
+            heldMatchesPreview:
+              heldPosition !== undefined &&
+              scene.heldPlacementVisual !== undefined &&
+              Math.abs(heldPosition.x - scene.heldPlacementVisual.x) <= 0.01 &&
+              Math.abs(heldPosition.y - scene.heldPlacementVisual.y) <= 0.01,
+            heldWithinTargetTolerance:
+              heldPosition !== undefined &&
+              Math.abs(heldPosition.x - target.x) <= tolerance &&
+              Math.abs(heldPosition.y - target.y) <= tolerance,
+            previewCount: scene.children.list.filter((child) =>
+              child.name.startsWith("held-placement:"),
+            ).length,
+            previewWithinTargetTolerance:
+              scene.heldPlacementVisual !== undefined &&
+              Math.abs(scene.heldPlacementVisual.x - target.x) <= tolerance &&
+              Math.abs(scene.heldPlacementVisual.y - target.y) <= tolerance,
+            trayRampCount: state?.trayRampCount,
           };
-        return {
-          heldMatchesPreview:
-            heldPosition !== undefined &&
-            scene.heldPlacementVisual !== undefined &&
-            Math.abs(heldPosition.x - scene.heldPlacementVisual.x) <= 0.01 &&
-            Math.abs(heldPosition.y - scene.heldPlacementVisual.y) <= 0.01,
-          heldWithinTargetTolerance:
-            heldPosition !== undefined &&
-            Math.abs(heldPosition.x - 540) <= tolerance &&
-            Math.abs(heldPosition.y - 300) <= tolerance,
-          previewCount: scene.children.list.filter((child) =>
-            child.name.startsWith("held-placement:"),
-          ).length,
-          previewWithinTargetTolerance:
-            scene.heldPlacementVisual !== undefined &&
-            Math.abs(scene.heldPlacementVisual.x - 540) <= tolerance &&
-            Math.abs(scene.heldPlacementVisual.y - 300) <= tolerance,
-          trayRampCount: state?.trayRampCount,
-        };
-      }, canvasCoordinateTolerance),
+        },
+        { target, tolerance: canvasCoordinateTolerance },
+      ),
     )
     .toEqual({
       heldMatchesPreview: true,
@@ -229,22 +232,27 @@ test("renders and moves a held Ramp preview without runtime registration", async
       trayRampCount: 1,
     });
 
-  await page.evaluate(() =>
-    window.__contraptionLabTest?.dispatchAction({
-      type: "cancel-held-placement",
-    }),
-  );
+  await canvas.click({
+    position: {
+      x: (target.x / 960) * canvasBox.width,
+      y: (target.y / 540) * canvasBox.height,
+    },
+  });
   await expect
     .poll(() =>
       page.evaluate(() => {
         const state = window.__contraptionLabTest?.getGameState();
         const scene =
           window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+            contactObjects: Map<unknown, unknown>;
             children: { list: Array<{ name: string }> };
+            matter: { world: { engine: { world: { bodies: unknown[] } } } };
             ramps: Map<string, unknown>;
           };
         return {
           heldPlacement: state?.heldPlacement,
+          contactCount: scene.contactObjects.size,
+          matterBodyCount: scene.matter.world.engine.world.bodies.length,
           previewCount: scene.children.list.filter((child) =>
             child.name.startsWith("held-placement:"),
           ).length,
@@ -253,11 +261,143 @@ test("renders and moves a held Ramp preview without runtime registration", async
         };
       }),
     )
-    .toEqual({
-      heldPlacement: null,
-      previewCount: 0,
+    .toMatchObject({
+      heldPlacement: { part: "ramp" },
+      contactCount: before.contactCount,
+      matterBodyCount: before.matterBodyCount,
+      previewCount: 1,
       runtimeRampCount: 0,
       trayRampCount: 1,
+    });
+
+  const validTarget = { x: 540, y: 300 };
+  await canvas.hover({
+    position: {
+      x: (validTarget.x / 960) * canvasBox.width,
+      y: (validTarget.y / 540) * canvasBox.height,
+    },
+  });
+  const heldBeforeCommit = await page.evaluate(() => {
+    const heldPlacement =
+      window.__contraptionLabTest?.getGameState().heldPlacement;
+    if (!heldPlacement) throw new Error("Ramp was not held before commit.");
+    return {
+      position: { ...heldPlacement.transform.position },
+      rotation: heldPlacement.transform.rotation,
+    };
+  });
+  await canvas.click({
+    position: {
+      x: (validTarget.x / 960) * canvasBox.width,
+      y: (validTarget.y / 540) * canvasBox.height,
+    },
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ({ held, tolerance }) => {
+          const state = window.__contraptionLabTest?.getGameState();
+          const scene =
+            window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+              contactObjects: Map<unknown, { id: string }>;
+              children: { list: Array<{ name: string }> };
+              matter: { world: { engine: { world: { bodies: unknown[] } } } };
+              ramps: Map<
+                string,
+                {
+                  shape: {
+                    body?: {
+                      angle: number;
+                      position: { x: number; y: number };
+                    };
+                    rotation: number;
+                    x: number;
+                    y: number;
+                  };
+                  sprite?: { rotation: number; x: number; y: number };
+                }
+              >;
+            };
+          const ramp = scene.ramps.get("held-ramp-1");
+          const body = ramp?.shape.body;
+          return {
+            contactRegistered: [...scene.contactObjects.values()].some(
+              (contact) => contact.id === "held-ramp-1",
+            ),
+            heldPlacement: state?.heldPlacement,
+            matterBodyCount: scene.matter.world.engine.world.bodies.length,
+            previewCount: scene.children.list.filter((child) =>
+              child.name.startsWith("held-placement:"),
+            ).length,
+            rampHasMatterBody: ramp?.shape.body !== undefined,
+            matterMatchesHeld:
+              body !== undefined &&
+              Math.abs(body.position.x - held.position.x) <= tolerance &&
+              Math.abs(body.position.y - held.position.y) <= tolerance &&
+              Math.abs(body.angle - held.rotation) <= 0.01,
+            rampMatchesTarget:
+              ramp !== undefined &&
+              Math.abs(ramp.shape.x - 540) <= tolerance &&
+              Math.abs(ramp.shape.y - 300) <= tolerance,
+            runtimeAnchorMatchesHeld:
+              ramp !== undefined &&
+              Math.abs(ramp.shape.x - held.position.x) <= tolerance &&
+              Math.abs(ramp.shape.y - held.position.y) <= tolerance &&
+              Math.abs(ramp.shape.rotation - held.rotation) <= 0.01,
+            runtimeRampCount: scene.ramps.size,
+            selectedComponentId: state?.selectedComponentId,
+            trayRampCount: state?.trayRampCount,
+            visualAnchorMatchesHeld:
+              ramp?.sprite !== undefined &&
+              Math.abs(ramp.sprite.x - held.position.x) <= tolerance &&
+              Math.abs(ramp.sprite.y - held.position.y) <= tolerance &&
+              Math.abs(ramp.sprite.rotation - held.rotation) <= 0.01,
+          };
+        },
+        { held: heldBeforeCommit, tolerance: canvasCoordinateTolerance },
+      ),
+    )
+    .toEqual({
+      contactRegistered: true,
+      heldPlacement: null,
+      matterBodyCount: before.matterBodyCount + 1,
+      previewCount: 0,
+      rampHasMatterBody: true,
+      matterMatchesHeld: true,
+      rampMatchesTarget: true,
+      runtimeAnchorMatchesHeld: true,
+      runtimeRampCount: 1,
+      selectedComponentId: "held-ramp-1",
+      trayRampCount: 0,
+      visualAnchorMatchesHeld: true,
+    });
+
+  await canvas.click({
+    position: {
+      x: (validTarget.x / 960) * canvasBox.width,
+      y: (validTarget.y / 540) * canvasBox.height,
+    },
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const state = window.__contraptionLabTest?.getGameState();
+        const scene =
+          window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+            matter: { world: { engine: { world: { bodies: unknown[] } } } };
+            ramps: Map<string, unknown>;
+          };
+        return {
+          matterBodyCount: scene.matter.world.engine.world.bodies.length,
+          runtimeRampCount: scene.ramps.size,
+          trayRampCount: state?.trayRampCount,
+        };
+      }),
+    )
+    .toEqual({
+      matterBodyCount: before.matterBodyCount + 1,
+      runtimeRampCount: 1,
+      trayRampCount: 0,
     });
 });
 

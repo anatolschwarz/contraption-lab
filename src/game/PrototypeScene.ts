@@ -300,6 +300,9 @@ export class PrototypeScene extends Phaser.Scene {
     private readonly onHeldPlacementTransformChange: (
       transform: RampTransform,
     ) => void,
+    private readonly onHeldPlacementCommit: (
+      placement: HeldPlacement,
+    ) => boolean,
     private readonly onComponentRemove: (
       componentId: string,
       returnsTrayPart:
@@ -351,10 +354,18 @@ export class PrototypeScene extends Phaser.Scene {
         }
       },
     );
-    this.input.on(Phaser.Input.Events.POINTER_DOWN, () => {
-      if (!this.editInteractionEnabled || this.activeHeldPlacement) return;
-      this.onSelectionChange(null);
-    });
+    this.input.on(
+      Phaser.Input.Events.POINTER_DOWN,
+      (pointer: Phaser.Input.Pointer) => {
+        if (!this.editInteractionEnabled) return;
+        if (this.activeHeldPlacement) {
+          if (pointer.button === 0)
+            this.onHeldPlacementCommit(this.activeHeldPlacement);
+          return;
+        }
+        this.onSelectionChange(null);
+      },
+    );
     this.input.on(
       Phaser.Input.Events.POINTER_MOVE,
       (pointer: Phaser.Input.Pointer) => {
@@ -692,6 +703,163 @@ export class PrototypeScene extends Phaser.Scene {
       fill: BLOCK_FILL_COLOR,
       stroke: BLOCK_STROKE_COLOR,
     };
+  }
+
+  commitHeldPlacement(placement: Readonly<HeldPlacement>): boolean {
+    if (
+      !this.editInteractionEnabled ||
+      this.activeHeldPlacement?.id !== placement.id ||
+      this.activeHeldPlacement.part !== placement.part
+    ) {
+      return false;
+    }
+    const { position, rotation } = placement.transform;
+    let committed = false;
+
+    if (placement.part === "ramp") {
+      const trayRamp = this.level.trayRamp;
+      const definition: RampDefinition = {
+        ...TRAY_RAMP_DEFINITION,
+        ...(trayRamp
+          ? {
+              height: trayRamp.height,
+              ownership: trayRamp.ownership,
+              width: trayRamp.width,
+            }
+          : {}),
+        id: placement.id,
+        ...position,
+        rotation,
+      };
+      if (this.isHeldRectanglePlacementValid(definition)) {
+        this.createRamp(definition, true);
+        committed = true;
+      }
+    } else if (placement.part === "block") {
+      const definition: BlockDefinition = {
+        ...TRAY_BLOCK_DEFINITION,
+        id: placement.id,
+        ...position,
+        rotation,
+      };
+      if (this.isHeldRectanglePlacementValid(definition)) {
+        this.createBlock(definition, true);
+        committed = true;
+      }
+    } else if (placement.part === "mattress") {
+      const tray = this.level.trayMattress;
+      if (tray) {
+        const definition: MattressDefinition = {
+          ...tray,
+          id: placement.id,
+          ...position,
+        };
+        if (this.isHeldRectanglePlacementValid({ ...definition, rotation })) {
+          this.createMattress(definition, true);
+          committed = true;
+        }
+      }
+    } else if (placement.part === "teapot") {
+      const tray = this.level.trayTeapot;
+      if (tray) {
+        const definition: TeapotDefinition = {
+          ...tray,
+          id: placement.id,
+          ...position,
+        };
+        if (this.isHeldRectanglePlacementValid({ ...definition, rotation })) {
+          this.createTeapot(definition, true);
+          committed = true;
+        }
+      }
+    } else if (placement.part === "ball") {
+      const source = this.level.balls.find(
+        (ball) => ball.ownership === "player" && !this.balls.has(ball.id),
+      );
+      const definition = source
+        ? {
+            ...source,
+            id: placement.id,
+            ...position,
+            initiallyPlaced: true,
+          }
+        : undefined;
+      if (
+        definition &&
+        this.isHeldCirclePlacementValid(definition, placement.id)
+      ) {
+        this.createBall(definition, true);
+        committed = true;
+      }
+    } else {
+      const source = this.level.actors.find(
+        (actor) => actor.ownership === "player" && !this.actors.has(actor.id),
+      );
+      const definition = source
+        ? { ...source, id: placement.id, ...position, initiallyPlaced: true }
+        : undefined;
+      if (definition && this.isHeldActorPlacementValid(definition)) {
+        this.createActor(definition, undefined, true);
+        committed = true;
+      }
+    }
+
+    if (committed) this.onEditFeedback("");
+    else
+      this.onEditFeedback(
+        "Placement rejected: keep parts in bounds and clear of other parts.",
+      );
+    return committed;
+  }
+
+  private isHeldRectanglePlacementValid(
+    definition: Readonly<
+      Omit<RectanglePlacement, "rotation"> & { id: string; rotation?: number }
+    >,
+  ): boolean {
+    const geometry = { ...definition, rotation: definition.rotation ?? 0 };
+    const clamped = clampRampPosition(geometry, geometry);
+    return (
+      clamped.x === geometry.x &&
+      clamped.y === geometry.y &&
+      this.getCurrentBalls().every((ball) =>
+        isRectanglePlacementValid(
+          geometry,
+          ball,
+          this.getOtherPlacements(geometry.id),
+        ),
+      )
+    );
+  }
+
+  private isHeldCirclePlacementValid(
+    definition: Readonly<BallDefinition>,
+    id: string,
+  ): boolean {
+    const clamped = clampCirclePosition(definition, definition.radius);
+    return (
+      clamped.x === definition.x &&
+      clamped.y === definition.y &&
+      isCirclePlacementValid(
+        definition,
+        this.getOtherPlacements(id),
+        this.getOtherBallPlacements(id),
+      )
+    );
+  }
+
+  private isHeldActorPlacementValid(
+    definition: Readonly<ActorDefinition>,
+  ): boolean {
+    const clamped = clampRampPosition(definition, {
+      ...definition,
+      rotation: 0,
+    });
+    return (
+      clamped.x === definition.x &&
+      clamped.y === definition.y &&
+      this.isValidActorPlacement(definition.id, definition, definition)
+    );
   }
 
   spawnTrayBall(
@@ -1585,6 +1753,7 @@ export class PrototypeScene extends Phaser.Scene {
     event: Phaser.Types.Input.EventData,
   ): void {
     event.stopPropagation();
+    if (this.activeHeldPlacement) return;
     if (!this.editInteractionEnabled) {
       this.playStorybookPoke(componentType, componentId);
       return;
@@ -2098,11 +2267,13 @@ export class PrototypeScene extends Phaser.Scene {
       { x, y },
       { ...ramp.definition, rotation },
     );
-    const snapped = snapRampPlacement(
-      position,
-      rotation,
-      this.level.rampSnapTargets ?? [],
-    );
+    // State application must preserve the recorded placement anchor exactly.
+    // Snapping is an editor interaction affordance, not a transform migration.
+    // Otherwise applying state after a held placement can move a newly-created
+    // ramp to a nearby snap target that the player did not select.
+    const snapped = notify
+      ? snapRampPlacement(position, rotation, this.level.rampSnapTargets ?? [])
+      : { position, rotation };
     const isSnapTarget = this.level.rampSnapTargets?.some(
       (target) =>
         target.x === snapped.position.x &&

@@ -6924,3 +6924,247 @@ IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_P
 Do not paraphrase, reconstruct, summarize, or omit any part of it.
 
 Then STOP.
+
+Continue Phase 2 #32 from Slice 3 checkpoint:
+
+d77c55387bfada5a81d387cbe020e2999da7610b
+
+Work ONLY in:
+/home/anatolschwartz/code/contraption-lab
+
+Verify:
+- branch = phase2-32-tea-time
+- checkpoint above is an ancestor of HEAD
+- do NOT modify /home/anatolschwartz/code/contraption-lab-main
+
+Session token:
+s-20260815-1658-l32a
+
+Implement ONLY held-placement Slice 4:
+
+VALID CLICK -> COMMIT/PLACE PART.
+
+Required generic behavior:
+
+1. While heldPlacement is active, clicking a VALID canvas position:
+- commits that exact held transform;
+- creates/registers the normal existing runtime/render part;
+- creates the normal Matter body when that part is collidable;
+- registers normal contact/collision behavior;
+- decrements inventory exactly ONCE;
+- clears heldPlacement and provisional visual;
+- makes the committed part the normal selected component.
+
+2. Invalid click:
+- does NOT commit;
+- does NOT decrement inventory;
+- does NOT create runtime/Matter/contact objects;
+- part remains held and continues following the pointer.
+
+3. Reuse existing committed-part creation/geometry paths.
+Do NOT create parallel Ramp/Teapot-specific implementations.
+Do NOT let old `spawn-tray-*` state mutation cause a second inventory decrement.
+
+Apply generically to all applicable inventory-placeable parts.
+
+Do NOT implement yet:
+- Escape/right-click cancel;
+- held Q/E rotation;
+- broad Reset/puzzle-switch cleanup;
+- Tea Time reference-route fixes;
+- Parts layout changes;
+- Teapot opacity;
+- unrelated collision/reset fixes.
+
+Automated verification:
+- valid held Ramp click commits at held transform;
+- inventory 1 -> 0 exactly once;
+- heldPlacement clears;
+- preview disappears;
+- committed Ramp remains selected;
+- runtime Ramp exists;
+- Matter body exists;
+- normal collision/contact registration exists where applicable;
+- repeated click cannot double-decrement/create duplicate part;
+- invalid click leaves part held and inventory unchanged.
+
+Real browser:
+- Edit -> Parts -> Ramp;
+- move held Ramp to a valid clear position;
+- click;
+- verify preview becomes committed Ramp at same position;
+- inventory becomes 0;
+- Ramp remains selected;
+- verify normal runtime/Matter registration;
+- also verify an invalid placement click remains held.
+
+Use <=1px tolerance for DOM/canvas coordinate comparisons.
+
+Run:
+- focused relevant tests
+- focused Playwright regression
+- npm run typecheck
+- npm run lint
+- git diff --check
+
+Do not commit or push Contraption Lab.
+
+Create/update:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+Response must separate:
+- implementation
+- automated tests
+- browser verification
+- unresolved issues
+- manual verification requirement
+
+Handoff using exactly:
+/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
+
+Continue Phase 2 #32.
+
+Work ONLY in:
+/home/anatolschwartz/code/contraption-lab
+
+Verify:
+- branch = phase2-32-tea-time
+- do NOT modify /home/anatolschwartz/code/contraption-lab-main
+
+Session token:
+s-20260815-1658-l32a
+
+DIAGNOSE AND FIX ONLY the Slice 4 committed-transform mismatch.
+
+Observed browser test:
+
+After valid held Ramp commit:
+- heldPlacement = null
+- trayRampCount = 0
+- runtimeRampCount = 1
+- rampHasMatterBody = true
+- contactRegistered = true
+- selectedComponentId = held-ramp-1
+- BUT rampMatchesTarget = false
+
+Manual browser testing confirms click-to-place works.
+
+Also observed visually:
+- marble penetrates roughly halfway into Ramp;
+- Ramp effective collision line appears near the visual middle rather than the visible upper surface.
+
+Do NOT weaken the existing test.
+
+First instrument/inspect the exact values for:
+1. held Ramp transform immediately before commit;
+2. requested commit transform;
+3. committed runtime Ramp visual/container transform;
+4. committed Matter body position/angle;
+5. the geometry offsets used by createRamp / Ramp rendering.
+
+Determine whether:
+- the test is comparing incompatible coordinate anchors; OR
+- production creation changes/offsets the held transform.
+
+Required invariant:
+held transform before commit ~= committed runtime placement anchor ~= Matter placement anchor,
+subject only to intentional documented geometry-local offsets.
+
+If production is wrong, fix the smallest generic Ramp/runtime geometry issue causing the mismatch.
+If the test anchor is wrong, correct only the test and explain why.
+
+Do NOT yet fix:
+- Reset stale visuals;
+- placed-part movement trap;
+- Teapot geometry;
+- Cup geometry/location;
+- Slice 5 cancel/Q/E/lifecycle features;
+- Tea Time reference route.
+
+Run:
+- focused relevant unit/integration tests
+- focused Playwright Slice 4 test
+- npm run typecheck
+- npm run lint
+- git diff --check
+
+Do not commit or push Contraption Lab.
+
+Create/update:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+Response must report the exact pre-commit held transform, runtime visual transform, Matter transform, root cause, fix, and Playwright result.
+
+Handoff using exactly:
+/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
+Do not paraphrase, reconstruct, summarize, or omit any part.
+
+Then STOP.
+
+Finalize the reviewed Phase 2 #32 Slice 4 checkpoint.
+
+Work ONLY in:
+/home/anatolschwartz/code/contraption-lab
+
+Verify:
+- branch = phase2-32-tea-time
+- checkpoint d77c55387bfada5a81d387cbe020e2999da7610b is an ancestor of HEAD
+- do NOT modify /home/anatolschwartz/code/contraption-lab-main
+
+Session token:
+s-20260815-1658-l32a
+
+Slice 4 and the committed-transform fix have been reviewed and verified:
+- valid held placement commits correctly
+- invalid placement remains held
+- inventory decrements exactly once
+- runtime/Matter/contact registration works
+- held/runtime/visual/Matter transform alignment is fixed
+- focused Playwright PASS
+- unit/typecheck/lint/diff-check PASS
+
+Commit ONLY the current reviewed Slice 4 changes.
+
+Do NOT stage unrelated/pre-existing files.
+
+Before commit:
+- append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md
+- stage the reviewed #32 changes plus that prompt-log update
+- run git diff --cached --check
+- run git diff --cached --name-status
+- verify no unrelated files are staged
+
+Create ONE LOCAL commit:
+
+wip: checkpoint held placement slice 4
+
+Do NOT push Contraption Lab.
+
+After commit:
+- report commit SHA
+- report git status --short
+- confirm unrelated files remain uncommitted
+- confirm contraption-lab-main remains untouched
+
+Create/update:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+The diff artifact must contain the checkpoint commit diff itself.
+
+Handoff using exactly:
+/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
