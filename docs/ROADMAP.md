@@ -164,11 +164,12 @@ detailed acceptance criteria, and design decisions.
   - real phone/tablet testing
 
 - Minimize flow approvals
--- /home/anatolschwartz/code/prom-resp/push-response.sh s-20260814-1207-l30a
+-- /home/anatolschwartz/CodeRoot/tools/prom-resp/push-response.sh <token> [project] --response <path> --diff <path>
 -- git diff --check → allow everywhere.
--- prom-resp pull/rebase + push → allow automatically for that repo.
--- prom-resp handoff Git operations → allow automatically
-  - add the session response + diff artifacts
+-- allow the maintained prom-resp helper; do not allow direct handoff-repository Git operations
+-- the helper owns the handoff flow
+  - copy the session response + diff artifacts
+  - add them
   - status
   - commit
   - pull --rebase
@@ -191,4 +192,4 @@ detailed acceptance criteria, and design decisions.
 ** "approval friendly prettifier"?
 --- should  tehr be an entity that turns teh code to be "apprval freindly"
 --- if such functionalty to be implemented within Terra implemneter, will harm Terra coding capabities due to off-topic context etc?
---- smae applies to the prom-resp instructns in the "to execute prompt" 
+--- smae applies to the prom-resp instructns in the "to execute prompt"
