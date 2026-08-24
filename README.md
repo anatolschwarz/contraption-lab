@@ -16,6 +16,25 @@ locally in the browser.
 - npm 11 or newer
 - A modern browser with WebGL or Canvas support
 
+## Project configuration and repository conventions
+
+Project-specific Codex configuration lives under `.codex/`.
+
+- `.codex/config.toml` defines project-level Codex approval and sandbox settings.
+- Codex uses `approval_policy = "on-request"` and `sandbox_mode = "workspace-write"`.
+- External prompt/response artifacts are published through the maintained
+  `tools/prom-resp/push-response.sh` interface; its handoff repository is not a
+  project writable root.
+- The maintained handoff helper's command allowance is user-level because the
+  helper is shared across projects. This repository does not grant direct
+  handoff-repository Git operations.
+- Localhost access may be permitted where required for local development and
+  Playwright browser testing.
+- PNG files are treated as binary through `.gitattributes`.
+- Environment files (`.env`, `.env.*`) are excluded from Git.
+
+Codex-specific operating instructions are in [`AGENTS.md`](AGENTS.md).
+
 ## Install and develop
 
 ```bash
