@@ -15,6 +15,7 @@ locally in the browser.
 - Node.js 24 (see `.nvmrc`)
 - npm 11 or newer
 - A modern browser with WebGL or Canvas support
+- FFmpeg (`ffmpeg` and `ffprobe`) for Storybook asset processing
 
 ## Project configuration and repository conventions
 

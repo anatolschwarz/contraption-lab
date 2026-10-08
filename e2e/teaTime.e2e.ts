@@ -121,10 +121,10 @@ test("opens Parts below the controls and starts held Teapot placement", async ({
     });
 });
 
-test("keeps an invalid held Ramp and commits a valid Ramp with normal registration", async ({
+test("cleans a committed Ramp from runtime and display state on Reset", async ({
   page,
 }) => {
-  test.setTimeout(45_000);
+  test.setTimeout(60_000);
   await openTeaTime(page);
   const parts = page.locator("#parts-palette");
   if (!(await parts.isVisible()))
@@ -397,6 +397,125 @@ test("keeps an invalid held Ramp and commits a valid Ramp with normal registrati
     .toEqual({
       matterBodyCount: before.matterBodyCount + 1,
       runtimeRampCount: 1,
+      trayRampCount: 0,
+    });
+
+  await page.evaluate(() => {
+    const scene =
+      window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+        ramps: Map<string, { sprite?: unknown }>;
+      };
+    const sprite = scene.ramps.get("held-ramp-1")?.sprite;
+    if (!sprite) throw new Error("Committed Ramp sprite is unavailable.");
+    (
+      window as unknown as { resetStaleRampSprite?: unknown }
+    ).resetStaleRampSprite = sprite;
+  });
+
+  await page.getByRole("button", { name: "Reset" }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const state = window.__contraptionLabTest?.getGameState();
+        const scene =
+          window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+            children: { list: unknown[] };
+            contactObjects: Map<unknown, unknown>;
+            matter: { world: { engine: { world: { bodies: unknown[] } } } };
+            ramps: Map<string, unknown>;
+          };
+        const staleSprite = (
+          window as unknown as { resetStaleRampSprite?: unknown }
+        ).resetStaleRampSprite;
+        return {
+          contactCount: scene.contactObjects.size,
+          matterBodyCount: scene.matter.world.engine.world.bodies.length,
+          runtimeRampCount: scene.ramps.size,
+          staleSpriteInDisplayList: scene.children.list.includes(staleSprite),
+          trayRampCount: state?.trayRampCount,
+        };
+      }),
+    )
+    .toEqual({
+      contactCount: before.contactCount,
+      matterBodyCount: before.matterBodyCount,
+      runtimeRampCount: 0,
+      staleSpriteInDisplayList: false,
+      trayRampCount: 1,
+    });
+
+  await page.getByRole("button", { name: "Reset" }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const state = window.__contraptionLabTest?.getGameState();
+        const scene =
+          window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+            children: { list: unknown[] };
+            contactObjects: Map<unknown, unknown>;
+            matter: { world: { engine: { world: { bodies: unknown[] } } } };
+            ramps: Map<string, unknown>;
+          };
+        const staleSprite = (
+          window as unknown as { resetStaleRampSprite?: unknown }
+        ).resetStaleRampSprite;
+        return {
+          contactCount: scene.contactObjects.size,
+          matterBodyCount: scene.matter.world.engine.world.bodies.length,
+          runtimeRampCount: scene.ramps.size,
+          staleSpriteInDisplayList: scene.children.list.includes(staleSprite),
+          trayRampCount: state?.trayRampCount,
+        };
+      }),
+    )
+    .toEqual({
+      contactCount: before.contactCount,
+      matterBodyCount: before.matterBodyCount,
+      runtimeRampCount: 0,
+      staleSpriteInDisplayList: false,
+      trayRampCount: 1,
+    });
+
+  await page.locator("#tray-ramp-button").click();
+  await canvas.hover({
+    position: {
+      x: (validTarget.x / 960) * canvasBox.width,
+      y: (validTarget.y / 540) * canvasBox.height,
+    },
+  });
+  await canvas.click({
+    position: {
+      x: (validTarget.x / 960) * canvasBox.width,
+      y: (validTarget.y / 540) * canvasBox.height,
+    },
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const state = window.__contraptionLabTest?.getGameState();
+        const scene =
+          window.__contraptionLabTest?.getPrototypeScene() as unknown as {
+            children: { list: unknown[] };
+            ramps: Map<string, { sprite?: unknown }>;
+          };
+        const staleSprite = (
+          window as unknown as { resetStaleRampSprite?: unknown }
+        ).resetStaleRampSprite;
+        const ramp = scene.ramps.get("held-ramp-1");
+        return {
+          currentSpriteInDisplayList:
+            ramp?.sprite !== undefined &&
+            scene.children.list.includes(ramp.sprite),
+          runtimeRampCount: scene.ramps.size,
+          staleSpriteInDisplayList: scene.children.list.includes(staleSprite),
+          trayRampCount: state?.trayRampCount,
+        };
+      }),
+    )
+    .toEqual({
+      currentSpriteInDisplayList: true,
+      runtimeRampCount: 1,
+      staleSpriteInDisplayList: false,
       trayRampCount: 0,
     });
 });

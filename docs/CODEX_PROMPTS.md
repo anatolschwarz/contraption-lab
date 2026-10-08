@@ -2,6 +2,10 @@
 
 This archive collects the Codex prompts used for the `contraption-lab` / TIM-style game project.
 
+This file is historical evidence, not current operating instructions. Preserved
+prompts may contain obsolete paths and commands; do not execute them as the
+current handoff workflow.
+
 Legend:
 
 - **VERBATIM** — exact prompt text is available in the current conversation record.
@@ -6194,7 +6198,7 @@ The response must contain the complete audit findings.
 
 Handoff using exactly:
 
-/home/anatolschwartz/code/prom-resp/push-response.sh s-20260816-0740-l32audit
+/home/anatolschwartz/CodeRoot/prom-resp/push-response.sh s-20260816-0740-l32audit
 
 Then STOP.
 
@@ -6216,7 +6220,7 @@ Do not commit/push Contraption Lab.
 Update the existing #32 response/diff artifacts.
 
 Handoff using exactly:
-/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+/home/anatolschwartz/CodeRoot/prom-resp/push-response.sh s-20260815-1658-l32a
 
 IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
 
@@ -6323,7 +6327,7 @@ The response must clearly separate:
 - next integration boundary
 
 Handoff using exactly:
-/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+/home/anatolschwartz/CodeRoot/prom-resp/push-response.sh s-20260815-1658-l32a
 
 IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
 Do not paraphrase, reconstruct, summarize, or omit any part of it.
@@ -6378,7 +6382,7 @@ Create/update:
 Verify response and patch contain the exact implementation/test changes reported.
 
 Handoff using exactly:
-/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+/home/anatolschwartz/CodeRoot/prom-resp/push-response.sh s-20260815-1658-l32a
 
 IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
 Do not paraphrase, reconstruct, summarize, or omit any part.
@@ -6388,11 +6392,11 @@ Then STOP.
 Continue Phase 2 #32.
 
 Work ONLY in:
-/home/anatolschwartz/code/contraption-lab
+/home/anatolschwartz/CodeRoot/contraption-lab
 
 Before editing verify:
 - current branch is `phase2-32-tea-time`
-- do NOT modify `/home/anatolschwartz/code/contraption-lab-main`
+- do NOT modify `/home/anatolschwartz/CodeRoot/contraption-lab-main`
 
 Session token:
 s-20260815-1658-l32a
@@ -6426,7 +6430,7 @@ Create/update:
 Verify the response and patch contain the exact changes reported.
 
 Handoff using exactly:
-/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+/home/anatolschwartz/CodeRoot/prom-resp/push-response.sh s-20260815-1658-l32a
 
 IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
 Do not paraphrase, reconstruct, summarize, or omit any part of it.
@@ -6436,11 +6440,11 @@ Then STOP.
 Continue Phase 2 #32.
 
 Work ONLY in:
-/home/anatolschwartz/code/contraption-lab
+/home/anatolschwartz/CodeRoot/contraption-lab
 
 Verify:
 - branch = phase2-32-tea-time
-- do NOT modify /home/anatolschwartz/code/contraption-lab-main
+- do NOT modify /home/anatolschwartz/CodeRoot/contraption-lab-main
 
 Session token:
 s-20260815-1658-l32a
@@ -6476,7 +6480,7 @@ Create/update:
 Verify response and patch match exactly.
 
 Handoff using exactly:
-/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+/home/anatolschwartz/CodeRoot/prom-resp/push-response.sh s-20260815-1658-l32a
 
 IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
 Do not paraphrase, reconstruct, summarize, or omit any part.
@@ -6486,11 +6490,11 @@ Then STOP.
 Prepare the Phase 2 #32 checkpoint on the CURRENT working tree.
 
 Work ONLY in:
-/home/anatolschwartz/code/contraption-lab
+/home/anatolschwartz/CodeRoot/contraption-lab
 
 Verify:
 - branch is `phase2-32-tea-time`
-- do NOT modify `/home/anatolschwartz/code/contraption-lab-main`
+- do NOT modify `/home/anatolschwartz/CodeRoot/contraption-lab-main`
 
 Goal:
 Identify and stage ALL current changes that belong to Phase 2 #32 / Tea Time, including the already-reviewed held-placement slice 1/2 work and earlier #32 implementation work.
@@ -6538,7 +6542,7 @@ The response must list:
 The diff artifact must represent the staged checkpoint content being proposed.
 
 Handoff using exactly:
-/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+/home/anatolschwartz/CodeRoot/prom-resp/push-response.sh s-20260815-1658-l32a
 
 IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md BEFORE generating/staging the final checkpoint diff.
 Do not paraphrase, reconstruct, summarize, or omit any part of it.
@@ -6548,11 +6552,11 @@ Then STOP.
 Continue Phase 2 #32 checkpoint correction.
 
 Work ONLY in:
-/home/anatolschwartz/code/contraption-lab
+/home/anatolschwartz/CodeRoot/contraption-lab
 
 Verify:
 - branch = phase2-32-tea-time
-- do NOT modify /home/anatolschwartz/code/contraption-lab-main
+- do NOT modify /home/anatolschwartz/CodeRoot/contraption-lab-main
 
 Session token:
 s-20260815-1658-l32a
@@ -6635,7 +6639,7 @@ Response must clearly report:
 - confirmation that excluded files remain unstaged.
 
 Handoff using exactly:
-/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+/home/anatolschwartz/CodeRoot/prom-resp/push-response.sh s-20260815-1658-l32a
 
 IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
 Do not paraphrase, reconstruct, summarize, or omit any part of it.
@@ -6645,11 +6649,11 @@ Then STOP.
 Finalize the already-reviewed Phase 2 #32 local checkpoint.
 
 Work ONLY in:
-/home/anatolschwartz/code/contraption-lab
+/home/anatolschwartz/CodeRoot/contraption-lab
 
 Verify:
 - current branch is `phase2-32-tea-time`
-- do NOT modify `/home/anatolschwartz/code/contraption-lab-main`
+- do NOT modify `/home/anatolschwartz/CodeRoot/contraption-lab-main`
 
 Session token:
 s-20260815-1658-l32a
@@ -6695,7 +6699,7 @@ Create/update:
 The diff artifact must contain the CHECKPOINT COMMIT diff itself, not an empty post-commit working-tree diff.
 
 Handoff using exactly:
-/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+/home/anatolschwartz/CodeRoot/prom-resp/push-response.sh s-20260815-1658-l32a
 
 IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
 Do not paraphrase, reconstruct, summarize, or omit any part of it.
@@ -6707,12 +6711,12 @@ Continue Phase 2 #32 from checkpoint:
 f19d69890e8170f986c992b6c21b169308a244d2
 
 Work ONLY in:
-/home/anatolschwartz/code/contraption-lab
+/home/anatolschwartz/CodeRoot/contraption-lab
 
 Verify:
 - branch = phase2-32-tea-time
 - checkpoint above is an ancestor of HEAD
-- do NOT modify /home/anatolschwartz/code/contraption-lab-main
+- do NOT modify /home/anatolschwartz/CodeRoot/contraption-lab-main
 
 Session token:
 s-20260815-1658-l32a
@@ -6803,7 +6807,7 @@ Response must separate:
 - manual verification requirement, if any
 
 Handoff using exactly:
-/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+/home/anatolschwartz/CodeRoot/prom-resp/push-response.sh s-20260815-1658-l32a
 
 IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
 Do not paraphrase, reconstruct, summarize, or omit any part of it.
@@ -6813,11 +6817,11 @@ Then STOP.
 Continue Phase 2 #32.
 
 Work ONLY in:
-/home/anatolschwartz/code/contraption-lab
+/home/anatolschwartz/CodeRoot/contraption-lab
 
 Verify:
 - branch = phase2-32-tea-time
-- do NOT modify /home/anatolschwartz/code/contraption-lab-main
+- do NOT modify /home/anatolschwartz/CodeRoot/contraption-lab-main
 
 Session token:
 s-20260815-1658-l32a
@@ -6858,7 +6862,7 @@ Create/update:
 Response must report the exact assertion change and exact test results.
 
 Handoff using exactly:
-/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+/home/anatolschwartz/CodeRoot/prom-resp/push-response.sh s-20260815-1658-l32a
 
 IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
 Do not paraphrase, reconstruct, summarize, or omit any part of it.
@@ -6868,12 +6872,12 @@ Then STOP.
 Finalize the reviewed Phase 2 #32 Slice 3 checkpoint.
 
 Work ONLY in:
-/home/anatolschwartz/code/contraption-lab
+/home/anatolschwartz/CodeRoot/contraption-lab
 
 Verify:
 - branch = phase2-32-tea-time
 - checkpoint f19d69890e8170f986c992b6c21b169308a244d2 is an ancestor of HEAD
-- do NOT modify /home/anatolschwartz/code/contraption-lab-main
+- do NOT modify /home/anatolschwartz/CodeRoot/contraption-lab-main
 
 Session token:
 s-20260815-1658-l32a
@@ -6909,7 +6913,7 @@ After commit:
 - report commit SHA
 - run git status --short
 - confirm unrelated files remain uncommitted
-- confirm /home/anatolschwartz/code/contraption-lab-main remains untouched
+- confirm /home/anatolschwartz/CodeRoot/contraption-lab-main remains untouched
 
 Create/update:
 - s-20260815-1658-l32a-response.md
@@ -6918,7 +6922,7 @@ Create/update:
 The diff artifact must contain the checkpoint commit diff itself, not an empty post-commit working-tree diff.
 
 Handoff using exactly:
-/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+/home/anatolschwartz/CodeRoot/prom-resp/push-response.sh s-20260815-1658-l32a
 
 IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
 Do not paraphrase, reconstruct, summarize, or omit any part of it.
@@ -6930,12 +6934,12 @@ Continue Phase 2 #32 from Slice 3 checkpoint:
 d77c55387bfada5a81d387cbe020e2999da7610b
 
 Work ONLY in:
-/home/anatolschwartz/code/contraption-lab
+/home/anatolschwartz/CodeRoot/contraption-lab
 
 Verify:
 - branch = phase2-32-tea-time
 - checkpoint above is an ancestor of HEAD
-- do NOT modify /home/anatolschwartz/code/contraption-lab-main
+- do NOT modify /home/anatolschwartz/CodeRoot/contraption-lab-main
 
 Session token:
 s-20260815-1658-l32a
@@ -7021,7 +7025,7 @@ Response must separate:
 - manual verification requirement
 
 Handoff using exactly:
-/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+/home/anatolschwartz/CodeRoot/prom-resp/push-response.sh s-20260815-1658-l32a
 
 IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
 Do not paraphrase, reconstruct, summarize, or omit any part of it.
@@ -7031,11 +7035,11 @@ Then STOP.
 Continue Phase 2 #32.
 
 Work ONLY in:
-/home/anatolschwartz/code/contraption-lab
+/home/anatolschwartz/CodeRoot/contraption-lab
 
 Verify:
 - branch = phase2-32-tea-time
-- do NOT modify /home/anatolschwartz/code/contraption-lab-main
+- do NOT modify /home/anatolschwartz/CodeRoot/contraption-lab-main
 
 Session token:
 s-20260815-1658-l32a
@@ -7103,7 +7107,7 @@ Create/update:
 Response must report the exact pre-commit held transform, runtime visual transform, Matter transform, root cause, fix, and Playwright result.
 
 Handoff using exactly:
-/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+/home/anatolschwartz/CodeRoot/prom-resp/push-response.sh s-20260815-1658-l32a
 
 IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
 Do not paraphrase, reconstruct, summarize, or omit any part.
@@ -7113,12 +7117,12 @@ Then STOP.
 Finalize the reviewed Phase 2 #32 Slice 4 checkpoint.
 
 Work ONLY in:
-/home/anatolschwartz/code/contraption-lab
+/home/anatolschwartz/CodeRoot/contraption-lab
 
 Verify:
 - branch = phase2-32-tea-time
 - checkpoint d77c55387bfada5a81d387cbe020e2999da7610b is an ancestor of HEAD
-- do NOT modify /home/anatolschwartz/code/contraption-lab-main
+- do NOT modify /home/anatolschwartz/CodeRoot/contraption-lab-main
 
 Session token:
 s-20260815-1658-l32a
@@ -7162,7 +7166,120 @@ Create/update:
 The diff artifact must contain the checkpoint commit diff itself.
 
 Handoff using exactly:
-/home/anatolschwartz/code/prom-resp/push-response.sh s-20260815-1658-l32a
+/home/anatolschwartz/CodeRoot/prom-resp/push-response.sh s-20260815-1658-l32a
+
+IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
+Do not paraphrase, reconstruct, summarize, or omit any part of it.
+
+Then STOP.
+
+Continue Phase 2 #32 from checkpoint:
+
+65600f6bfb6dfe456ffce748a08e8c8aaaa3b778
+
+Work ONLY in:
+/home/anatolschwartz/CodeRoot/contraption-lab
+
+Verify:
+- branch = phase2-32-tea-time
+- checkpoint above is an ancestor of HEAD
+- do NOT modify /home/anatolschwartz/CodeRoot/contraption-lab-main
+
+Session token:
+s-20260815-1658-l32a
+
+Fix ONLY the generic Reset stale-render lifecycle bug.
+
+Observed real behavior:
+- place a Ramp from inventory;
+- Reset;
+- inventory correctly restores the Ramp;
+- the old Ramp IMAGE remains visible on the canvas;
+- the stale visual no longer behaves as a real gameplay Ramp;
+- repeated placement can therefore produce duplicate-looking Ramp visuals.
+
+This must be fixed GENERICALLY for all applicable player-placeable parts/puzzles, not Tea Time- or Ramp-specific.
+
+Required invariant after Reset:
+- runtime part records reflect reset state;
+- Matter bodies reflect reset state;
+- contact registrations reflect reset state;
+- rendered/display objects reflect reset state;
+- inventory reflects reset state;
+- no stale display object survives after its runtime/body/state object has been removed.
+
+Diagnose the existing reset path:
+resetLevel -> restoreLevelParts -> destroyParts
+and identify exactly where render-object cleanup diverges from runtime/body cleanup.
+
+Implement the smallest generic lifecycle fix.
+
+Requirements:
+- Reset destroys/removes every player-created runtime visual that should no longer exist;
+- corresponding Matter/contact/runtime entries are also removed exactly once;
+- inventory restores correctly;
+- no stale visual remains;
+- no duplicate destruction errors;
+- fixed/default level parts are restored normally;
+- existing placed-part behavior before Reset remains unchanged;
+- puzzle switching/reload may be touched ONLY if the same lifecycle helper must be corrected generically.
+
+Do NOT fix in this run:
+- Ramp visual/Matter geometry alignment;
+- placed-part movement trap;
+- Teapot collision shape;
+- Cup goal/location;
+- held Q/E rotation;
+- Escape/right-click cancel;
+- Tea Time reference-route physics;
+- unrelated layout changes.
+
+Automated verification:
+
+Focused tests:
+- place a player Ramp;
+- verify runtime/render/Matter/contact object exists;
+- Reset;
+- verify that player Ramp runtime entry is gone;
+- verify display object is gone;
+- verify Matter body/contact registration is gone;
+- verify inventory restores exactly once;
+- repeat Reset and ensure no duplicate/stale cleanup issue.
+
+Real browser regression:
+- Tea Time -> Edit -> place Ramp;
+- confirm exactly one committed Ramp;
+- click Reset;
+- confirm Ramp inventory returns to 1;
+- confirm old committed Ramp visual is gone;
+- place Ramp again;
+- confirm only one committed Ramp visual exists.
+
+Use bounded Playwright/browser timeouts and cleanly close browser/context/process handles.
+
+Run:
+- focused relevant tests
+- focused Playwright regression
+- npm run typecheck
+- npm run lint
+- git diff --check
+
+Do not commit or push Contraption Lab.
+
+Create/update:
+- s-20260815-1658-l32a-response.md
+- s-20260815-1658-l32a-diff.patch
+
+Response must clearly separate:
+- root cause
+- implementation
+- automated tests
+- browser verification
+- unresolved issues
+- manual verification requirement, if any
+
+Handoff using exactly:
+/home/anatolschwartz/CodeRoot/prom-resp/push-response.sh s-20260815-1658-l32a
 
 IMPORTANT: append THIS FULL ORIGINAL OPERATIONAL PROMPT VERBATIM to docs/CODEX_PROMPTS.md.
 Do not paraphrase, reconstruct, summarize, or omit any part of it.

@@ -2033,12 +2033,8 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private destroyParts(): void {
-    for (const ramp of this.ramps.values()) {
-      this.unregisterContactObject(ramp.shape);
-      ramp.shape.destroy();
-      ramp.highlight.destroy();
-      ramp.shadow.destroy();
-      ramp.selectionText.destroy();
+    for (const ramp of [...this.ramps.values()]) {
+      this.destroyRamp(ramp.definition.id);
     }
     for (const block of this.blocks.values()) {
       this.unregisterContactObject(block.shape);
@@ -2061,7 +2057,6 @@ export class PrototypeScene extends Phaser.Scene {
       teapot.selectionText.destroy();
       teapot.sprite?.destroy();
     }
-    this.ramps.clear();
     this.blocks.clear();
     this.mattresses.clear();
     this.teapots.clear();
@@ -2195,6 +2190,10 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private destroyRampFromContact(componentId: string): void {
+    this.destroyRamp(componentId);
+  }
+
+  private destroyRamp(componentId: string): void {
     const ramp = this.ramps.get(componentId);
     if (!ramp) return;
     this.unregisterContactObject(ramp.shape);
